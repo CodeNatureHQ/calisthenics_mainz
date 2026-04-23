@@ -1,0 +1,194 @@
+{
+  "posts": [
+    {
+      "id": "beginner",
+      "glyph": "A1",
+      "category": { "de": "Guide", "en": "Guide" },
+      "date_label": { "de": "12. März 2026", "en": "March 12, 2026" },
+      "read_time": { "de": "6 Min. Lesezeit", "en": "6 min read" },
+      "title": {
+        "de": "Dein erstes halbes Jahr Calisthenics",
+        "en": "Your first six months of calisthenics"
+      },
+      "excerpt": {
+        "de": "Was du als Einsteiger:in wirklich brauchst — und was du getrost ignorieren kannst.",
+        "en": "What you actually need as a beginner — and what you can safely ignore."
+      },
+      "body_html": {
+        "de": "<p>Die erste Klimmzugstange ist höher, als sie von unten aussieht. Keine Sorge: Wir haben alle da unten angefangen.</p><h4>Die ersten vier Wochen</h4><p>Zwei Mal pro Woche reicht völlig. Fokus: <strong>aktiver Hang</strong>, Stützhaltung, Liegestütz an der Wand.</p>",
+        "en": "<p>The first pull-up bar is higher than it looks from below. Don't worry: we all started down there.</p><h4>First four weeks</h4><p>Twice a week is plenty. Focus: <strong>active hang</strong>, support hold, wall push-ups.</p>"
+      },
+      "published": true,
+      "sort_order": 0
+    },
+    {
+      "id": "battle-koeln",
+      "glyph": "W",
+      "category": { "de": "Wettkampf", "en": "Competition" },
+      "date_label": { "de": "24. November 2025", "en": "November 24, 2025" },
+      "read_time": { "de": "4 Min. Lesezeit", "en": "4 min read" },
+      "title": { "de": "Rhein-Battle Köln: Silber im Freestyle", "en": "Rhein Battle Cologne: silver in freestyle" },
+      "excerpt": { "de": "Vier Mainzer, ein Minivan und ein Podium.", "en": "Four Mainz athletes, one van, one podium." },
+      "body_html": {
+        "de": "<p>Samstag 6 Uhr früh, vier Athleten, ein Minivan. Tobi holt Silber im 1v1-Freestyle.</p>",
+        "en": "<p>Saturday 6am, four athletes, one van. Tobi took silver in the 1v1 freestyle.</p>"
+      },
+      "published": true,
+      "sort_order": 1
+    },
+    {
+      "id": "plan",
+      "glyph": "P",
+      "category": { "de": "Training", "en": "Training" },
+      "date_label": { "de": "3. Februar 2026", "en": "February 3, 2026" },
+      "read_time": { "de": "5 Min. Lesezeit", "en": "5 min read" },
+      "title": { "de": "Unser Fortgeschrittenen-Plan", "en": "Our advanced programme" },
+      "excerpt": { "de": "Wie wir sechs Wochen strukturieren, wenn die Basics sitzen.", "en": "How we structure six weeks once the basics are in." },
+      "body_html": {
+        "de": "<p>Sechs Wochen, drei Einheiten pro Woche. Fokus auf Push-Pull-Symmetrie.</p>",
+        "en": "<p>Six weeks, three sessions a week. Push-pull symmetry focus.</p>"
+      },
+      "published": true,
+      "sort_order": 2
+    }
+  ],
+  "events": [
+    {
+      "id": "jam-rheinufer-2026-05",
+      "category": "jam",
+      "starts_at": "2026-05-17T15:00:00+02:00",
+      "place": { "de": "Rheinufer · Volkspark Mainz", "en": "Rhine promenade · Volkspark Mainz" },
+      "title": { "de": "Frühlings-Jam am Rhein", "en": "Spring jam by the Rhine" },
+      "description": {
+        "de": "Offener Jam für alle Level. Bring gute Laune, wir bringen die Bars.",
+        "en": "Open jam for all levels. Bring good vibes, we'll bring the bars."
+      }
+    },
+    {
+      "id": "workshop-handstand-2026-06",
+      "category": "workshop",
+      "starts_at": "2026-06-07T10:00:00+02:00",
+      "place": { "de": "JGU Campus · Halle", "en": "JGU Campus · Gym" },
+      "title": { "de": "Handstand-Workshop", "en": "Handstand workshop" },
+      "description": {
+        "de": "Drei Stunden Handstand-Training mit Paul.",
+        "en": "Three hours of handstand work with Paul."
+      }
+    },
+    {
+      "id": "comp-wsw-2026-07",
+      "category": "comp",
+      "starts_at": "2026-07-19T11:00:00+02:00",
+      "place": { "de": "Frankfurt · WSW Qualifier", "en": "Frankfurt · WSW qualifier" },
+      "title": { "de": "World Street Workout Qualifier", "en": "World Street Workout qualifier" },
+      "description": {
+        "de": "Vier Mainzer Athlet:innen im Freestyle-Bracket.",
+        "en": "Four Mainz athletes in the freestyle bracket."
+      }
+    },
+    {
+      "id": "social-sommerfest-2026-08",
+      "category": "social",
+      "starts_at": "2026-08-15T18:00:00+02:00",
+      "place": { "de": "Volkspark Mainz", "en": "Volkspark Mainz" },
+      "title": { "de": "Vereins-Sommerfest", "en": "Club summer party" },
+      "description": {
+        "de": "Jahreshighlight: Grillen, Musik, Team-Challenges.",
+        "en": "Annual highlight: BBQ, music, team challenges."
+      }
+    },
+    {
+      "id": "comp-battle-2025-11",
+      "category": "comp",
+      "starts_at": "2025-11-22T12:00:00+01:00",
+      "place": { "de": "Köln · Calisthenics Battle", "en": "Cologne · Calisthenics battle" },
+      "title": { "de": "Rhein-Battle Köln", "en": "Rhein Battle Cologne" },
+      "description": {
+        "de": "Zweiter Platz in der Team-Wertung.",
+        "en": "Second place in team ranking."
+      }
+    }
+  ],
+  "training_sessions": [
+    {
+      "day_of_week": 0,
+      "time_label": "19:15 – 21:30",
+      "place": { "de": "JGU Campus · Halle", "en": "JGU Campus · Gym" },
+      "level": "training",
+      "sort_order": 0
+    },
+    {
+      "day_of_week": 3,
+      "time_label": "19:15 – 21:30",
+      "place": { "de": "JGU Campus · Halle", "en": "JGU Campus · Gym" },
+      "level": "open",
+      "sort_order": 1
+    }
+  ],
+  "calendar_overrides": [
+    {
+      "type": "training",
+      "on_date": "2026-05-09",
+      "time_label": "11:00 – 13:00",
+      "place": { "de": "Volkspark Mainz", "en": "Volkspark Mainz" },
+      "level": "open",
+      "note": { "de": "Outdoor-Extra-Session", "en": "Outdoor extra session" }
+    },
+    {
+      "type": "cancel",
+      "on_date": "2026-05-14",
+      "note": { "de": "Christi Himmelfahrt — kein Training", "en": "Public holiday — no session" }
+    }
+  ],
+  "spots": [
+    {
+      "id": "jgu",
+      "glyph": "JGU",
+      "map_x": 300,
+      "map_y": 330,
+      "label_anchor": "left",
+      "name": { "de": "JGU Campus · Heim-Spot", "en": "JGU Campus · Home spot" },
+      "subtitle": { "de": "Unser wöchentliches Zuhause", "en": "Our weekly home" },
+      "address": "Saarstraße 21, 55122 Mainz",
+      "access": { "de": "Öffentlich zugänglich", "en": "Publicly accessible" },
+      "gear": ["Pull-up", "Dips", "Parallettes", "Rings"],
+      "sort_order": 0
+    },
+    {
+      "id": "volkspark",
+      "glyph": "VP",
+      "map_x": 380,
+      "map_y": 410,
+      "label_anchor": "right",
+      "name": { "de": "Volkspark Mainz", "en": "Volkspark Mainz" },
+      "subtitle": { "de": "Outdoor-Alternative", "en": "Outdoor alternative" },
+      "address": "Volkspark, 55131 Mainz",
+      "access": { "de": "Öffentlich zugänglich", "en": "Publicly accessible" },
+      "gear": ["Pull-up", "Monkey bars", "Low bar"],
+      "sort_order": 1
+    },
+    {
+      "id": "biebrich",
+      "glyph": "BB",
+      "map_x": 160,
+      "map_y": 285,
+      "label_anchor": "right",
+      "name": { "de": "Wiesbaden-Biebrich", "en": "Wiesbaden-Biebrich" },
+      "subtitle": { "de": "Sonntagsausflug", "en": "Sunday trip" },
+      "address": "Rheinufer, 65203 Wiesbaden",
+      "access": { "de": "Öffentlich zugänglich", "en": "Publicly accessible" },
+      "gear": ["Pull-up", "Dips", "Parallettes"],
+      "sort_order": 2
+    }
+  ],
+  "site_settings": {
+    "hero_members": "120+",
+    "hero_sessions": "2 + Open",
+    "hero_spot": "JGU Campus",
+    "hero_fee": "€ 0 / Monat",
+    "about_members": "120",
+    "about_founded": "2018",
+    "about_spots": "3",
+    "about_sessions": "2"
+  }
+}

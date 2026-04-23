@@ -1,26 +1,253 @@
+/* Google Fonts — must precede @import "tailwindcss" */
+@import url('https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
 @import "tailwindcss";
 
+/* ------------------------------------------------------------------ */
+/* Design Tokens                                                        */
+/* ------------------------------------------------------------------ */
+@theme {
+  --color-bg:          #1A1A1E;
+  --color-bg-2:        #24242A;
+  --color-bg-3:        #2E2E35;
+  --color-line:        #3A3A42;
+  --color-line-soft:   #2C2C33;
+  --color-fg:          #F5F3EE;
+  --color-fg-dim:      #B8B8BD;
+  --color-fg-mute:     #7A7A80;
+  --color-accent-spark:#D8FF3D;
+  --color-accent-ink:  #0B0B0D;
+  --color-danger:      #FF7A7A;
+  --color-ok:          #8EE88E;
+  --color-cat-comp:    #E6C6FF;
+  --color-cat-jam:     #D8FF3D;
+  --color-cat-workshop:#8EC5FF;
+  --color-cat-social:  #FFB48E;
+
+  --font-display: 'Archivo Black', 'Space Grotesk', system-ui, sans-serif;
+  --font-sans:    'Space Grotesk', system-ui, -apple-system, sans-serif;
+  --font-mono:    'JetBrains Mono', ui-monospace, monospace;
+}
+
+/* ------------------------------------------------------------------ */
+/* CSS Custom Properties                                                */
+/* ------------------------------------------------------------------ */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Backgrounds */
+  --bg:         #1A1A1E;
+  --bg-2:       #24242A;
+  --bg-3:       #2E2E35;
+  /* Borders */
+  --line:       #3A3A42;
+  --line-soft:  #2C2C33;
+  /* Text */
+  --fg:         #F5F3EE;
+  --fg-dim:     #B8B8BD;
+  --fg-mute:    #7A7A80;
+  /* Accent */
+  --accent-spark: #D8FF3D;
+  --accent-ink:   #0B0B0D;
+  /* Status */
+  --danger:     #FF7A7A;
+  --ok:         #8EE88E;
+  /* Category */
+  --cat-comp:     #E6C6FF;
+  --cat-jam:      #D8FF3D;
+  --cat-workshop: #8EC5FF;
+  --cat-social:   #FFB48E;
+  --cat-cancel:   #FFB4A8;
+  --cat-event:    #A8E0FF;
+
+  /* Legacy aliases (component compat) */
+  --bg-elev:    var(--bg-2);
+  --bg-elev-2:  var(--bg-3);
+  --border:     var(--line);
+  --border-soft:var(--line-soft);
+  --fg-muted:   var(--fg-dim);
+  --accent:     var(--accent-spark);
+  --accent-hover:#E8FF66;
+  --accent-soft: rgba(216,255,61,0.1);
+  --accent-ring: rgba(216,255,61,0.25);
+  --success:    var(--ok);
+  --warning:    #FFB48E;
+
+  --radius-sm: 6px;
+  --radius:    10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+
+  --shadow-1: 0 1px 2px rgba(0,0,0,0.4);
+  --shadow-2: 0 8px 24px rgba(0,0,0,0.5);
+  --shadow-3: 0 20px 60px rgba(0,0,0,0.6);
+
+  --container: 1280px;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+/* ------------------------------------------------------------------ */
+/* Base                                                                 */
+/* ------------------------------------------------------------------ */
+html {
+  scroll-behavior: smooth;
+  background: var(--bg);
+  color: var(--fg);
+  box-sizing: border-box;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+*, *::before, *::after {
+  box-sizing: inherit;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+  background: var(--bg);
+  color: var(--fg);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  margin: 0;
 }
+
+section[id] {
+  scroll-margin-top: 68px;
+}
+
+/* ------------------------------------------------------------------ */
+/* Container                                                            */
+/* ------------------------------------------------------------------ */
+.container {
+  width: 100%;
+  max-width: var(--container);
+  margin-inline: auto;
+  padding-inline: 32px;
+}
+
+@media (max-width: 640px) {
+  .container { padding-inline: 20px; }
+}
+
+/* ------------------------------------------------------------------ */
+/* Section                                                              */
+/* ------------------------------------------------------------------ */
+.section {
+  padding: 120px 0;
+  border-top: 1px solid var(--line-soft);
+}
+
+@media (max-width: 640px) {
+  .section { padding: 80px 0; }
+}
+
+/* ------------------------------------------------------------------ */
+/* Typography                                                           */
+/* ------------------------------------------------------------------ */
+h1, h2, h3, h4 {
+  font-family: var(--font-display);
+  text-transform: uppercase;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+/* ------------------------------------------------------------------ */
+/* Fade-in animation                                                    */
+/* ------------------------------------------------------------------ */
+.fade-in {
+  opacity: 0;
+  transform: translateY(14px);
+  transition: opacity 0.7s ease, transform 0.7s ease;
+}
+
+.fade-in.visible {
+  opacity: 1;
+  transform: none;
+}
+
+/* ------------------------------------------------------------------ */
+/* Leaflet overrides                                                    */
+/* ------------------------------------------------------------------ */
+.leaflet-container {
+  background: var(--bg-2) !important;
+  border-radius: var(--radius-lg);
+}
+
+/* No filter needed — CartoDB Dark Matter is already dark */
+
+/* Dark popup */
+.leaflet-popup-content-wrapper {
+  background: #24242A !important;
+  border: 1px solid #3A3A42 !important;
+  border-radius: 10px !important;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.6) !important;
+  padding: 0 !important;
+}
+.leaflet-popup-content {
+  margin: 0 !important;
+}
+.leaflet-popup-tip {
+  background: #24242A !important;
+}
+.leaflet-popup-close-button {
+  color: #7A7A80 !important;
+  font-size: 16px !important;
+  top: 6px !important;
+  right: 8px !important;
+}
+
+/* ------------------------------------------------------------------ */
+/* Tiptap editor                                                        */
+/* ------------------------------------------------------------------ */
+.tiptap-editor {
+  min-height: 200px;
+  padding: 0.75rem;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  color: var(--fg);
+  font-size: 0.875rem;
+  line-height: 1.6;
+  font-family: var(--font-sans);
+  outline: none;
+}
+
+.tiptap-editor:focus-within {
+  border-color: var(--accent-spark);
+}
+
+.tiptap-editor h1 { font-size: 1.5rem; font-weight: 700; margin: 0.75rem 0 0.5rem; }
+.tiptap-editor h2 { font-size: 1.25rem; font-weight: 600; margin: 0.75rem 0 0.5rem; }
+.tiptap-editor p  { margin: 0.5rem 0; }
+.tiptap-editor ul, .tiptap-editor ol { padding-left: 1.5rem; margin: 0.5rem 0; }
+.tiptap-editor blockquote {
+  border-left: 3px solid var(--accent-spark);
+  padding-left: 1rem;
+  color: var(--fg-dim);
+  margin: 0.75rem 0;
+}
+.tiptap-editor a { color: var(--accent-spark); text-decoration: underline; }
+.tiptap-editor .is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: var(--fg-mute);
+  pointer-events: none;
+  height: 0;
+}
+
+/* ------------------------------------------------------------------ */
+/* Blog post body (rendered from body_html)                            */
+/* ------------------------------------------------------------------ */
+.prose-cm p  { margin: 0 0 16px; color: var(--fg-dim); font-size: 16px; line-height: 1.7; }
+.prose-cm strong { color: var(--fg); }
+.prose-cm h4 {
+  font-family: var(--font-display);
+  color: var(--fg);
+  font-size: 18px;
+  text-transform: uppercase;
+  margin: 28px 0 12px;
+  letter-spacing: .02em;
+}
+.prose-cm ul { color: var(--fg-dim); padding-left: 20px; margin: 0 0 16px; line-height: 1.7; }
+.prose-cm blockquote {
+  border-left: 3px solid var(--accent-spark);
+  padding-left: 1rem;
+  color: var(--fg-dim);
+  margin: 1rem 0;
+}
+.prose-cm a { color: var(--accent-spark); text-decoration: underline; }
