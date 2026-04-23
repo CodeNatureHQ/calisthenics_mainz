@@ -38,6 +38,7 @@ const copy = {
 
 export default function SpotsSection({ lang, spots }: Props) {
   const c = copy[lang]
+  const visibleSpots = spots.filter(s => s.visible)
   const [activeSpot, setActiveSpot] = useState<Spot | null>(null)
 
   return (
@@ -97,7 +98,7 @@ export default function SpotsSection({ lang, spots }: Props) {
             {/* Map */}
             <div style={{ flex: 1, minHeight: 0 }}>
               <LeafletMap
-                spots={spots}
+                spots={visibleSpots}
                 activeSpot={activeSpot}
                 onSpotClick={setActiveSpot}
                 lang={lang}

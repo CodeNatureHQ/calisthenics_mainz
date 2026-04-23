@@ -46,6 +46,8 @@ export type TrainingSession = {
   time_label: string
   place: L10n
   level: SessionLevel
+  description: L10n | null
+  spot_id: string | null
   sort_order: number
   created_at: string
   updated_at: string
@@ -61,6 +63,8 @@ export type CalendarOverride = {
   place: L10n | null
   level: SessionLevel | null
   note: L10n | null
+  description: L10n | null
+  spot_id: string | null
   created_at: string
   updated_at: string
 }
@@ -80,6 +84,7 @@ export type Spot = {
   gear: string[]
   maps_url: string | null
   images: string[]
+  visible: boolean
   sort_order: number
   created_at: string
   updated_at: string

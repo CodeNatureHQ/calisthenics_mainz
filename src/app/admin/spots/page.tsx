@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import type { Spot } from '@/lib/types'
 import { createClient } from '@/lib/supabase/client'
+import { slugify } from '@/lib/slugify'
 
 export default function AdminSpotsPage() {
   const [spots, setSpots] = useState<Spot[]>([])
@@ -15,14 +16,14 @@ export default function AdminSpotsPage() {
     lat: string; lng: string; label_anchor: 'left' | 'right'
     name_de: string; name_en: string; subtitle_de: string; subtitle_en: string
     address: string; access_de: string; access_en: string
-    gear: string; maps_url: string; sort_order: string
+    gear: string; maps_url: string; sort_order: string; visible: boolean
   }
 
   const emptyForm = (): FormState => ({
     id: '', glyph: '', map_x: '400', map_y: '280', lat: '', lng: '',
     label_anchor: 'right', name_de: '', name_en: '', subtitle_de: '', subtitle_en: '',
     address: '', access_de: 'Öffentlich zugänglich', access_en: 'Publicly accessible',
-    gear: '', maps_url: '', sort_order: '0',
+    gear: '', maps_url: '', sort_order: '0', visible: true,
   })
 
   const spotToForm = (s: Spot): FormState => ({
@@ -32,6 +33,7 @@ export default function AdminSpotsPage() {
     subtitle_de: s.subtitle.de, subtitle_en: s.subtitle.en,
     address: s.address, access_de: s.access.de, access_en: s.access.en,
     gear: s.gear.join(', '), maps_url: s.maps_url ?? '', sort_order: String(s.sort_order),
+    visible: s.visible,
   })
 
   const [form, setForm] = useState<FormState>(emptyForm())
@@ -76,6 +78,7 @@ export default function AdminSpotsPage() {
         gear: form.gear.split(',').map((g) => g.trim()).filter(Boolean),
         maps_url: form.maps_url || null,
         sort_order: parseInt(form.sort_order) || 0,
+        visible: form.visible,
         images: [],
       }
       if (isNew) {
@@ -97,6 +100,11 @@ export default function AdminSpotsPage() {
   const f = (key: keyof FormState, value: string) =>
     setForm((prev) => ({ ...prev, [key]: value }))
 
+  async function toggleVisible(spot: Spot) {
+    await createClient().from('spots').update({ visible: !spot.visible }).eq('id', spot.id)
+    load()
+  }
+
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
@@ -113,7 +121,7 @@ export default function AdminSpotsPage() {
 
           <div style={{ display: 'grid', gap: '1rem' }}>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: '0.75rem' }}>
-              <Field label="Slug / ID"><input value={form.id} onChange={(e) => f('id', e.target.value)} disabled={!isNew} style={{ ...inputStyle, opacity: isNew ? 1 : 0.6 }} /></Field>
+              {!isNew && <Field label="ID"><input value={form.id} disabled style={{ ...inputStyle, opacity: 0.5, fontFamily: 'var(--font-mono)', fontSize: 12 }} /></Field>}
               <Field label="Glyph"><input value={form.glyph} onChange={(e) => f('glyph', e.target.value)} placeholder="JGU" style={{ ...inputStyle, fontFamily: 'var(--font-mono)' }} /></Field>
               <Field label="Label anchor">
                 <select value={form.label_anchor} onChange={(e) => f('label_anchor', e.target.value)} style={inputStyle}>
@@ -127,7 +135,17 @@ export default function AdminSpotsPage() {
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-              <Field label="Name (DE)"><input value={form.name_de} onChange={(e) => f('name_de', e.target.value)} style={inputStyle} /></Field>
+              <Field label="Name (DE)">
+                <input value={form.name_de} onChange={(e) => {
+                  f('name_de', e.target.value)
+                  if (isNew) f('id', slugify(e.target.value))
+                }} style={inputStyle} />
+                {isNew && form.id && (
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--accent-2)', letterSpacing: '0.06em', marginTop: 4 }}>
+                    ID: {form.id}
+                  </div>
+                )}
+              </Field>
               <Field label="Name (EN)"><input value={form.name_en} onChange={(e) => f('name_en', e.target.value)} style={inputStyle} /></Field>
               <Field label="Subtitle (DE)"><input value={form.subtitle_de} onChange={(e) => f('subtitle_de', e.target.value)} style={inputStyle} /></Field>
               <Field label="Subtitle (EN)"><input value={form.subtitle_en} onChange={(e) => f('subtitle_en', e.target.value)} style={inputStyle} /></Field>
@@ -138,6 +156,18 @@ export default function AdminSpotsPage() {
             <Field label="Adresse"><input value={form.address} onChange={(e) => f('address', e.target.value)} style={inputStyle} /></Field>
             <Field label="Equipment (kommagetrennt)"><input value={form.gear} onChange={(e) => f('gear', e.target.value)} placeholder="Pull-up, Dips, Parallettes" style={inputStyle} /></Field>
             <Field label="Google Maps URL"><input value={form.maps_url} onChange={(e) => f('maps_url', e.target.value)} type="url" style={inputStyle} /></Field>
+            <Field label="Sichtbarkeit">
+              <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', padding: '10px 12px', background: 'var(--bg)', border: '1px solid var(--line)', borderRadius: 8 }}>
+                <input
+                  type="checkbox" checked={form.visible}
+                  onChange={(e) => setForm(prev => ({ ...prev, visible: e.target.checked }))}
+                  style={{ width: 16, height: 16, accentColor: 'var(--ok)', flexShrink: 0 }}
+                />
+                <span style={{ fontFamily: 'var(--font-sans)', fontSize: 13.5, color: form.visible ? 'var(--ok)' : 'var(--fg-mute)' }}>
+                  {form.visible ? 'Auf der Karte sichtbar' : 'Versteckt (nicht auf Karte)'}
+                </span>
+              </label>
+            </Field>
           </div>
 
           <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1.25rem' }}>
@@ -147,15 +177,52 @@ export default function AdminSpotsPage() {
         </div>
       )}
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-        {spots.map((s) => (
-          <div key={s.id} style={{ background: 'var(--bg-elev)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', padding: '1rem 1.25rem', display: 'flex', gap: '1rem', alignItems: 'center' }}>
-            <div style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.75rem', color: 'var(--accent)', background: 'var(--accent-soft)', borderRadius: 'var(--radius-sm)', padding: '0.25rem 0.5rem', flexShrink: 0 }}>{s.glyph}</div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontWeight: 600, color: 'var(--fg)', fontSize: '0.9375rem' }}>{s.name.de}</div>
-              <div style={{ fontSize: '0.75rem', color: 'var(--fg-dim)', marginTop: 2 }}>{s.address}</div>
+      <div style={{ background: 'var(--bg-2)', border: '1px solid var(--line-soft)', borderRadius: 14, overflow: 'hidden' }}>
+        {spots.length === 0 ? (
+          <div style={{ padding: '60px 24px', textAlign: 'center', color: 'var(--fg-mute)', fontFamily: 'var(--font-mono)', fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Keine Spots</div>
+        ) : spots.map((s) => (
+          <div key={s.id} style={{
+            display: 'grid', gridTemplateColumns: '1fr auto',
+            gap: 16, padding: '16px 20px',
+            borderBottom: '1px solid var(--line-soft)',
+            alignItems: 'center',
+            opacity: s.visible ? 1 : 0.5,
+            transition: 'opacity 0.2s',
+          }}>
+            <div style={{ minWidth: 0, display: 'flex', alignItems: 'center', gap: 12 }}>
+              {/* Visibility indicator */}
+              <div style={{
+                width: 8, height: 8, borderRadius: '50%', flexShrink: 0,
+                background: s.visible ? 'var(--ok)' : 'var(--fg-mute)',
+                boxShadow: s.visible ? '0 0 8px rgba(142,232,142,0.6)' : 'none',
+                transition: 'background 0.2s, box-shadow 0.2s',
+              }} />
+              <div style={{
+                fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 11,
+                color: 'var(--accent-spark)', background: 'rgba(216,255,61,0.1)',
+                borderRadius: 6, padding: '3px 8px', flexShrink: 0,
+              }}>{s.glyph}</div>
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontWeight: 500, color: 'var(--fg)', fontSize: 14, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.name.de}</div>
+                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--fg-mute)', marginTop: 2, letterSpacing: '0.06em' }}>{s.address}</div>
+              </div>
             </div>
-            <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+              {/* Visibility toggle */}
+              <button
+                onClick={() => toggleVisible(s)}
+                title={s.visible ? 'Auf Karte sichtbar — klicken zum Ausblenden' : 'Versteckt — klicken zum Einblenden'}
+                style={{
+                  padding: '6px 10px', borderRadius: 6, cursor: 'pointer',
+                  fontFamily: 'var(--font-mono)', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em',
+                  background: s.visible ? 'rgba(142,232,142,0.1)' : 'var(--bg-3)',
+                  color: s.visible ? 'var(--ok)' : 'var(--fg-mute)',
+                  border: s.visible ? '1px solid rgba(142,232,142,0.3)' : '1px solid var(--line)',
+                  transition: 'all 0.2s',
+                }}
+              >
+                {s.visible ? '● Sichtbar' : '○ Versteckt'}
+              </button>
               <button onClick={() => startEdit(s)} style={secondaryBtnStyle}>Bearbeiten</button>
               <button onClick={() => deleteSpot(s.id)} style={dangerBtnStyle}>Löschen</button>
             </div>

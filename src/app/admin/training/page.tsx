@@ -1,15 +1,17 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import type { TrainingSession, CalendarOverride, SessionLevel } from '@/lib/types'
+import type { TrainingSession, CalendarOverride, SessionLevel, Spot } from '@/lib/types'
 import { createClient } from '@/lib/supabase/client'
-import { fullDayLabel, levelLabel } from '@/lib/utils'
+import { fullDayLabel, levelLabel, t } from '@/lib/utils'
+import LangPair from '@/components/admin/LangPair'
 
 const LEVELS: SessionLevel[] = ['beginner', 'advanced', 'open', 'comp', 'training']
 
 export default function AdminTrainingPage() {
   const [sessions, setSessions] = useState<TrainingSession[]>([])
   const [overrides, setOverrides] = useState<CalendarOverride[]>([])
+  const [spots, setSpots] = useState<Spot[]>([])
   const [editingSession, setEditingSession] = useState<TrainingSession | null | 'new'>(null)
   const [editingOverride, setEditingOverride] = useState<CalendarOverride | null | 'new'>(null)
   const [saving, setSaving] = useState(false)
@@ -17,12 +19,14 @@ export default function AdminTrainingPage() {
 
   async function load() {
     const supabase = createClient()
-    const [{ data: s }, { data: o }] = await Promise.all([
+    const [{ data: s }, { data: o }, { data: sp }] = await Promise.all([
       supabase.from('training_sessions').select('*').order('sort_order'),
       supabase.from('calendar_overrides').select('*').order('on_date'),
+      supabase.from('spots').select('*').order('sort_order'),
     ])
     setSessions(s ?? [])
     setOverrides(o ?? [])
+    setSpots(sp ?? [])
   }
 
   useEffect(() => { load() }, [])
@@ -55,6 +59,7 @@ export default function AdminTrainingPage() {
         {editingSession !== null && (
           <SessionForm
             session={editingSession === 'new' ? null : editingSession}
+            spots={spots}
             onSave={() => { setEditingSession(null); load() }}
             onCancel={() => setEditingSession(null)}
           />
@@ -130,19 +135,35 @@ export default function AdminTrainingPage() {
   )
 }
 
-function SessionForm({ session, onSave, onCancel }: { session: TrainingSession | null; onSave: () => void; onCancel: () => void }) {
+function SessionForm({ session, spots, onSave, onCancel }: { session: TrainingSession | null; spots: Spot[]; onSave: () => void; onCancel: () => void }) {
   const [dow, setDow] = useState(session?.day_of_week ?? 0)
   const [time, setTime] = useState(session?.time_label ?? '')
   const [placeDe, setPlaceDe] = useState(session?.place?.de ?? '')
   const [placeEn, setPlaceEn] = useState(session?.place?.en ?? '')
   const [level, setLevel] = useState<SessionLevel>(session?.level ?? 'open')
+  const [spotId, setSpotId] = useState(session?.spot_id ?? '')
+  const [descDe, setDescDe] = useState(session?.description?.de ?? '')
+  const [descEn, setDescEn] = useState(session?.description?.en ?? '')
   const [sortOrder, setSortOrder] = useState(session?.sort_order ?? 0)
   const [saving, setSaving] = useState(false)
+
+  // When spot is selected, auto-fill place from spot data
+  function handleSpotChange(id: string) {
+    setSpotId(id)
+    const spot = spots.find(s => s.id === id)
+    if (spot) { setPlaceDe(spot.name.de); setPlaceEn(spot.name.en) }
+  }
 
   async function save() {
     setSaving(true)
     const supabase = createClient()
-    const data = { day_of_week: dow, time_label: time, place: { de: placeDe, en: placeEn }, level, sort_order: sortOrder }
+    const data = {
+      day_of_week: dow, time_label: time,
+      place: { de: placeDe, en: placeEn },
+      level, sort_order: sortOrder,
+      spot_id: spotId || null,
+      description: descDe ? { de: descDe, en: descEn } : null,
+    }
     if (session) {
       await supabase.from('training_sessions').update(data).eq('id', session.id)
     } else {
@@ -153,32 +174,56 @@ function SessionForm({ session, onSave, onCancel }: { session: TrainingSession |
   }
 
   return (
-    <div style={{ background: 'var(--bg-elev)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', padding: '1.25rem', marginBottom: '1rem' }}>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '0.75rem', marginBottom: '1rem' }}>
+    <div style={{ background: 'var(--bg-2)', border: '1px solid var(--line-soft)', borderRadius: 14, padding: 20, marginBottom: 16 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 12, marginBottom: 16 }}>
         <Field label="Wochentag">
-          <select value={dow} onChange={(e) => setDow(Number(e.target.value))} style={inputStyle}>
+          <select value={dow} onChange={(e) => setDow(Number(e.target.value))} className="admin-input" style={inputStyle}>
             {[0,1,2,3,4,5,6].map((d) => <option key={d} value={d}>{fullDayLabel(d, 'de')}</option>)}
           </select>
         </Field>
         <Field label="Uhrzeit">
-          <input value={time} onChange={(e) => setTime(e.target.value)} placeholder="19:15 – 21:30" style={inputStyle} />
+          <input value={time} onChange={(e) => setTime(e.target.value)} placeholder="19:15 – 21:30" className="admin-input" style={inputStyle} />
         </Field>
         <Field label="Level">
-          <select value={level} onChange={(e) => setLevel(e.target.value as SessionLevel)} style={inputStyle}>
+          <select value={level} onChange={(e) => setLevel(e.target.value as SessionLevel)} className="admin-input" style={inputStyle}>
             {LEVELS.map((l) => <option key={l} value={l}>{levelLabel(l, 'de')}</option>)}
           </select>
         </Field>
-        <Field label="Ort (DE)">
-          <input value={placeDe} onChange={(e) => setPlaceDe(e.target.value)} style={inputStyle} />
-        </Field>
-        <Field label="Place (EN)">
-          <input value={placeEn} onChange={(e) => setPlaceEn(e.target.value)} style={inputStyle} />
-        </Field>
         <Field label="Reihenfolge">
-          <input type="number" value={sortOrder} onChange={(e) => setSortOrder(Number(e.target.value))} style={{ ...inputStyle, width: 80 }} />
+          <input type="number" value={sortOrder} onChange={(e) => setSortOrder(Number(e.target.value))} className="admin-input" style={{ ...inputStyle, width: 80 }} />
         </Field>
       </div>
-      <div style={{ display: 'flex', gap: '0.5rem' }}>
+
+      {/* Spot selector */}
+      <Field label="Spot (für Kartenlink)">
+        <select value={spotId} onChange={(e) => handleSpotChange(e.target.value)} className="admin-input" style={{ ...inputStyle, marginBottom: 16 }}>
+          <option value="">— Kein Spot verknüpft —</option>
+          {spots.map(s => (
+            <option key={s.id} value={s.id}>{s.name.de} · {s.address}</option>
+          ))}
+        </select>
+      </Field>
+
+      {/* Place (auto-filled from spot, editable) */}
+      <div style={{ marginBottom: 16 }}>
+        <LangPair
+          label="Ort / Location"
+          deValue={placeDe} enValue={placeEn}
+          onDe={setPlaceDe} onEn={setPlaceEn}
+          placeholder={{ de: 'JGU Campus · Halle', en: 'JGU Campus · Gym' }}
+        />
+      </div>
+
+      {/* Description */}
+      <LangPair
+        label="Beschreibung (optional)"
+        deValue={descDe} enValue={descEn}
+        onDe={setDescDe} onEn={setDescEn}
+        textarea rows={2}
+        placeholder={{ de: 'Worauf liegt der Fokus heute?', en: "What's the focus today?" }}
+      />
+
+      <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
         <button onClick={onCancel} style={secondaryBtnStyle}>Abbrechen</button>
         <button onClick={save} disabled={saving} style={primaryBtnStyle}>{saving ? '…' : 'Speichern'}</button>
       </div>

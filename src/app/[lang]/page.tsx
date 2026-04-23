@@ -67,7 +67,7 @@ export default async function HomePage({
       <Nav lang={lang} />
       <main>
         <Hero lang={lang} settings={settings} />
-        <TrainingSection lang={lang} sessions={sessions ?? []} overrides={overrides ?? []} />
+        <TrainingSection lang={lang} sessions={sessions ?? []} overrides={overrides ?? []} spots={spots ?? []} />
         <EventsSection lang={lang} events={events ?? []} />
         <SpotsSection lang={lang} spots={spots ?? []} />
         <AboutSection lang={lang} settings={settings} />

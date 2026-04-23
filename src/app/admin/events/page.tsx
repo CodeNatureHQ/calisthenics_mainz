@@ -4,6 +4,12 @@ import { useEffect, useState } from 'react'
 import type { Event, EventCategory } from '@/lib/types'
 import { createClient } from '@/lib/supabase/client'
 import { formatDate } from '@/lib/utils'
+import { slugify } from '@/lib/slugify'
+
+function autoEventId(category: string, dateStr: string): string {
+  const date = dateStr ? dateStr.slice(0, 10) : ''
+  return `${category}-${date}`.replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-')
+}
 
 const CATEGORIES: EventCategory[] = ['comp', 'jam', 'workshop', 'social']
 
@@ -80,15 +86,27 @@ export default function AdminEventsPage() {
           <h3 style={cardTitle}>{isNew ? 'Neues Event' : 'Event bearbeiten'}</h3>
           {error && <div style={errorBox}>{error}</div>}
           <div style={{ display: 'grid', gap: 18, marginTop: 16 }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr auto auto', gap: 12, alignItems: 'end' }}>
-              <Field label="Slug / ID"><input value={form.id} onChange={(e) => f('id', e.target.value)} disabled={!isNew} style={{ ...inp, opacity: isNew ? 1 : 0.5 }} /></Field>
+            <div style={{ display: 'grid', gridTemplateColumns: 'auto auto', gap: 12, alignItems: 'end' }}>
               <Field label="Kategorie">
-                <select value={form.category} onChange={(e) => f('category', e.target.value)} style={inp}>
+                <select value={form.category} onChange={(e) => {
+                  f('category', e.target.value)
+                  if (isNew) f('id', autoEventId(e.target.value, form.starts_at))
+                }} style={inp}>
                   {CATEGORIES.map((c) => <option key={c} value={c}>{CAT_LABELS[c]}</option>)}
                 </select>
               </Field>
-              <Field label="Datum & Zeit"><input type="datetime-local" value={form.starts_at} onChange={(e) => f('starts_at', e.target.value)} style={inp} /></Field>
+              <Field label="Datum & Zeit">
+                <input type="datetime-local" value={form.starts_at} onChange={(e) => {
+                  f('starts_at', e.target.value)
+                  if (isNew) f('id', autoEventId(form.category, e.target.value))
+                }} style={inp} />
+              </Field>
             </div>
+            {isNew && form.id && (
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--fg-mute)', letterSpacing: '0.06em' }}>
+                ID: <span style={{ color: 'var(--accent-2)' }}>{form.id}</span>
+              </div>
+            )}
             <LangPair label="Titel" deValue={form.title_de} enValue={form.title_en} onDe={(v) => f('title_de', v)} onEn={(v) => f('title_en', v)} />
             <LangPair label="Ort" deValue={form.place_de} enValue={form.place_en} onDe={(v) => f('place_de', v)} onEn={(v) => f('place_en', v)} />
             <LangPair label="Beschreibung" deValue={form.desc_de} enValue={form.desc_en} onDe={(v) => f('desc_de', v)} onEn={(v) => f('desc_en', v)} textarea />

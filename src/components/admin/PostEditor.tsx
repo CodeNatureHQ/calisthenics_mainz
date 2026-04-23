@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState } from 'react'
 import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Link from '@tiptap/extension-link'
@@ -8,6 +8,7 @@ import Underline from '@tiptap/extension-underline'
 import Placeholder from '@tiptap/extension-placeholder'
 import type { Post } from '@/lib/types'
 import { createClient } from '@/lib/supabase/client'
+import { slugify } from '@/lib/slugify'
 
 type Props = {
   post: Partial<Post> | null
@@ -126,13 +127,13 @@ export default function PostEditor({ post, onSave, onCancel }: Props) {
       <div style={{ display: 'grid', gap: '1rem' }}>
         {/* Row 1: ID + Glyph + Published */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr auto auto', gap: '0.75rem', alignItems: 'end' }}>
-          <FormField label="Slug / ID">
+          <FormField label={isNew ? 'Slug (wird auto-generiert)' : 'Slug'}>
             <input
               value={id}
               onChange={(e) => setId(e.target.value)}
               disabled={!isNew}
-              placeholder="beginner"
-              style={{ ...inputStyle, opacity: isNew ? 1 : 0.6 }}
+              placeholder="wird aus Titel generiert …"
+              style={{ ...inputStyle, opacity: isNew ? 1 : 0.5, fontFamily: 'var(--font-mono)', fontSize: 12 }}
             />
           </FormField>
           <FormField label="Glyph">
@@ -185,7 +186,14 @@ export default function PostEditor({ post, onSave, onCancel }: Props) {
         {/* Title + Excerpt — DE / EN */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
           <FormField label="Titel (DE)">
-            <input value={titleDe} onChange={(e) => setTitleDe(e.target.value)} style={inputStyle} />
+            <input
+              value={titleDe}
+              onChange={(e) => {
+                setTitleDe(e.target.value)
+                if (isNew && !id) setId(slugify(e.target.value))
+              }}
+              style={inputStyle}
+            />
           </FormField>
           <FormField label="Title (EN)">
             <input value={titleEn} onChange={(e) => setTitleEn(e.target.value)} style={inputStyle} />
@@ -223,7 +231,7 @@ export default function PostEditor({ post, onSave, onCancel }: Props) {
   )
 }
 
-function ToolBar({ editor }: { editor: ReturnType<typeof useEditor> }) {
+function ToolBar({ editor }: { editor: ReturnType<typeof useEditor> | null }) {
   if (!editor) return null
 
   const btn = (action: () => void, active: boolean, label: string) => (
