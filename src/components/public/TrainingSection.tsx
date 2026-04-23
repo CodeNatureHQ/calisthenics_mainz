@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect, useCallback } from 'react'
 import { createPortal } from 'react-dom'
-import type { Lang, TrainingSession, CalendarOverride, Spot } from '@/lib/types'
+import type { Lang, TrainingSession, CalendarOverride, Spot, Event } from '@/lib/types'
 import { t, levelLabel, dayLabel, fullDayLabel } from '@/lib/utils'
 
 type SessionEntry = {
@@ -16,6 +16,7 @@ type Props = {
   sessions: TrainingSession[]
   overrides: CalendarOverride[]
   spots: Spot[]
+  events: Event[]
 }
 
 const DAYS = [0, 1, 2, 3, 4, 5, 6]
@@ -55,7 +56,7 @@ const levelColors: Record<string, string> = {
   training: '#a78bfa',
 }
 
-export default function TrainingSection({ lang, sessions, overrides, spots }: Props) {
+export default function TrainingSection({ lang, sessions, overrides, spots, events }: Props) {
   const c = copy[lang]
   const [tab, setTab] = useState<'week' | 'cal'>('week')
   const [calDate, setCalDate] = useState(() => new Date())
@@ -124,6 +125,7 @@ export default function TrainingSection({ lang, sessions, overrides, spots }: Pr
             lang={lang}
             sessions={sessions}
             overrides={overrides}
+            events={events}
             calDate={calDate}
             setCalDate={setCalDate}
             c={c}
@@ -518,10 +520,15 @@ function SessionCard({ time, place, level, levelLabel_, hasSpot, onClick }: {
   )
 }
 
+const CAT_COLORS_EVENT: Record<string, string> = {
+  comp: '#E6C6FF', jam: '#D8FF3D', workshop: '#8EC5FF', social: '#FFB48E',
+}
+
 function CalendarView({
   lang,
   sessions,
   overrides,
+  events,
   calDate,
   setCalDate,
   c,
@@ -530,6 +537,7 @@ function CalendarView({
   lang: Lang
   sessions: TrainingSession[]
   overrides: CalendarOverride[]
+  events: Event[]
   calDate: Date
   setCalDate: (d: Date) => void
   c: (typeof copy)['de']
@@ -562,6 +570,17 @@ function CalendarView({
     }
     return map
   }, [sessions])
+
+  // Build events lookup by date string (YYYY-MM-DD)
+  const eventsByDate = useMemo(() => {
+    const map: Record<string, Event[]> = {}
+    for (const ev of events) {
+      const dateStr = ev.starts_at.slice(0, 10)
+      if (!map[dateStr]) map[dateStr] = []
+      map[dateStr].push(ev)
+    }
+    return map
+  }, [events])
 
   // Days in month, with leading empty cells
   const firstDay = new Date(year, month, 1)
@@ -679,6 +698,7 @@ function CalendarView({
             const hasCancelOverride = dayOverrides.some((o) => o.type === 'cancel')
             const extraSessions = dayOverrides.filter((o) => o.type === 'training')
             const fixedSessions = hasCancelOverride ? [] : (sessionsByDow[dow] ?? [])
+            const dayEvents = eventsByDate[dateStr] ?? []
 
             return (
               <div
@@ -770,6 +790,45 @@ function CalendarView({
                   >
                     {c.extra}{o.time_label ? ` · ${o.time_label.split(' – ')[0]}` : ''}
                   </div>
+                ))}
+
+                {/* Events */}
+                {dayEvents.map((ev) => (
+                  <a
+                    key={ev.id}
+                    href="#events"
+                    onClick={(e) => e.stopPropagation()}
+                    style={{
+                      display: 'block',
+                      fontSize: '0.625rem',
+                      fontWeight: 600,
+                      color: 'var(--fg)',
+                      background: 'transparent',
+                      borderLeft: `2px solid ${CAT_COLORS_EVENT[ev.category] ?? 'var(--cat-event)'}`,
+                      borderRadius: '0 3px 3px 0',
+                      padding: '2px 4px',
+                      marginBottom: 2,
+                      cursor: 'pointer',
+                      textDecoration: 'none',
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      transition: 'background 0.15s, color 0.15s',
+                    }}
+                    title={t(ev.title, lang)}
+                    onMouseEnter={(e) => {
+                      const el = e.currentTarget as HTMLElement
+                      el.style.background = 'var(--fg)'
+                      el.style.color = 'var(--accent-ink)'
+                    }}
+                    onMouseLeave={(e) => {
+                      const el = e.currentTarget as HTMLElement
+                      el.style.background = 'transparent'
+                      el.style.color = 'var(--fg)'
+                    }}
+                  >
+                    {t(ev.title, lang)}
+                  </a>
                 ))}
               </div>
             )
