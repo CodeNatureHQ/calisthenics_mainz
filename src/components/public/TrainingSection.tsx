@@ -332,7 +332,15 @@ function WeekView({
   }, [overrides])
 
   return (
-    <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' as never, borderRadius: 18 }}>
+    <>
+    <style>{`
+      @media (min-width: 641px) { .week-mobile { display: none !important; } }
+      @media (max-width: 640px) { .week-desktop { display: none !important; } }
+    `}</style>
+    <div className="week-mobile">
+      <MobileWeekView lang={lang} byDay={byDay} overridesByDate={overridesByDate} today={today} c={c} onSelect={onSelect} />
+    </div>
+    <div className="week-desktop" style={{ overflowX: 'auto', borderRadius: 18 }}>
     <div
       style={{
         display: 'grid',
@@ -465,6 +473,124 @@ function WeekView({
         )
       })}
     </div>
+    </div>
+    </>
+  )
+}
+
+function MobileWeekView({
+  lang, byDay, overridesByDate, today, c, onSelect,
+}: {
+  lang: Lang
+  byDay: Record<number, TrainingSession[]>
+  overridesByDate: Record<string, CalendarOverride[]>
+  today: string
+  c: (typeof copy)['de']
+  onSelect: (entry: { session?: TrainingSession; override?: CalendarOverride; dateStr?: string }) => void
+}) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      {DAYS.map((dow) => {
+        const dateStr = currentWeekDate(dow)
+        const isToday = dateStr === today
+        const dayOverrides = overridesByDate[dateStr] ?? []
+        const hasCancelOverride = dayOverrides.some((o) => o.type === 'cancel')
+        const extraSessions = dayOverrides.filter((o) => o.type === 'training')
+        const fixedSessions = hasCancelOverride ? [] : (byDay[dow] ?? [])
+        const hasAnything = fixedSessions.length > 0 || extraSessions.length > 0 || hasCancelOverride
+
+        const d = new Date(dateStr + 'T12:00:00')
+        const dateNum = d.getDate()
+        const monthShort = d.toLocaleDateString(lang === 'de' ? 'de-DE' : 'en-GB', { month: 'short' })
+
+        return (
+          <div
+            key={dow}
+            style={{
+              border: `1px solid ${isToday ? 'var(--accent-2)' : 'var(--line-soft)'}`,
+              borderRadius: 12,
+              overflow: 'hidden',
+              background: isToday ? 'rgba(74,127,212,0.05)' : 'var(--bg-2)',
+            }}
+          >
+            {/* Day header row */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '10px 14px',
+              borderBottom: hasAnything ? '1px solid var(--line-soft)' : undefined,
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                {isToday && (
+                  <span style={{
+                    fontFamily: 'var(--font-mono)', fontSize: 9, fontWeight: 700,
+                    letterSpacing: '0.1em', textTransform: 'uppercase',
+                    background: 'var(--accent-2)', color: '#fff',
+                    padding: '2px 7px', borderRadius: 999,
+                  }}>{c.today}</span>
+                )}
+                <span style={{
+                  fontFamily: 'var(--font-display)', fontSize: 14,
+                  letterSpacing: '0.06em', textTransform: 'uppercase',
+                  color: isToday ? 'var(--accent-2)' : hasAnything ? 'var(--fg)' : 'var(--fg-mute)',
+                  fontWeight: hasAnything ? 600 : 400,
+                }}>
+                  {fullDayLabel(dow, lang)}
+                </span>
+              </div>
+              <span style={{
+                fontFamily: 'var(--font-mono)', fontSize: 11,
+                color: isToday ? 'var(--accent-2)' : 'var(--fg-mute)',
+              }}>
+                {dateNum}. {monthShort}
+              </span>
+            </div>
+
+            {/* Sessions */}
+            {hasAnything && (
+              <div style={{ padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {hasCancelOverride && (
+                  <div style={{
+                    background: 'rgba(255,122,122,0.1)', border: '1px solid rgba(255,122,122,0.3)',
+                    borderLeft: '3px solid var(--danger)', borderRadius: 8, padding: '8px 10px',
+                  }}>
+                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, fontWeight: 600, color: 'var(--danger)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                      {c.cancelled}
+                    </div>
+                    {dayOverrides.find(o => o.type === 'cancel')?.note && (
+                      <div style={{ fontSize: 11, color: 'var(--fg-dim)', marginTop: 3 }}>
+                        {t(dayOverrides.find(o => o.type === 'cancel')!.note!, lang)}
+                      </div>
+                    )}
+                  </div>
+                )}
+                {fixedSessions.map((s) => (
+                  <SessionCard
+                    key={s.id}
+                    levelLabel_={levelLabel(s.level, lang)}
+                    time={s.time_label} place={t(s.place, lang)} level={s.level}
+                    hasSpot={!!s.spot_id}
+                    onClick={() => onSelect({ session: s, dateStr })}
+                  />
+                ))}
+                {extraSessions.map((o) => (
+                  <div key={o.id} onClick={() => onSelect({ override: o, dateStr })} style={{
+                    background: 'rgba(216,255,61,0.06)', border: '1px solid rgba(216,255,61,0.25)',
+                    borderLeft: '3px solid var(--accent-spark)', borderRadius: 8,
+                    padding: '8px 10px', display: 'flex', flexDirection: 'column', gap: 4, cursor: 'pointer',
+                  }}>
+                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, fontWeight: 600, color: 'var(--accent-spark)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{c.extra}</div>
+                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--fg)', fontWeight: 500 }}>{o.time_label}</div>
+                    {o.place && <div style={{ fontSize: 11, color: 'var(--fg-dim)' }}>{t(o.place, lang)}</div>}
+                    {o.note && <div style={{ fontSize: 11, color: 'var(--fg-dim)', fontStyle: 'italic' }}>{t(o.note, lang)}</div>}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )
+      })}
     </div>
   )
 }
@@ -607,7 +733,12 @@ function CalendarView({
     : ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
   return (
-    <div>
+    <>
+    <style>{`
+      @media (min-width: 641px) { .cal-mobile { display: none !important; } }
+      @media (max-width: 640px) { .cal-desktop { display: none !important; } }
+    `}</style>
+    <div className="cal-desktop">
       {/* Month navigation */}
       <div
         style={{
@@ -840,6 +971,238 @@ function CalendarView({
           })}
         </div>
       </div>
+      </div>
+    </div>
+    <div className="cal-mobile">
+      <MobileCalendarView
+        lang={lang}
+        sessions={sessions}
+        overrides={overrides}
+        events={events}
+        calDate={calDate}
+        setCalDate={setCalDate}
+        c={c}
+        onSelect={onSelect}
+        todayStr={todayStr}
+      />
+    </div>
+    </>
+  )
+}
+
+function MobileCalendarView({
+  lang, sessions, overrides, events, calDate, setCalDate, c, onSelect, todayStr,
+}: {
+  lang: Lang
+  sessions: TrainingSession[]
+  overrides: CalendarOverride[]
+  events: Event[]
+  calDate: Date
+  setCalDate: (d: Date) => void
+  c: (typeof copy)['de']
+  onSelect: (entry: { session?: TrainingSession; override?: CalendarOverride; dateStr?: string }) => void
+  todayStr: string
+}) {
+  const year = calDate.getFullYear()
+  const month = calDate.getMonth()
+  const [selectedDate, setSelectedDate] = useState(todayStr)
+
+  const sessionsByDow = useMemo(() => {
+    const map: Record<number, TrainingSession[]> = {}
+    for (const s of sessions) {
+      if (!map[s.day_of_week]) map[s.day_of_week] = []
+      map[s.day_of_week].push(s)
+    }
+    return map
+  }, [sessions])
+
+  const overridesByDate = useMemo(() => {
+    const map: Record<string, CalendarOverride[]> = {}
+    for (const o of overrides) {
+      if (!map[o.on_date]) map[o.on_date] = []
+      map[o.on_date].push(o)
+    }
+    return map
+  }, [overrides])
+
+  const eventsByDate = useMemo(() => {
+    const map: Record<string, Event[]> = {}
+    for (const ev of events) {
+      const d = ev.starts_at.slice(0, 10)
+      if (!map[d]) map[d] = []
+      map[d].push(ev)
+    }
+    return map
+  }, [events])
+
+  const firstDay = new Date(year, month, 1)
+  const startDow = (firstDay.getDay() + 6) % 7
+  const daysInMonth = new Date(year, month + 1, 0).getDate()
+  const cells: Array<null | { day: number; dateStr: string; dow: number }> = []
+  for (let i = 0; i < startDow; i++) cells.push(null)
+  for (let d = 1; d <= daysInMonth; d++) {
+    const date = new Date(year, month, d)
+    const dow = (date.getDay() + 6) % 7
+    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
+    cells.push({ day: d, dateStr, dow })
+  }
+
+  const dayHeaders = lang === 'de'
+    ? ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So']
+    : ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su']
+
+  const monthLabel = calDate.toLocaleDateString(lang === 'de' ? 'de-DE' : 'en-GB', { month: 'long', year: 'numeric' })
+
+  const selDayOvr = overridesByDate[selectedDate] ?? []
+  const selHasCancel = selDayOvr.some(o => o.type === 'cancel')
+  const selExtra = selDayOvr.filter(o => o.type === 'training')
+  const selDow = (new Date(selectedDate + 'T12:00:00').getDay() + 6) % 7
+  const selFixed = selHasCancel ? [] : (sessionsByDow[selDow] ?? [])
+  const selEvents = eventsByDate[selectedDate] ?? []
+  const hasAnything = selFixed.length > 0 || selExtra.length > 0 || selEvents.length > 0 || selHasCancel
+
+  const selDateLabel = new Date(selectedDate + 'T12:00:00').toLocaleDateString(
+    lang === 'de' ? 'de-DE' : 'en-GB',
+    { weekday: 'long', day: 'numeric', month: 'long' }
+  )
+
+  return (
+    <div>
+      {/* Month nav */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+        <button onClick={() => setCalDate(new Date(year, month - 1, 1))} style={iconBtnStyle} aria-label={c.prevMonth}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18l-6-6 6-6" /></svg>
+        </button>
+        <span style={{ fontWeight: 600, fontSize: '1rem', color: 'var(--fg)', textTransform: 'capitalize' }}>{monthLabel}</span>
+        <button onClick={() => setCalDate(new Date(year, month + 1, 1))} style={iconBtnStyle} aria-label={c.nextMonth}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 18l6-6-6-6" /></svg>
+        </button>
+      </div>
+
+      {/* Grid */}
+      <div style={{ border: '1px solid var(--line-soft)', borderRadius: 14, overflow: 'hidden', background: 'var(--bg-2)' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', borderBottom: '1px solid var(--line-soft)' }}>
+          {dayHeaders.map(d => (
+            <div key={d} style={{ padding: '8px 4px', textAlign: 'center', fontSize: 11, fontWeight: 600, color: 'var(--fg-mute)', fontFamily: 'var(--font-mono)' }}>{d}</div>
+          ))}
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)' }}>
+          {cells.map((cell, idx) => {
+            if (!cell) return <div key={`e-${idx}`} style={{ minHeight: 52, borderRight: '1px solid var(--line-soft)', borderBottom: '1px solid var(--line-soft)' }} />
+            const { day, dateStr, dow } = cell
+            const isToday = dateStr === todayStr
+            const isSelected = dateStr === selectedDate
+            const dayOvr = overridesByDate[dateStr] ?? []
+            const hasCancel = dayOvr.some(o => o.type === 'cancel')
+            const hasSessions = hasCancel ? false : (sessionsByDow[dow] ?? []).length > 0 || dayOvr.some(o => o.type === 'training')
+            const dayEvs = eventsByDate[dateStr] ?? []
+            const hasContent = hasCancel || hasSessions || dayEvs.length > 0
+            const primaryColor = hasCancel
+              ? 'var(--danger)'
+              : hasSessions
+              ? 'var(--accent-2)'
+              : dayEvs.length > 0
+              ? (CAT_COLORS_EVENT[dayEvs[0].category] ?? 'var(--fg-dim)')
+              : null
+            const eventDots = dayEvs.slice(0, 2).map(ev => CAT_COLORS_EVENT[ev.category] ?? 'var(--fg-dim)')
+
+            return (
+              <div
+                key={dateStr}
+                onClick={() => setSelectedDate(dateStr)}
+                style={{
+                  minHeight: 56, padding: '6px 2px 4px', textAlign: 'center', cursor: 'pointer',
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
+                  borderRight: '1px solid var(--line-soft)',
+                  borderBottom: hasContent && !isSelected
+                    ? `2px solid ${primaryColor}`
+                    : '1px solid var(--line-soft)',
+                  background: isSelected
+                    ? 'rgba(74,127,212,0.1)'
+                    : hasContent
+                    ? 'rgba(74,127,212,0.03)'
+                    : 'transparent',
+                  transition: 'background 0.15s',
+                }}
+              >
+                <div style={{
+                  width: 28, height: 28, borderRadius: '50%',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 13, fontFamily: 'var(--font-mono)',
+                  fontWeight: isToday || isSelected || hasContent ? 600 : 400,
+                  background: isSelected ? 'var(--fg)' : isToday ? 'var(--accent-2)' : 'transparent',
+                  color: isSelected
+                    ? 'var(--accent-ink)'
+                    : isToday
+                    ? '#fff'
+                    : hasContent
+                    ? 'var(--fg)'
+                    : 'var(--fg-mute)',
+                  flexShrink: 0,
+                }}>
+                  {day}
+                </div>
+                {/* Event dots */}
+                <div style={{ display: 'flex', gap: 3, justifyContent: 'center', minHeight: 8 }}>
+                  {hasSessions && !hasCancel && (
+                    <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--accent-2)', display: 'inline-block' }} />
+                  )}
+                  {hasCancel && (
+                    <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--danger)', display: 'inline-block' }} />
+                  )}
+                  {eventDots.map((color, i) => (
+                    <span key={i} style={{ width: 7, height: 7, borderRadius: '50%', background: color, display: 'inline-block' }} />
+                  ))}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* Selected day detail */}
+      <div style={{ marginTop: 20 }}>
+        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '0.08em', color: 'var(--fg-mute)', textTransform: 'capitalize', marginBottom: 12 }}>
+          {selDateLabel}
+        </div>
+        {!hasAnything && (
+          <div style={{ color: 'var(--fg-mute)', fontSize: 14, padding: '12px 0' }}>{c.noTraining}</div>
+        )}
+        {selHasCancel && (
+          <div style={{ background: 'rgba(255,122,122,0.1)', border: '1px solid rgba(255,122,122,0.3)', borderLeft: '3px solid var(--danger)', borderRadius: 10, padding: '10px 14px', marginBottom: 8 }}>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--danger)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{c.cancelled}</div>
+          </div>
+        )}
+        {selFixed.map(s => (
+          <div key={s.id} onClick={() => onSelect({ session: s, dateStr: selectedDate })}
+            style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', background: 'var(--bg-2)', border: '1px solid var(--line-soft)', borderLeft: '3px solid var(--accent-2)', borderRadius: 10, marginBottom: 8, cursor: 'pointer' }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--fg)', fontWeight: 600 }}>{s.time_label}</div>
+              <div style={{ fontSize: 12, color: 'var(--fg-dim)', marginTop: 2 }}>{t(s.place, lang)}</div>
+            </div>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--fg-mute)" strokeWidth="2" style={{ flexShrink: 0 }}><path d="M9 18l6-6-6-6"/></svg>
+          </div>
+        ))}
+        {selExtra.map(o => (
+          <div key={o.id} onClick={() => onSelect({ override: o, dateStr: selectedDate })}
+            style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', background: 'rgba(216,255,61,0.06)', border: '1px solid rgba(216,255,61,0.25)', borderLeft: '3px solid var(--accent-spark)', borderRadius: 10, marginBottom: 8, cursor: 'pointer' }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--accent-spark)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{c.extra}</div>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--fg)', fontWeight: 600, marginTop: 2 }}>{o.time_label}</div>
+              {o.place && <div style={{ fontSize: 12, color: 'var(--fg-dim)', marginTop: 2 }}>{t(o.place, lang)}</div>}
+            </div>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--fg-mute)" strokeWidth="2" style={{ flexShrink: 0 }}><path d="M9 18l6-6-6-6"/></svg>
+          </div>
+        ))}
+        {selEvents.map(ev => (
+          <a key={ev.id} href="#events"
+            style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', background: 'var(--bg-2)', border: '1px solid var(--line-soft)', borderLeft: `3px solid ${CAT_COLORS_EVENT[ev.category] ?? 'var(--fg-dim)'}`, borderRadius: 10, marginBottom: 8, textDecoration: 'none' }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--fg-mute)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 3 }}>{ev.category}</div>
+              <div style={{ fontSize: 14, color: 'var(--fg)', fontWeight: 500 }}>{t(ev.title, lang)}</div>
+            </div>
+          </a>
+        ))}
       </div>
     </div>
   )

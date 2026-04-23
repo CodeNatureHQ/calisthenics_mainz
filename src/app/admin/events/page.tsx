@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import type { Event, EventCategory } from '@/lib/types'
 import { createClient } from '@/lib/supabase/client'
 import { formatDate } from '@/lib/utils'
-import { slugify } from '@/lib/slugify'
+import { pageHead, crumbStyle, h1Style, card, listRow, empty, inp, fieldLabel, errorBox, btnPrimary, btnGhost, btnDanger, metaItem, chipStyle } from '../shared'
 
 function autoEventId(category: string, dateStr: string): string {
   const date = dateStr ? dateStr.slice(0, 10) : ''
@@ -95,7 +95,7 @@ export default function AdminEventsPage() {
           <h3 style={cardTitle}>{isNew ? 'Neues Event' : 'Event bearbeiten'}</h3>
           {error && <div style={errorBox}>{error}</div>}
           <div style={{ display: 'grid', gap: 18, marginTop: 16 }}>
-            <div style={{ display: 'grid', gridTemplateColumns: 'auto auto', gap: 12, alignItems: 'end' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'auto auto', gap: 12, alignItems: 'end' }} className="admin-form-2col">
               <Field label="Kategorie">
                 <select value={form.category} onChange={(e) => {
                   f('category', e.target.value)
@@ -133,7 +133,7 @@ export default function AdminEventsPage() {
         ) : events.map((ev) => {
           const cat = CAT_COLORS[ev.category]
           return (
-            <div key={ev.id} style={listRow}>
+            <div key={ev.id} style={listRow} className="admin-list-row">
               <div style={{ minWidth: 0 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
                   <span style={{ fontWeight: 500, color: 'var(--fg)', fontSize: 14, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ev.title.de}</span>
@@ -144,7 +144,7 @@ export default function AdminEventsPage() {
                   <span style={metaItem}>{ev.place.de}</span>
                 </div>
               </div>
-              <div style={{ display: 'flex', gap: 6 }}>
+              <div style={{ display: 'flex', gap: 6 }} className="admin-list-row-actions">
                 <button onClick={() => { setForm(eventToForm(ev)); setIsNew(false) }} style={btnGhost}>Bearbeiten</button>
                 <button onClick={() => del(ev.id)} style={btnDanger}>Löschen</button>
               </div>
@@ -170,7 +170,7 @@ function LangPair({ label, deValue, enValue, onDe, onEn, textarea = false }: { l
   return (
     <div>
       <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--fg-mute)', marginBottom: 8 }}>{label}</div>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }} className="admin-lang-pair">
         {[{ val: deValue, cb: onDe, tag: 'DE' }, { val: enValue, cb: onEn, tag: 'EN' }].map(({ val, cb, tag }) => (
           <div key={tag} style={{ position: 'relative' }}>
             <Tag
@@ -187,18 +187,4 @@ function LangPair({ label, deValue, enValue, onDe, onEn, textarea = false }: { l
   )
 }
 
-const pageHead: React.CSSProperties = { display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 24, flexWrap: 'wrap', marginBottom: 32, paddingBottom: 24, borderBottom: '1px solid var(--line-soft)' }
-const crumbStyle: React.CSSProperties = { display: 'block', fontFamily: 'var(--font-mono)', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--fg-mute)', marginBottom: 8 }
-const h1Style: React.CSSProperties = { fontFamily: 'var(--font-display)', fontSize: 32, textTransform: 'uppercase', letterSpacing: '-0.01em', margin: 0, color: 'var(--fg)' }
-const card: React.CSSProperties = { background: 'var(--bg-2)', border: '1px solid var(--line-soft)', borderRadius: 14, overflow: 'hidden' }
-const cardTitle: React.CSSProperties = { fontFamily: 'var(--font-display)', fontSize: 14, textTransform: 'uppercase', letterSpacing: '0.02em', margin: 0, color: 'var(--fg)' }
-const listRow: React.CSSProperties = { display: 'grid', gridTemplateColumns: '1fr auto', gap: 16, padding: '16px 20px', borderBottom: '1px solid var(--line-soft)', alignItems: 'center' }
-const metaItem: React.CSSProperties = { fontFamily: 'var(--font-mono)', fontSize: 10.5, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--fg-mute)' }
-const chipStyle: React.CSSProperties = { padding: '2px 8px', borderRadius: 999, background: 'var(--bg)', border: '1px solid', fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase' }
-const empty: React.CSSProperties = { padding: '60px 24px', textAlign: 'center', color: 'var(--fg-mute)', fontFamily: 'var(--font-mono)', fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.08em' }
-const fieldLabel: React.CSSProperties = { fontFamily: 'var(--font-mono)', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--fg-mute)' }
-const inp: React.CSSProperties = { width: '100%', background: 'var(--bg)', border: '1px solid var(--line)', borderRadius: 8, padding: '10px 12px', fontSize: 13.5, color: 'var(--fg)', outline: 'none', fontFamily: 'inherit', transition: 'border-color 0.15s' }
-const errorBox: React.CSSProperties = { color: 'var(--danger)', fontSize: 12, fontFamily: 'var(--font-mono)', marginTop: 8, background: 'rgba(255,122,122,0.06)', padding: '8px 12px', borderRadius: 6, border: '1px solid rgba(255,122,122,0.2)' }
-const btnPrimary: React.CSSProperties = { display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 16px', borderRadius: 8, fontFamily: 'var(--font-mono)', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', background: 'var(--fg)', color: 'var(--accent-ink)', border: '1px solid var(--fg)', cursor: 'pointer', transition: 'background 0.15s' }
-const btnGhost: React.CSSProperties = { padding: '6px 10px', borderRadius: 6, fontFamily: 'var(--font-mono)', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', background: 'transparent', color: 'var(--fg-dim)', border: '1px solid transparent', cursor: 'pointer', transition: 'background 0.15s' }
-const btnDanger: React.CSSProperties = { padding: '6px 10px', borderRadius: 6, fontFamily: 'var(--font-mono)', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', background: 'transparent', color: 'var(--danger)', border: '1px solid var(--line)', cursor: 'pointer', transition: 'border-color 0.15s' }
+const cardTitle: React.CSSProperties = { fontFamily: 'var(--font-mono)', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.1em', margin: 0, color: 'var(--fg)', fontWeight: 600 }

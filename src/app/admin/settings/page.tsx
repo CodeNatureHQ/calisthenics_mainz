@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import type { SiteSettings } from '@/lib/types'
 import { createClient } from '@/lib/supabase/client'
+import { pageHead, crumbStyle, h1Style, card, cardHead, cardMeta, inp, errorBox, successBox, btnPrimary } from '../shared'
 
 export default function AdminSettingsPage() {
   const [form, setForm] = useState<Partial<SiteSettings>>({})
@@ -45,11 +46,7 @@ export default function AdminSettingsPage() {
       </div>
 
       {error && <div style={errorBox}>{error}</div>}
-      {saved && (
-        <div style={{ ...errorBox, color: 'var(--ok)', background: 'rgba(142,232,142,0.06)', border: '1px solid rgba(142,232,142,0.2)', marginBottom: 24 }}>
-          ✓ Gespeichert
-        </div>
-      )}
+      {saved && <div style={successBox}>✓ Gespeichert</div>}
 
       {/* Hero stats */}
       <div style={card}>
@@ -112,14 +109,5 @@ export default function AdminSettingsPage() {
   )
 }
 
-const pageHead: React.CSSProperties = { display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 24, flexWrap: 'wrap', marginBottom: 32, paddingBottom: 24, borderBottom: '1px solid var(--line-soft)' }
-const crumbStyle: React.CSSProperties = { display: 'block', fontFamily: 'var(--font-mono)', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--fg-mute)', marginBottom: 8 }
-const h1Style: React.CSSProperties = { fontFamily: 'var(--font-display)', fontSize: 32, textTransform: 'uppercase', letterSpacing: '-0.01em', margin: 0, color: 'var(--fg)' }
-const card: React.CSSProperties = { background: 'var(--bg-2)', border: '1px solid var(--line-soft)', borderRadius: 14, overflow: 'hidden' }
-const cardHead: React.CSSProperties = { padding: '16px 20px', borderBottom: '1px solid var(--line-soft)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }
-const cardTitle: React.CSSProperties = { fontFamily: 'var(--font-display)', fontSize: 14, textTransform: 'uppercase', letterSpacing: '0.02em', margin: 0, color: 'var(--fg)' }
-const cardMeta: React.CSSProperties = { fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--fg-mute)', letterSpacing: '0.06em' }
+const cardTitle: React.CSSProperties = { fontFamily: 'var(--font-mono)', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.1em', margin: 0, color: 'var(--fg)', fontWeight: 600 }
 const statBox: React.CSSProperties = { background: 'var(--bg)', border: '1px solid var(--line-soft)', borderRadius: 12, padding: 18 }
-const inp: React.CSSProperties = { width: '100%', background: 'var(--bg)', border: '1px solid var(--line)', borderRadius: 8, padding: '10px 12px', fontSize: 13.5, color: 'var(--fg)', outline: 'none', fontFamily: 'inherit', transition: 'border-color 0.15s' }
-const errorBox: React.CSSProperties = { color: 'var(--danger)', fontSize: 12, fontFamily: 'var(--font-mono)', marginBottom: 24, background: 'rgba(255,122,122,0.06)', padding: '10px 14px', borderRadius: 8, border: '1px solid rgba(255,122,122,0.2)' }
-const btnPrimary: React.CSSProperties = { display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 16px', borderRadius: 8, fontFamily: 'var(--font-mono)', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', background: 'var(--fg)', color: 'var(--accent-ink)', border: '1px solid var(--fg)', cursor: 'pointer', transition: 'background 0.15s' }

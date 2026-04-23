@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import type { Spot } from '@/lib/types'
 import { createClient } from '@/lib/supabase/client'
 import { slugify } from '@/lib/slugify'
+import { pageHead, crumbStyle, h1Style, card, formCard, listRow as sharedListRow, empty, inp, fieldLabel, errorBox, btnPrimary, btnGhost, btnDanger } from '../shared'
 
 export default function AdminSpotsPage() {
   const [spots, setSpots] = useState<Spot[]>([])
@@ -107,17 +108,21 @@ export default function AdminSpotsPage() {
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-        <h1 style={pageTitle}>Spots</h1>
-        {!editing && <button onClick={startNew} style={primaryBtnStyle}>+ Neuer Spot</button>}
+      <div style={pageHead}>
+        <div>
+          <span style={crumbStyle}>04 / Content</span>
+          <h1 style={h1Style}>Spots</h1>
+        </div>
+        {!editing && <button onClick={startNew} style={btnPrimary}>+ Neuer Spot</button>}
       </div>
 
       {editing !== null && (
-        <div style={{ background: 'var(--bg-elev)', border: '1px solid var(--border)', borderRadius: 'var(--radius-xl)', padding: '2rem', marginBottom: '1.5rem' }}>
+        <div style={{ ...formCard, marginBottom: 16 }}>
           <h2 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--fg)', margin: '0 0 1.5rem' }}>
             {isNew ? 'Neuer Spot' : 'Spot bearbeiten'}
           </h2>
           {error && <div style={errorBox}>{error}</div>}
+
 
           <div style={{ display: 'grid', gap: '1rem' }}>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: '0.75rem' }}>
@@ -134,7 +139,7 @@ export default function AdminSpotsPage() {
               <Field label="Sort"><input type="number" value={form.sort_order} onChange={(e) => f('sort_order', e.target.value)} style={{ ...inputStyle, width: 80 }} /></Field>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }} className="admin-lang-pair">
               <Field label="Name (DE)">
                 <input value={form.name_de} onChange={(e) => {
                   f('name_de', e.target.value)
@@ -170,25 +175,18 @@ export default function AdminSpotsPage() {
             </Field>
           </div>
 
-          <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1.25rem' }}>
-            <button onClick={cancelEdit} style={secondaryBtnStyle}>Abbrechen</button>
-            <button onClick={handleSave} disabled={saving} style={primaryBtnStyle}>{saving ? 'Speichern …' : 'Speichern'}</button>
+          <div style={{ display: 'flex', gap: 8, marginTop: 20 }}>
+            <button onClick={cancelEdit} style={btnGhost}>Abbrechen</button>
+            <button onClick={handleSave} disabled={saving} style={btnPrimary}>{saving ? 'Speichern …' : 'Speichern'}</button>
           </div>
         </div>
       )}
 
-      <div style={{ background: 'var(--bg-2)', border: '1px solid var(--line-soft)', borderRadius: 14, overflow: 'hidden' }}>
+      <div style={card}>
         {spots.length === 0 ? (
-          <div style={{ padding: '60px 24px', textAlign: 'center', color: 'var(--fg-mute)', fontFamily: 'var(--font-mono)', fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Keine Spots</div>
+          <div style={empty}>Keine Spots</div>
         ) : spots.map((s) => (
-          <div key={s.id} style={{
-            display: 'grid', gridTemplateColumns: '1fr auto',
-            gap: 16, padding: '16px 20px',
-            borderBottom: '1px solid var(--line-soft)',
-            alignItems: 'center',
-            opacity: s.visible ? 1 : 0.5,
-            transition: 'opacity 0.2s',
-          }}>
+          <div key={s.id} style={{ ...sharedListRow, opacity: s.visible ? 1 : 0.5, transition: 'opacity 0.2s' }} className="admin-list-row">
             <div style={{ minWidth: 0, display: 'flex', alignItems: 'center', gap: 12 }}>
               {/* Visibility indicator */}
               <div style={{
@@ -207,24 +205,20 @@ export default function AdminSpotsPage() {
                 <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--fg-mute)', marginTop: 2, letterSpacing: '0.06em' }}>{s.address}</div>
               </div>
             </div>
-            <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-              {/* Visibility toggle */}
+            <div style={{ display: 'flex', gap: 6, alignItems: 'center' }} className="admin-list-row-actions">
               <button
                 onClick={() => toggleVisible(s)}
-                title={s.visible ? 'Auf Karte sichtbar — klicken zum Ausblenden' : 'Versteckt — klicken zum Einblenden'}
+                title={s.visible ? 'Sichtbar — klicken zum Ausblenden' : 'Versteckt — klicken zum Einblenden'}
                 style={{
-                  padding: '6px 10px', borderRadius: 6, cursor: 'pointer',
-                  fontFamily: 'var(--font-mono)', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em',
-                  background: s.visible ? 'rgba(142,232,142,0.1)' : 'var(--bg-3)',
+                  ...btnGhost,
                   color: s.visible ? 'var(--ok)' : 'var(--fg-mute)',
-                  border: s.visible ? '1px solid rgba(142,232,142,0.3)' : '1px solid var(--line)',
-                  transition: 'all 0.2s',
+                  borderColor: s.visible ? 'rgba(142,232,142,0.3)' : 'var(--line)',
                 }}
               >
                 {s.visible ? '● Sichtbar' : '○ Versteckt'}
               </button>
-              <button onClick={() => startEdit(s)} style={secondaryBtnStyle}>Bearbeiten</button>
-              <button onClick={() => deleteSpot(s.id)} style={dangerBtnStyle}>Löschen</button>
+              <button onClick={() => startEdit(s)} style={btnGhost}>Bearbeiten</button>
+              <button onClick={() => deleteSpot(s.id)} style={btnDanger}>Löschen</button>
             </div>
           </div>
         ))}
@@ -236,15 +230,10 @@ export default function AdminSpotsPage() {
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--fg-dim)', marginBottom: '0.375rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</label>
+      <label style={fieldLabel}>{label}</label>
       {children}
     </div>
   )
 }
 
-const pageTitle: React.CSSProperties = { fontSize: '1.5rem', fontWeight: 700, color: 'var(--fg)', margin: 0, letterSpacing: '-0.02em' }
-const inputStyle: React.CSSProperties = { width: '100%', background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', color: 'var(--fg)', fontSize: '0.875rem', padding: '0.5625rem 0.75rem', outline: 'none', fontFamily: 'inherit' }
-const primaryBtnStyle: React.CSSProperties = { background: 'var(--accent)', color: '#0a0a0b', fontWeight: 600, fontSize: '0.875rem', padding: '0.5rem 1.25rem', borderRadius: 'var(--radius)', border: 'none', cursor: 'pointer' }
-const secondaryBtnStyle: React.CSSProperties = { background: 'var(--bg-elev-2)', color: 'var(--fg-muted)', fontWeight: 500, fontSize: '0.8125rem', padding: '0.375rem 0.875rem', borderRadius: 'var(--radius)', border: '1px solid var(--border)', cursor: 'pointer' }
-const dangerBtnStyle: React.CSSProperties = { background: 'rgba(239,68,68,0.08)', color: 'var(--danger)', fontWeight: 500, fontSize: '0.8125rem', padding: '0.375rem 0.875rem', borderRadius: 'var(--radius)', border: '1px solid rgba(239,68,68,0.2)', cursor: 'pointer' }
-const errorBox: React.CSSProperties = { color: 'var(--danger)', fontSize: '0.875rem', marginBottom: '1rem', background: 'rgba(239,68,68,0.08)', padding: '0.75rem', borderRadius: 'var(--radius)', border: '1px solid rgba(239,68,68,0.2)' }
+const inputStyle: React.CSSProperties = inp

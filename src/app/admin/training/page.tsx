@@ -5,6 +5,7 @@ import type { TrainingSession, CalendarOverride, SessionLevel, Spot } from '@/li
 import { createClient } from '@/lib/supabase/client'
 import { fullDayLabel, levelLabel, t } from '@/lib/utils'
 import LangPair from '@/components/admin/LangPair'
+import { pageHead, crumbStyle, h1Style, sectionHead, sectionTitle, card, formCard, listRow as sharedListRow, empty, inp, fieldLabel, errorBox, btnPrimary, btnGhost, btnDanger } from '../shared'
 
 const LEVELS: SessionLevel[] = ['beginner', 'advanced', 'open', 'comp', 'training']
 
@@ -47,13 +48,18 @@ export default function AdminTrainingPage() {
 
   return (
     <div>
-      <h1 style={pageTitle}>Training</h1>
+      <div style={pageHead}>
+        <div>
+          <span style={crumbStyle}>03 / Content</span>
+          <h1 style={h1Style}>Training</h1>
+        </div>
+      </div>
 
       {/* ---- Sessions ---- */}
-      <section style={{ marginTop: '1.5rem' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+      <section style={{ marginBottom: '2.5rem' }}>
+        <div style={sectionHead}>
           <h2 style={sectionTitle}>Wochenplan</h2>
-          <button onClick={() => setEditingSession('new')} style={primaryBtnStyle}>+ Hinzufügen</button>
+          <button onClick={() => setEditingSession('new')} style={btnPrimary}>+ Hinzufügen</button>
         </div>
 
         {editingSession !== null && (
@@ -65,21 +71,21 @@ export default function AdminTrainingPage() {
           />
         )}
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-          {sessions.map((s) => (
-            <div key={s.id} style={listRow}>
-              <div>
-                <span style={badge}>{fullDayLabel(s.day_of_week, 'de')}</span>
-                <span style={{ fontWeight: 600, color: 'var(--fg)', marginLeft: '0.75rem', fontSize: '0.9375rem' }}>
-                  {s.time_label}
-                </span>
-                <span style={{ color: 'var(--fg-dim)', fontSize: '0.8125rem', marginLeft: '0.5rem' }}>
-                  · {s.place.de} · {levelLabel(s.level, 'de')}
-                </span>
+        <div style={card}>
+          {sessions.length === 0 ? <div style={empty}>Keine Einheiten</div> : sessions.map((s) => (
+            <div key={s.id} style={sharedListRow} className="admin-list-row">
+              <div style={{ minWidth: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4, flexWrap: 'wrap' }}>
+                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, fontWeight: 700, color: 'var(--fg-mute)', background: 'var(--bg-3)', borderRadius: 4, padding: '2px 7px', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{fullDayLabel(s.day_of_week, 'de')}</span>
+                  <span style={{ fontWeight: 600, color: 'var(--fg)', fontSize: 14 }}>{s.time_label}</span>
+                </div>
+                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10.5, color: 'var(--fg-mute)', letterSpacing: '0.04em' }}>
+                  {s.place.de} · {levelLabel(s.level, 'de')}
+                </div>
               </div>
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
-                <button onClick={() => setEditingSession(s)} style={secondaryBtnStyle}>Bearbeiten</button>
-                <button onClick={() => deleteSession(s.id)} style={dangerBtnStyle}>Löschen</button>
+              <div style={{ display: 'flex', gap: 6 }} className="admin-list-row-actions">
+                <button onClick={() => setEditingSession(s)} style={btnGhost}>Bearbeiten</button>
+                <button onClick={() => deleteSession(s.id)} style={btnDanger}>Löschen</button>
               </div>
             </div>
           ))}
@@ -87,10 +93,10 @@ export default function AdminTrainingPage() {
       </section>
 
       {/* ---- Overrides ---- */}
-      <section style={{ marginTop: '2.5rem' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+      <section>
+        <div style={sectionHead}>
           <h2 style={sectionTitle}>Einmaltermine & Ausfälle</h2>
-          <button onClick={() => setEditingOverride('new')} style={primaryBtnStyle}>+ Hinzufügen</button>
+          <button onClick={() => setEditingOverride('new')} style={btnPrimary}>+ Hinzufügen</button>
         </div>
 
         {editingOverride !== null && (
@@ -101,31 +107,26 @@ export default function AdminTrainingPage() {
           />
         )}
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-          {overrides.map((o) => (
-            <div key={o.id} style={listRow}>
-              <div>
-                <span
-                  style={{
-                    ...badge,
-                    background: o.type === 'cancel' ? 'rgba(239,68,68,0.12)' : 'var(--accent-soft)',
-                    color: o.type === 'cancel' ? 'var(--danger)' : 'var(--accent)',
-                  }}
-                >
-                  {o.type === 'cancel' ? 'Ausfall' : 'Extra'}
-                </span>
-                <span style={{ fontWeight: 600, color: 'var(--fg)', marginLeft: '0.75rem', fontSize: '0.9375rem' }}>
-                  {o.on_date}
-                </span>
-                {o.note && (
-                  <span style={{ color: 'var(--fg-dim)', fontSize: '0.8125rem', marginLeft: '0.5rem' }}>
-                    · {o.note.de}
+        <div style={card}>
+          {overrides.length === 0 ? <div style={empty}>Keine Einträge</div> : overrides.map((o) => (
+            <div key={o.id} style={sharedListRow} className="admin-list-row">
+              <div style={{ minWidth: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4, flexWrap: 'wrap' }}>
+                  <span style={{
+                    fontFamily: 'var(--font-mono)', fontSize: 10, fontWeight: 700, borderRadius: 4, padding: '2px 7px',
+                    textTransform: 'uppercase', letterSpacing: '0.08em',
+                    background: o.type === 'cancel' ? 'rgba(255,122,122,0.12)' : 'rgba(216,255,61,0.1)',
+                    color: o.type === 'cancel' ? 'var(--danger)' : 'var(--accent-spark)',
+                  }}>
+                    {o.type === 'cancel' ? 'Ausfall' : 'Extra'}
                   </span>
-                )}
+                  <span style={{ fontWeight: 600, color: 'var(--fg)', fontSize: 14 }}>{o.on_date}</span>
+                </div>
+                {o.note && <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10.5, color: 'var(--fg-mute)' }}>{o.note.de}</div>}
               </div>
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
-                <button onClick={() => setEditingOverride(o)} style={secondaryBtnStyle}>Bearbeiten</button>
-                <button onClick={() => deleteOverride(o.id)} style={dangerBtnStyle}>Löschen</button>
+              <div style={{ display: 'flex', gap: 6 }} className="admin-list-row-actions">
+                <button onClick={() => setEditingOverride(o)} style={btnGhost}>Bearbeiten</button>
+                <button onClick={() => deleteOverride(o.id)} style={btnDanger}>Löschen</button>
               </div>
             </div>
           ))}
@@ -174,8 +175,8 @@ function SessionForm({ session, spots, onSave, onCancel }: { session: TrainingSe
   }
 
   return (
-    <div style={{ background: 'var(--bg-2)', border: '1px solid var(--line-soft)', borderRadius: 14, padding: 20, marginBottom: 16 }}>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 12, marginBottom: 16 }}>
+    <div style={formCard}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 12, marginBottom: 16 }} className="admin-form-grid">
         <Field label="Wochentag">
           <select value={dow} onChange={(e) => setDow(Number(e.target.value))} className="admin-input" style={inputStyle}>
             {[0,1,2,3,4,5,6].map((d) => <option key={d} value={d}>{fullDayLabel(d, 'de')}</option>)}
@@ -224,8 +225,8 @@ function SessionForm({ session, spots, onSave, onCancel }: { session: TrainingSe
       />
 
       <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
-        <button onClick={onCancel} style={secondaryBtnStyle}>Abbrechen</button>
-        <button onClick={save} disabled={saving} style={primaryBtnStyle}>{saving ? '…' : 'Speichern'}</button>
+        <button onClick={onCancel} style={btnGhost}>Abbrechen</button>
+        <button onClick={save} disabled={saving} style={btnPrimary}>{saving ? '…' : 'Speichern'}</button>
       </div>
     </div>
   )
@@ -265,8 +266,8 @@ function OverrideForm({ override, onSave, onCancel }: { override: CalendarOverri
   }
 
   return (
-    <div style={{ background: 'var(--bg-elev)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', padding: '1.25rem', marginBottom: '1rem' }}>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '0.75rem', marginBottom: '1rem' }}>
+    <div style={formCard}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 12, marginBottom: 16 }} className="admin-form-grid">
         <Field label="Typ">
           <select value={type} onChange={(e) => setType(e.target.value as 'training' | 'cancel')} style={inputStyle}>
             <option value="cancel">Ausfall</option>
@@ -301,9 +302,9 @@ function OverrideForm({ override, onSave, onCancel }: { override: CalendarOverri
           <input value={noteEn} onChange={(e) => setNoteEn(e.target.value)} style={inputStyle} />
         </Field>
       </div>
-      <div style={{ display: 'flex', gap: '0.5rem' }}>
-        <button onClick={onCancel} style={secondaryBtnStyle}>Abbrechen</button>
-        <button onClick={save} disabled={saving} style={primaryBtnStyle}>{saving ? '…' : 'Speichern'}</button>
+      <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
+        <button onClick={onCancel} style={btnGhost}>Abbrechen</button>
+        <button onClick={save} disabled={saving} style={btnPrimary}>{saving ? '…' : 'Speichern'}</button>
       </div>
     </div>
   )
@@ -312,17 +313,10 @@ function OverrideForm({ override, onSave, onCancel }: { override: CalendarOverri
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--fg-dim)', marginBottom: '0.375rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</label>
+      <label style={fieldLabel}>{label}</label>
       {children}
     </div>
   )
 }
 
-const pageTitle: React.CSSProperties = { fontSize: '1.5rem', fontWeight: 700, color: 'var(--fg)', margin: 0, letterSpacing: '-0.02em' }
-const sectionTitle: React.CSSProperties = { fontSize: '1rem', fontWeight: 700, color: 'var(--fg)', margin: 0 }
-const inputStyle: React.CSSProperties = { width: '100%', background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', color: 'var(--fg)', fontSize: '0.875rem', padding: '0.5625rem 0.75rem', outline: 'none', fontFamily: 'inherit' }
-const primaryBtnStyle: React.CSSProperties = { background: 'var(--accent)', color: '#0a0a0b', fontWeight: 600, fontSize: '0.875rem', padding: '0.5rem 1.25rem', borderRadius: 'var(--radius)', border: 'none', cursor: 'pointer' }
-const secondaryBtnStyle: React.CSSProperties = { background: 'var(--bg-elev-2)', color: 'var(--fg-muted)', fontWeight: 500, fontSize: '0.8125rem', padding: '0.375rem 0.875rem', borderRadius: 'var(--radius)', border: '1px solid var(--border)', cursor: 'pointer' }
-const dangerBtnStyle: React.CSSProperties = { background: 'rgba(239,68,68,0.08)', color: 'var(--danger)', fontWeight: 500, fontSize: '0.8125rem', padding: '0.375rem 0.875rem', borderRadius: 'var(--radius)', border: '1px solid rgba(239,68,68,0.2)', cursor: 'pointer' }
-const listRow: React.CSSProperties = { background: 'var(--bg-elev)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', padding: '0.75rem 1.25rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }
-const badge: React.CSSProperties = { fontFamily: 'var(--font-mono)', fontSize: '0.6875rem', fontWeight: 700, color: 'var(--accent)', background: 'var(--accent-soft)', borderRadius: 4, padding: '1px 6px' }
+const inputStyle: React.CSSProperties = inp
