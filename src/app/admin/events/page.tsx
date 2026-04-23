@@ -31,8 +31,15 @@ type FormState = {
 
 const emptyForm = (): FormState => ({ id: '', category: 'jam', starts_at: '', place_de: '', place_en: '', title_de: '', title_en: '', desc_de: '', desc_en: '' })
 
+function toLocalDatetimeInput(iso: string): string {
+  // Convert UTC ISO string to local datetime-local value (YYYY-MM-DDTHH:MM)
+  const d = new Date(iso)
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
+
 function eventToForm(e: Event): FormState {
-  return { id: e.id, category: e.category, starts_at: e.starts_at.slice(0, 16), place_de: e.place.de, place_en: e.place.en, title_de: e.title.de, title_en: e.title.en, desc_de: e.description.de, desc_en: e.description.en }
+  return { id: e.id, category: e.category, starts_at: toLocalDatetimeInput(e.starts_at), place_de: e.place.de, place_en: e.place.en, title_de: e.title.de, title_en: e.title.en, desc_de: e.description.de, desc_en: e.description.en }
 }
 
 export default function AdminEventsPage() {
@@ -57,7 +64,9 @@ export default function AdminEventsPage() {
     setSaving(true); setError('')
     try {
       const supabase = createClient()
-      const data = { id: form.id, category: form.category, starts_at: form.starts_at, place: { de: form.place_de, en: form.place_en }, title: { de: form.title_de, en: form.title_en }, description: { de: form.desc_de, en: form.desc_en } }
+      // datetime-local has no timezone — parse as local time and convert to UTC ISO string
+      const starts_at = form.starts_at ? new Date(form.starts_at).toISOString() : form.starts_at
+      const data = { id: form.id, category: form.category, starts_at, place: { de: form.place_de, en: form.place_en }, title: { de: form.title_de, en: form.title_en }, description: { de: form.desc_de, en: form.desc_en } }
       const { error } = isNew ? await supabase.from('events').insert(data) : await supabase.from('events').update(data).eq('id', form.id)
       if (error) throw error
       setForm(null); load()

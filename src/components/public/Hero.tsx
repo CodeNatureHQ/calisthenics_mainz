@@ -95,7 +95,7 @@ export default function Hero({ lang, settings }: Props) {
           style={{
             display: "grid",
             gridTemplateColumns: "1.3fr 0.7fr",
-            gap: 48,
+            gap: "clamp(24px, 4vw, 48px)",
             alignItems: "end",
           }}
           className="hero-grid"
@@ -276,7 +276,7 @@ export default function Hero({ lang, settings }: Props) {
       </div>
 
       <style>{`
-        @media (max-width: 900px) {
+        @media (max-width: 1536px) {
           .hero-grid {
             grid-template-columns: 1fr !important;
           }
@@ -284,7 +284,15 @@ export default function Hero({ lang, settings }: Props) {
             padding-left: 0 !important;
             border-left: none !important;
             border-top: 1px solid var(--line-soft);
-            padding-top: 32px !important;
+            padding-top: 24px !important;
+            display: grid !important;
+            grid-template-columns: 1fr 1fr !important;
+            gap: 12px 32px !important;
+          }
+        }
+        @media (max-width: 480px) {
+          .hero-meta {
+            grid-template-columns: 1fr !important;
           }
         }
       `}</style>
