@@ -332,6 +332,7 @@ function WeekView({
   }, [overrides])
 
   return (
+    <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' as never, borderRadius: 18 }}>
     <div
       style={{
         display: 'grid',
@@ -340,6 +341,7 @@ function WeekView({
         borderRadius: 18,
         overflow: 'hidden',
         background: 'var(--bg-2)',
+        minWidth: 560,
       }}
       className="schedule-grid"
     >
@@ -462,6 +464,7 @@ function WeekView({
           </div>
         )
       })}
+    </div>
     </div>
   )
 }
@@ -647,12 +650,14 @@ function CalendarView({
       </div>
 
       {/* Calendar grid */}
+      <div style={{ overflowX: 'auto' }}>
       <div
         style={{
           border: '1px solid var(--border)',
           borderRadius: 'var(--radius-lg)',
           overflow: 'hidden',
           background: 'var(--bg-elev)',
+          minWidth: 420,
         }}
       >
         {/* Day headers */}
@@ -834,6 +839,7 @@ function CalendarView({
             )
           })}
         </div>
+      </div>
       </div>
     </div>
   )

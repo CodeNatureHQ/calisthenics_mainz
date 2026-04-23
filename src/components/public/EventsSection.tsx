@@ -150,7 +150,14 @@ export default function EventsSection({ lang, events }: Props) {
 
       <style>{`
         @media (max-width: 720px) {
-          .event-row { grid-template-columns: 1fr !important; gap: 14px !important; padding: 22px 4px !important; }
+          .event-row { grid-template-columns: 1fr !important; gap: 10px !important; padding: 18px 4px !important; }
+          .event-countdown { align-items: flex-start !important; flex-direction: row !important; flex-wrap: wrap !important; }
+          .event-date-num { font-size: 28px !important; }
+        }
+        @media (max-width: 480px) {
+          .event-dialog-inner { padding: 20px 20px 24px !important; }
+          .event-dialog-dl { grid-template-columns: 1fr !important; gap: 8px !important; }
+          .event-dialog-dt { padding-bottom: 0 !important; }
         }
       `}</style>
     </section>
@@ -193,7 +200,7 @@ function EventRow({
     >
       {/* Date block */}
       <div style={{ fontFamily: 'var(--font-mono)', display: 'flex', flexDirection: 'column', gap: 2 }}>
-        <div style={{ fontFamily: 'var(--font-display)', fontSize: 44, lineHeight: 1, letterSpacing: '-0.02em', color: isPast ? 'var(--fg-mute)' : 'var(--fg)' }}>
+        <div className="event-date-num" style={{ fontFamily: 'var(--font-display)', fontSize: 44, lineHeight: 1, letterSpacing: '-0.02em', color: isPast ? 'var(--fg-mute)' : 'var(--fg)' }}>
           {d.getDate()}
         </div>
         <div style={{ fontSize: 12, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--fg-dim)', marginTop: 6 }}>
@@ -225,7 +232,7 @@ function EventRow({
       </div>
 
       {/* Countdown + arrow */}
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 12 }}>
+      <div className="event-countdown" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 12 }}>
         {isPast ? (
           <span style={{ padding: '6px 12px', border: '1px solid var(--line)', borderRadius: 999, fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--fg-mute)', textTransform: 'uppercase', letterSpacing: '0.08em', whiteSpace: 'nowrap' }}>
             {c.past}
@@ -339,7 +346,7 @@ function EventDialog({
         </button>
 
         {/* Content */}
-        <div style={{ padding: '32px 40px 40px' }}>
+        <div className="event-dialog-inner" style={{ padding: '32px 40px 40px' }}>
           {/* Category */}
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
             <span style={{ width: 8, height: 8, borderRadius: '50%', background: catColor, display: 'inline-block' }} />
@@ -384,7 +391,7 @@ function EventDialog({
           </div>
 
           {/* Info grid */}
-          <dl style={{
+          <dl className="event-dialog-dl" style={{
             display: 'grid',
             gridTemplateColumns: '100px 1fr',
             gap: '12px 16px',

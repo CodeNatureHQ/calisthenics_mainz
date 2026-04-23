@@ -57,6 +57,7 @@ export default function SpotsSection({ lang, spots }: Props) {
         >
           {/* Map card */}
           <div
+            className="spots-card"
             style={{
               border: '1px solid var(--line-soft)',
               borderRadius: 18,
@@ -160,6 +161,10 @@ export default function SpotsSection({ lang, spots }: Props) {
       <style>{`
         @media (max-width: 900px) {
           .spots-layout { grid-template-columns: 1fr !important; }
+          .spots-card { min-height: 320px !important; }
+        }
+        @media (max-width: 480px) {
+          .spots-card { min-height: 260px !important; }
         }
       `}</style>
     </section>
