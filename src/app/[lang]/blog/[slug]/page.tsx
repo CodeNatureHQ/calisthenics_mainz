@@ -118,16 +118,17 @@ export default async function BlogPostPage({
         >
           <Link
             href={`/${lang}`}
-            style={{
-              fontFamily: 'var(--font-mono)',
-              fontWeight: 700,
-              fontSize: '1.125rem',
-              color: 'var(--accent)',
-              textDecoration: 'none',
-              flexShrink: 0,
-            }}
+            style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}
           >
-            CM
+            <img src="/logo.png" alt="Calisthenics Mainz" style={{ width: 32, height: 32, objectFit: 'contain' }} />
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              <span style={{ fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 12, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--fg)', lineHeight: 1.1 }}>
+                Calisthenics Mainz
+              </span>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.18em', color: 'var(--fg-mute)' }}>
+                VEREIN · MAINZ
+              </span>
+            </div>
           </Link>
           <span style={{ color: 'var(--border)', fontSize: '1rem' }}>/</span>
           <Link

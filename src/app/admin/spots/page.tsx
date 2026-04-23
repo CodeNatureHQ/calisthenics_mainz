@@ -60,6 +60,9 @@ export default function AdminSpotsPage() {
   }
 
   async function handleSave() {
+    if (!form.name_de.trim()) { setError('"Name (DE)" ist ein Pflichtfeld.'); return }
+    if (!form.address.trim()) { setError('"Adresse" ist ein Pflichtfeld.'); return }
+    if (!form.lat || !form.lng) { setError('"Lat" und "Lng" sind Pflichtfelder für die Karte.'); return }
     setSaving(true)
     setError('')
     try {

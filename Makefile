@@ -12,4 +12,3 @@ commit:
 	@read -p "Commit-Nachricht: " msg; \
 	git add -A && \
 	git commit -m "$$msg" && \
-	vercel --token $(VERCEL_TOKEN) --scope $(VERCEL_SCOPE) --prod --yes

@@ -61,6 +61,9 @@ export default function AdminEventsPage() {
 
   async function save() {
     if (!form) return
+    if (!form.starts_at) { setError('"Datum & Zeit" ist ein Pflichtfeld.'); return }
+    if (!form.title_de.trim()) { setError('"Titel (DE)" ist ein Pflichtfeld.'); return }
+    if (!form.place_de.trim()) { setError('"Ort (DE)" ist ein Pflichtfeld.'); return }
     setSaving(true); setError('')
     try {
       const supabase = createClient()
