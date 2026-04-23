@@ -58,23 +58,11 @@ export default function Nav({ lang }: { lang: Lang }) {
       >
         {/* Brand */}
         <Link href={`/${lang}`} style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
-          <div
-            style={{
-              width: 36,
-              height: 36,
-              background: 'var(--fg)',
-              borderRadius: 8,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontFamily: 'var(--font-display)',
-              fontSize: 14,
-              color: 'var(--accent-ink)',
-              flexShrink: 0,
-            }}
-          >
-            CM
-          </div>
+          <img
+            src="/logo.png"
+            alt="Calisthenics Mainz"
+            style={{ width: 36, height: 36, objectFit: 'contain', flexShrink: 0 }}
+          />
           <div>
             <div
               style={{

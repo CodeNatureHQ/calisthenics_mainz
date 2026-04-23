@@ -40,105 +40,118 @@ export default function AdminBlogPage() {
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-        <h1 style={pageTitle}>Blogposts</h1>
-        <button onClick={() => setEditing('new')} style={primaryBtnStyle}>
-          + Neuer Post
-        </button>
+      {/* Page head */}
+      <div style={pageHead}>
+        <div>
+          <span style={crumbStyle}>01 / Content</span>
+          <h1 style={h1Style}>Blogposts</h1>
+        </div>
+        <div style={{ display: 'flex', gap: 10, flexShrink: 0 }}>
+          <button onClick={() => setEditing('new')} style={btnPrimary}>
+            + Neuer Post
+          </button>
+        </div>
       </div>
 
-      {loading ? (
-        <p style={{ color: 'var(--fg-dim)' }}>Laden …</p>
-      ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-          {posts.map((post) => (
-            <div
-              key={post.id}
-              style={{
-                background: 'var(--bg-elev)',
-                border: '1px solid var(--border)',
-                borderRadius: 'var(--radius-lg)',
-                padding: '1rem 1.25rem',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '1rem',
-              }}
-            >
-              <div
-                style={{
-                  fontFamily: 'var(--font-mono)',
-                  fontWeight: 700,
-                  fontSize: '0.875rem',
-                  color: 'var(--accent)',
-                  background: 'var(--accent-soft)',
-                  borderRadius: 'var(--radius-sm)',
-                  padding: '0.25rem 0.5rem',
-                  flexShrink: 0,
-                }}
-              >
-                {post.glyph ?? '—'}
-              </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontWeight: 600, color: 'var(--fg)', fontSize: '0.9375rem' }}>
-                  {post.title.de}
+      {/* Card */}
+      <div style={card}>
+        {loading ? (
+          <div style={empty}>Laden …</div>
+        ) : posts.length === 0 ? (
+          <div style={empty}>Noch keine Posts</div>
+        ) : (
+          posts.map((post) => (
+            <div key={post.id} style={listRow}>
+              <div style={{ minWidth: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
+                  <div style={{
+                    width: 28, height: 28, borderRadius: 6,
+                    background: 'var(--bg-2)', border: '1px solid var(--line-soft)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontFamily: 'var(--font-display)', fontSize: 10, color: 'var(--fg)',
+                    flexShrink: 0,
+                  }}>
+                    {post.glyph ?? '—'}
+                  </div>
+                  <span style={{ fontWeight: 500, color: 'var(--fg)', fontSize: 14, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {post.title.de}
+                  </span>
                 </div>
-                <div style={{ fontSize: '0.75rem', color: 'var(--fg-dim)', marginTop: 2 }}>
-                  {post.id} · {post.published ? '✓ Veröffentlicht' : '⬜ Entwurf'}
+                <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
+                  <span style={metaItem}>{post.id}</span>
+                  <span style={metaItem}>{post.category.de}</span>
+                  <span style={metaItem}>{post.date_label.de}</span>
+                  <span style={{
+                    ...metaItem,
+                    color: post.published ? 'var(--ok)' : 'var(--fg-mute)',
+                  }}>
+                    {post.published ? 'Veröffentlicht' : 'Entwurf'}
+                  </span>
                 </div>
               </div>
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
-                <button onClick={() => setEditing(post)} style={secondaryBtnStyle}>
-                  Bearbeiten
-                </button>
-                <button onClick={() => handleDelete(post.id)} style={dangerBtnStyle}>
-                  Löschen
-                </button>
+              <div style={{ display: 'flex', gap: 6 }}>
+                <button onClick={() => setEditing(post)} style={btnGhost}>Bearbeiten</button>
+                <button onClick={() => handleDelete(post.id)} style={btnDanger}>Löschen</button>
               </div>
             </div>
-          ))}
-        </div>
-      )}
+          ))
+        )}
+      </div>
     </div>
   )
 }
 
-const pageTitle: React.CSSProperties = {
-  fontSize: '1.5rem',
-  fontWeight: 700,
-  color: 'var(--fg)',
-  margin: 0,
-  letterSpacing: '-0.02em',
+const pageHead: React.CSSProperties = {
+  display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between',
+  gap: 24, flexWrap: 'wrap', marginBottom: 32, paddingBottom: 24,
+  borderBottom: '1px solid var(--line-soft)',
 }
-
-const primaryBtnStyle: React.CSSProperties = {
-  background: 'var(--accent)',
-  color: '#0a0a0b',
-  fontWeight: 600,
-  fontSize: '0.875rem',
-  padding: '0.5rem 1.25rem',
-  borderRadius: 'var(--radius)',
-  border: 'none',
-  cursor: 'pointer',
+const crumbStyle: React.CSSProperties = {
+  display: 'block', fontFamily: 'var(--font-mono)', fontSize: 11,
+  textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--fg-mute)', marginBottom: 8,
 }
-
-const secondaryBtnStyle: React.CSSProperties = {
-  background: 'var(--bg-elev-2)',
-  color: 'var(--fg-muted)',
-  fontWeight: 500,
-  fontSize: '0.8125rem',
-  padding: '0.375rem 0.875rem',
-  borderRadius: 'var(--radius)',
-  border: '1px solid var(--border)',
-  cursor: 'pointer',
+const h1Style: React.CSSProperties = {
+  fontFamily: 'var(--font-display)', fontSize: 32, textTransform: 'uppercase',
+  letterSpacing: '-0.01em', margin: 0, color: 'var(--fg)',
 }
-
-const dangerBtnStyle: React.CSSProperties = {
-  background: 'rgba(239,68,68,0.08)',
-  color: 'var(--danger)',
-  fontWeight: 500,
-  fontSize: '0.8125rem',
-  padding: '0.375rem 0.875rem',
-  borderRadius: 'var(--radius)',
-  border: '1px solid rgba(239,68,68,0.2)',
-  cursor: 'pointer',
+const card: React.CSSProperties = {
+  background: 'var(--bg-2)', border: '1px solid var(--line-soft)',
+  borderRadius: 14, overflow: 'hidden',
+}
+const listRow: React.CSSProperties = {
+  display: 'grid', gridTemplateColumns: '1fr auto',
+  gap: 16, padding: '16px 20px',
+  borderBottom: '1px solid var(--line-soft)',
+  alignItems: 'center',
+}
+const metaItem: React.CSSProperties = {
+  fontFamily: 'var(--font-mono)', fontSize: 10.5, textTransform: 'uppercase',
+  letterSpacing: '0.06em', color: 'var(--fg-mute)',
+}
+const empty: React.CSSProperties = {
+  padding: '60px 24px', textAlign: 'center',
+  color: 'var(--fg-mute)', fontFamily: 'var(--font-mono)', fontSize: 12,
+  textTransform: 'uppercase', letterSpacing: '0.08em',
+}
+const btnPrimary: React.CSSProperties = {
+  display: 'inline-flex', alignItems: 'center', gap: 8,
+  padding: '10px 16px', borderRadius: 8,
+  fontFamily: 'var(--font-mono)', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em',
+  background: 'var(--fg)', color: 'var(--accent-ink)',
+  border: '1px solid var(--fg)', cursor: 'pointer',
+  transition: 'background 0.15s, transform 0.1s',
+}
+const btnGhost: React.CSSProperties = {
+  padding: '6px 10px', borderRadius: 6,
+  fontFamily: 'var(--font-mono)', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em',
+  background: 'var(--bg-2)', color: 'var(--fg)',
+  border: '1px solid var(--line)', cursor: 'pointer',
+  transition: 'border-color 0.15s, transform 0.1s',
+}
+const btnDanger: React.CSSProperties = {
+  padding: '6px 10px', borderRadius: 6,
+  fontFamily: 'var(--font-mono)', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em',
+  background: 'transparent', color: 'var(--danger)',
+  border: '1px solid var(--line)', cursor: 'pointer',
+  transition: 'border-color 0.15s, background 0.15s',
 }

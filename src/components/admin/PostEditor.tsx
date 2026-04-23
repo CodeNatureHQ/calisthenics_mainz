@@ -35,6 +35,7 @@ export default function PostEditor({ post, onSave, onCancel }: Props) {
   const [error, setError] = useState('')
 
   const editorDe = useEditor({
+    immediatelyRender: false,
     extensions: [
       StarterKit,
       Underline,
@@ -45,6 +46,7 @@ export default function PostEditor({ post, onSave, onCancel }: Props) {
   })
 
   const editorEn = useEditor({
+    immediatelyRender: false,
     extensions: [
       StarterKit,
       Underline,

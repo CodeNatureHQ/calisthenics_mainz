@@ -11,12 +11,9 @@ const copy = {
     h1a: 'Calisthenics.',
     h1b: 'Mainz.',
     h1c: 'Kostenlos.',
-    lede: (
-      <>
-        Wir trainieren, wettkämpfen und lernen gemeinsam.{' '}
-        <strong>Vom ersten Klimmzug bis zur Masters-Stage</strong> — jede:r ist willkommen.
-      </>
-    ),
+    ledePre:    'Wir trainieren, wettkämpfen und lernen gemeinsam. ',
+    ledeStrong: 'Vom ersten Klimmzug bis zur Masters-Stage',
+    ledePost:   ' — jede:r ist willkommen.',
     cta: 'Jetzt mitmachen',
     ctaGhost: 'Trainingsplan ansehen',
     metaLabels: ['Mitglieder', 'Einheiten / Woche', 'Heimspot', 'Monatsbeitrag'],
@@ -26,12 +23,9 @@ const copy = {
     h1a: 'Calisthenics.',
     h1b: 'Mainz.',
     h1c: 'Free.',
-    lede: (
-      <>
-        We train, compete and learn together.{' '}
-        <strong>From the first pull-up to the masters stage</strong> — everyone is welcome.
-      </>
-    ),
+    ledePre:    'We train, compete and learn together. ',
+    ledeStrong: 'From the first pull-up to the masters stage',
+    ledePost:   ' — everyone is welcome.',
     cta: 'Join now',
     ctaGhost: 'View schedule',
     metaLabels: ['Members', 'Sessions / week', 'Home spot', 'Monthly fee'],
@@ -161,7 +155,7 @@ export default function Hero({ lang, settings }: Props) {
                 fontWeight: 400,
               }}
             >
-              {c.lede}
+              {c.ledePre}<strong>{c.ledeStrong}</strong>{c.ledePost}
             </p>
 
             {/* CTAs */}
