@@ -78,12 +78,11 @@ export default function Nav({ lang }: { lang: Lang }) {
         }}
       >
         <div
-          className="container"
+          className="container nav-inner"
           style={{
             display: "flex",
             alignItems: "center",
             height: 68,
-            gap: "2rem",
           }}
         >
           {/* Brand */}
@@ -94,7 +93,9 @@ export default function Nav({ lang }: { lang: Lang }) {
               display: "flex",
               alignItems: "center",
               gap: 10,
-              flexShrink: 0,
+              minWidth: 0,
+              overflow: "hidden",
+              flexShrink: 1,
             }}
           >
             <img
@@ -107,8 +108,9 @@ export default function Nav({ lang }: { lang: Lang }) {
                 flexShrink: 0,
               }}
             />
-            <div>
+            <div className="nav-brand-text" style={{ minWidth: 0, overflow: "hidden" }}>
               <div
+                className="nav-brand-name"
                 style={{
                   fontFamily: "var(--font-sans)",
                   fontWeight: 700,
@@ -117,11 +119,15 @@ export default function Nav({ lang }: { lang: Lang }) {
                   textTransform: "uppercase",
                   color: "var(--fg)",
                   lineHeight: 1.1,
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
                 }}
               >
                 Calisthenics Mainz
               </div>
               <div
+                className="nav-brand-sub"
                 style={{
                   fontFamily: "var(--font-mono)",
                   fontSize: 9,
@@ -187,6 +193,7 @@ export default function Nav({ lang }: { lang: Lang }) {
                 <button
                   key={l}
                   onClick={() => setLang(l)}
+                  className="nav-lang-btn"
                   style={{
                     background: lang === l ? "var(--fg)" : "transparent",
                     color: lang === l ? "var(--accent-ink)" : "var(--fg-mute)",
@@ -293,7 +300,19 @@ export default function Nav({ lang }: { lang: Lang }) {
           </div>
         </div>
 
-        {/* Mobile menu with slide animation */}
+        <style>{`
+        .nav-inner { gap: 2rem; }
+        @media (max-width: 640px) {
+          .nav-inner { gap: 0.5rem; }
+          .nav-lang-btn { padding: 5px 8px !important; }
+          .nav-brand-sub { display: none; }
+        }
+        @media (max-width: 359px) {
+          .nav-brand-text { display: none; }
+        }
+      `}</style>
+
+      {/* Mobile menu with slide animation */}
         <div
           style={{
             overflow: "hidden",

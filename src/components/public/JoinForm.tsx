@@ -241,6 +241,7 @@ export default function JoinForm({ lang }: Props) {
               flexDirection: 'column',
               gap: 20,
               height: 'fit-content',
+              minWidth: 0,
             }}
           >
             <h3
@@ -315,7 +316,7 @@ export default function JoinForm({ lang }: Props) {
                     {s.icon}
                   </div>
                   <span style={{ flex: 1 }}>{s.label}</span>
-                  <span style={{ color: 'var(--fg-mute)' }}>{s.handle}</span>
+                  <span className="social-handle" style={{ color: 'var(--fg-mute)' }}>{s.handle}</span>
                 </a>
               ))}
             </div>
@@ -329,6 +330,9 @@ export default function JoinForm({ lang }: Props) {
         }
         @media (max-width: 520px) {
           .field-row { grid-template-columns: 1fr !important; }
+        }
+        @media (max-width: 640px) {
+          .social-handle { display: none; }
         }
       `}</style>
     </section>

@@ -33,8 +33,9 @@ export default function BlogGrid({ lang, posts }: Props) {
               href={`/${lang}/blog/${post.id}`}
               style={{
                 textDecoration: "none",
-                display: "flex" /* makes Link stretch to grid cell height */,
+                display: "flex",
                 flexDirection: "column",
+                minWidth: 0,
               }}
             >
               <article

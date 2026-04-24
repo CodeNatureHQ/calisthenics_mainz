@@ -129,7 +129,7 @@ export default function Hero({ lang, settings }: Props) {
             <h1
               style={{
                 fontFamily: "var(--font-display)",
-                fontSize: "clamp(52px, 9.5vw, 148px)",
+                fontSize: "clamp(28px, 9.5vw, 148px)",
                 lineHeight: 0.92,
                 letterSpacing: "-0.02em",
                 textTransform: "uppercase",
