@@ -8,9 +8,14 @@ export const metadata: Metadata = {
     template: '%s | Calisthenics Mainz',
   },
   description: 'Calisthenics-Verein in Mainz — Training, Events und Community.',
+  icons: {
+    icon: '/logo.png',
+    apple: '/logo.png',
+  },
   openGraph: {
     siteName: 'Calisthenics Mainz',
     type: 'website',
+    images: [{ url: '/logo.png', width: 512, height: 512, alt: 'Calisthenics Mainz' }],
   },
 }
 

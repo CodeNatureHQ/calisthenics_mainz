@@ -11,4 +11,4 @@ deploy:
 commit:
 	@read -p "Commit-Nachricht: " msg; \
 	git add -A && \
-	git commit -m "$$msg" && \
+	git commit -m "$$msg"

@@ -4,7 +4,10 @@ import { useEffect, useState } from 'react'
 import type { Spot } from '@/lib/types'
 import { createClient } from '@/lib/supabase/client'
 import { slugify } from '@/lib/slugify'
+import dynamic from 'next/dynamic'
 import { pageHead, crumbStyle, h1Style, card, formCard, listRow as sharedListRow, empty, inp, fieldLabel, errorBox, btnPrimary, btnGhost, btnDanger } from '../shared'
+
+const LocationPicker = dynamic(() => import('@/components/admin/LocationPicker'), { ssr: false })
 
 export default function AdminSpotsPage() {
   const [spots, setSpots] = useState<Spot[]>([])
@@ -62,7 +65,6 @@ export default function AdminSpotsPage() {
   async function handleSave() {
     if (!form.name_de.trim()) { setError('"Name (DE)" ist ein Pflichtfeld.'); return }
     if (!form.address.trim()) { setError('"Adresse" ist ein Pflichtfeld.'); return }
-    if (!form.lat || !form.lng) { setError('"Lat" und "Lng" sind Pflichtfelder für die Karte.'); return }
     setSaving(true)
     setError('')
     try {
@@ -80,7 +82,9 @@ export default function AdminSpotsPage() {
         address: form.address,
         access: { de: form.access_de, en: form.access_en },
         gear: form.gear.split(',').map((g) => g.trim()).filter(Boolean),
-        maps_url: form.maps_url || null,
+        maps_url: form.maps_url || (form.lat && form.lng
+          ? `https://www.google.com/maps/dir/?api=1&destination=${form.lat},${form.lng}`
+          : null),
         sort_order: parseInt(form.sort_order) || 0,
         visible: form.visible,
         images: [],
@@ -131,15 +135,6 @@ export default function AdminSpotsPage() {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: '0.75rem' }}>
               {!isNew && <Field label="ID"><input value={form.id} disabled style={{ ...inputStyle, opacity: 0.5, fontFamily: 'var(--font-mono)', fontSize: 12 }} /></Field>}
               <Field label="Glyph"><input value={form.glyph} onChange={(e) => f('glyph', e.target.value)} placeholder="JGU" style={{ ...inputStyle, fontFamily: 'var(--font-mono)' }} /></Field>
-              <Field label="Label anchor">
-                <select value={form.label_anchor} onChange={(e) => f('label_anchor', e.target.value)} style={inputStyle}>
-                  <option value="right">Right</option>
-                  <option value="left">Left</option>
-                </select>
-              </Field>
-              <Field label="Lat (Breitengrad)"><input value={form.lat} onChange={(e) => f('lat', e.target.value)} placeholder="49.9927" style={inputStyle} /></Field>
-              <Field label="Lng (Längengrad)"><input value={form.lng} onChange={(e) => f('lng', e.target.value)} placeholder="8.2297" style={inputStyle} /></Field>
-              <Field label="Sort"><input type="number" value={form.sort_order} onChange={(e) => f('sort_order', e.target.value)} style={{ ...inputStyle, width: 80 }} /></Field>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }} className="admin-lang-pair">
@@ -163,6 +158,13 @@ export default function AdminSpotsPage() {
 
             <Field label="Adresse"><input value={form.address} onChange={(e) => f('address', e.target.value)} style={inputStyle} /></Field>
             <Field label="Equipment (kommagetrennt)"><input value={form.gear} onChange={(e) => f('gear', e.target.value)} placeholder="Pull-up, Dips, Parallettes" style={inputStyle} /></Field>
+            <Field label="Standort auf Karte wählen">
+              <LocationPicker
+                lat={form.lat}
+                lng={form.lng}
+                onChange={(lat, lng) => setForm(prev => ({ ...prev, lat, lng }))}
+              />
+            </Field>
             <Field label="Google Maps URL"><input value={form.maps_url} onChange={(e) => f('maps_url', e.target.value)} type="url" style={inputStyle} /></Field>
             <Field label="Sichtbarkeit">
               <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', padding: '10px 12px', background: 'var(--bg)', border: '1px solid var(--line)', borderRadius: 8 }}>
