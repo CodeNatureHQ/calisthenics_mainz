@@ -65,7 +65,7 @@ export default function AusruestungPage({ lang, products }: Props) {
       </div>
 
       {/* Product grid */}
-      <div className="container" style={{ padding: '56px 0 80px' }}>
+      <div className="container" style={{ paddingTop: 56, paddingBottom: 80 }}>
         {products.length === 0 ? (
           <p style={{ color: 'var(--fg-mute)', fontFamily: 'var(--font-mono)', fontSize: 13, letterSpacing: '0.06em' }}>
             {lang === 'de' ? 'Bald verfügbar.' : 'Coming soon.'}
