@@ -187,7 +187,7 @@ export default function AdminSpotsPage() {
         </div>
       )}
 
-      <div style={card}>
+      {!editing && <div style={card}>
         {spots.length === 0 ? (
           <div style={empty}>Keine Spots</div>
         ) : spots.map((s) => (
@@ -227,7 +227,7 @@ export default function AdminSpotsPage() {
             </div>
           </div>
         ))}
-      </div>
+      </div>}
     </div>
   )
 }

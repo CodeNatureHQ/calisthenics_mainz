@@ -144,7 +144,7 @@ export default function AdminEventsPage() {
         </div>
       )}
 
-      <div style={card}>
+      {!form && <div style={card}>
         {events.length === 0 ? (
           <div style={empty}>Keine Events</div>
         ) : events.map((ev) => {
@@ -168,7 +168,7 @@ export default function AdminEventsPage() {
             </div>
           )
         })}
-      </div>
+      </div>}
     </div>
   )
 }

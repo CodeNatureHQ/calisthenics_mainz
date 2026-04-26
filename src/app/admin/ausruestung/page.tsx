@@ -199,7 +199,7 @@ export default function AdminAusruestungPage() {
         </div>
       )}
 
-      <div style={card}>
+      {!editing && <div style={card}>
         {products.length === 0 ? (
           <div style={empty}>Noch keine Produkte</div>
         ) : products.map((p) => (
@@ -230,7 +230,7 @@ export default function AdminAusruestungPage() {
             </div>
           </div>
         ))}
-      </div>
+      </div>}
     </div>
   )
 }
