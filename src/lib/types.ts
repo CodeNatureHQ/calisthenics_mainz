@@ -101,6 +101,13 @@ export type SiteSettings = {
   about_spots: string
   about_sessions: string
   show_ausruestung: boolean
+  imprint_street: string | null
+  imprint_zip: string | null
+  imprint_city: string | null
+  imprint_chair1: string | null
+  imprint_chair2: string | null
+  imprint_reg_nr: string | null
+  imprint_email: string | null
   updated_at: string
 }
 
@@ -114,6 +121,17 @@ export type Product = {
   desc_en: string
   href: string
   image_url: string | null
+  sort_order: number
+  visible: boolean
+  created_at: string
+}
+
+export type FaqItem = {
+  id: string
+  question_de: string
+  question_en: string
+  answer_de: string
+  answer_en: string
   sort_order: number
   visible: boolean
   created_at: string

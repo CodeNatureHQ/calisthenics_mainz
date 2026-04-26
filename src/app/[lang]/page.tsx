@@ -54,6 +54,7 @@ export default async function HomePage({
     { data: overrides },
     { data: spots },
     { data: settings },
+    { data: faqItems },
   ] = await Promise.all([
     supabase.from('posts').select('*').eq('published', true).order('sort_order'),
     supabase.from('events').select('*').order('starts_at', { ascending: false }),
@@ -61,6 +62,7 @@ export default async function HomePage({
     supabase.from('calendar_overrides').select('*').order('on_date'),
     supabase.from('spots').select('*').order('sort_order'),
     supabase.from('site_settings').select('*').single(),
+    supabase.from('faq_items').select('*').eq('visible', true).order('sort_order'),
   ])
 
   return (
@@ -73,7 +75,7 @@ export default async function HomePage({
         <SpotsSection lang={lang} spots={spots ?? []} />
         <AboutSection lang={lang} settings={settings} />
         <BlogGrid lang={lang} posts={posts ?? []} />
-        <FaqSection lang={lang} />
+        <FaqSection lang={lang} items={faqItems ?? []} />
         <JoinForm lang={lang} />
       </main>
       <Footer lang={lang} />

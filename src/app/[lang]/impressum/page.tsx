@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import type { Lang } from '@/lib/types'
+import { createClient } from '@/lib/supabase/server'
 
 export const metadata: Metadata = { title: 'Impressum' }
 
@@ -11,23 +12,19 @@ const copy = {
     sections: [
       {
         heading: 'Angaben gemäß § 5 TMG',
-        content: `Calisthenics Mainz e.V.
-[Straße und Hausnummer]
-55[PLZ] Mainz`,
+        content: `DYNAMIC_ADDRESS`,
       },
       {
         heading: 'Vertreten durch',
-        content: `1. Vorsitzender: [Name]
-2. Vorsitzender: [Name]`,
+        content: `DYNAMIC_CHAIRS`,
       },
       {
         heading: 'Vereinsregister',
-        content: `Amtsgericht Mainz
-Registernummer: VR [Nummer]`,
+        content: `DYNAMIC_REG`,
       },
       {
         heading: 'Kontakt',
-        content: `E-Mail: kontakt@calisthenics-mainz.de`,
+        content: `DYNAMIC_EMAIL`,
       },
       {
         heading: 'Haftungsausschluss',
@@ -45,23 +42,19 @@ Registernummer: VR [Nummer]`,
     sections: [
       {
         heading: 'Information according to § 5 TMG',
-        content: `Calisthenics Mainz e.V.
-[Street and number]
-55[ZIP] Mainz, Germany`,
+        content: `DYNAMIC_ADDRESS`,
       },
       {
         heading: 'Represented by',
-        content: `1st Chair: [Name]
-2nd Chair: [Name]`,
+        content: `DYNAMIC_CHAIRS`,
       },
       {
         heading: 'Register of Associations',
-        content: `Amtsgericht Mainz
-Registration number: VR [Number]`,
+        content: `DYNAMIC_REG`,
       },
       {
         heading: 'Contact',
-        content: `Email: kontakt@calisthenics-mainz.de`,
+        content: `DYNAMIC_EMAIL`,
       },
       {
         heading: 'Disclaimer',
@@ -80,6 +73,9 @@ export default async function ImpressumPage({ params }: { params: Promise<{ lang
   const lang = (rawLang === 'en' ? 'en' : 'de') as Lang
   const c = copy[lang]
 
+  const supabase = await createClient()
+  const { data: s } = await supabase.from('site_settings').select('imprint_street,imprint_zip,imprint_city,imprint_chair1,imprint_chair2,imprint_reg_nr,imprint_email').single()
+
   return (
     <>
       <header style={{ position: 'sticky', top: 0, zIndex: 100, background: 'rgba(10,10,11,0.92)', backdropFilter: 'blur(12px)', borderBottom: '1px solid var(--line-soft)' }}>
@@ -96,16 +92,36 @@ export default async function ImpressumPage({ params }: { params: Promise<{ lang
             {c.title}
           </h1>
 
-          {c.sections.map((s) => (
-            <section key={s.heading} style={{ marginBottom: '2.5rem' }}>
-              <h2 style={{ fontFamily: 'var(--font-mono)', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--fg-mute)', margin: '0 0 0.75rem' }}>
-                {s.heading}
-              </h2>
-              <p style={{ color: 'var(--fg-dim)', fontSize: 15, lineHeight: 1.75, whiteSpace: 'pre-line', margin: 0 }}>
-                {s.content}
-              </p>
-            </section>
-          ))}
+          {c.sections.map((section) => {
+            const isDE = lang === 'de'
+            let content = section.content
+            if (content === 'DYNAMIC_ADDRESS') {
+              const street = s?.imprint_street ?? (isDE ? '[Straße und Hausnummer]' : '[Street and number]')
+              const zip = s?.imprint_zip ?? (isDE ? '55[PLZ]' : '55[ZIP]')
+              const city = s?.imprint_city ?? 'Mainz'
+              content = `Calisthenics Mainz e.V.\n${street}\n${zip} ${city}${isDE ? '' : ', Germany'}`
+            } else if (content === 'DYNAMIC_CHAIRS') {
+              const c1 = s?.imprint_chair1 ?? (isDE ? '[Name]' : '[Name]')
+              const c2 = s?.imprint_chair2 ?? (isDE ? '[Name]' : '[Name]')
+              content = isDE ? `1. Vorsitzende:r: ${c1}\n2. Vorsitzende:r: ${c2}` : `1st Chair: ${c1}\n2nd Chair: ${c2}`
+            } else if (content === 'DYNAMIC_REG') {
+              const reg = s?.imprint_reg_nr ?? (isDE ? 'VR [Nummer]' : 'VR [Number]')
+              content = isDE ? `Amtsgericht Mainz\nRegisternummer: ${reg}` : `Amtsgericht Mainz\nRegistration number: ${reg}`
+            } else if (content === 'DYNAMIC_EMAIL') {
+              const email = s?.imprint_email ?? 'kontakt@calisthenics-mainz.de'
+              content = isDE ? `E-Mail: ${email}` : `Email: ${email}`
+            }
+            return (
+              <section key={section.heading} style={{ marginBottom: '2.5rem' }}>
+                <h2 style={{ fontFamily: 'var(--font-mono)', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--fg-mute)', margin: '0 0 0.75rem' }}>
+                  {section.heading}
+                </h2>
+                <p style={{ color: 'var(--fg-dim)', fontSize: 15, lineHeight: 1.75, whiteSpace: 'pre-line', margin: 0 }}>
+                  {content}
+                </p>
+              </section>
+            )
+          })}
         </div>
       </main>
     </>

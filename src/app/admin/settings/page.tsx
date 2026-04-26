@@ -28,6 +28,10 @@ export default function AdminSettingsPage() {
       about_members: form.about_members, about_founded: form.about_founded,
       about_spots: form.about_spots, about_sessions: form.about_sessions,
       show_ausruestung: form.show_ausruestung,
+      imprint_street: form.imprint_street, imprint_zip: form.imprint_zip,
+      imprint_city: form.imprint_city, imprint_chair1: form.imprint_chair1,
+      imprint_chair2: form.imprint_chair2, imprint_reg_nr: form.imprint_reg_nr,
+      imprint_email: form.imprint_email,
     }).eq('id', 1)
     if (error) setError(error.message)
     else { setSaved(true); setTimeout(() => setSaved(false), 3000) }
@@ -102,6 +106,31 @@ export default function AdminSettingsPage() {
               </div>
             ))}
           </div>
+        </div>
+      </div>
+
+      {/* Impressum */}
+      <div style={{ ...card, marginTop: 20 }}>
+        <div style={cardHead}>
+          <h3 style={cardTitle}>Impressum</h3>
+          <span style={cardMeta}>Pflichtangaben für die Impressums-Seite</span>
+        </div>
+        <div style={{ padding: 20, display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16 }} className="stats-grid">
+          {[
+            { key: 'imprint_chair1' as const,  label: '1. Vorsitzende:r',  placeholder: 'Max Mustermann' },
+            { key: 'imprint_chair2' as const,  label: '2. Vorsitzende:r',  placeholder: 'Erika Musterfrau' },
+            { key: 'imprint_street' as const,  label: 'Straße & Hausnummer', placeholder: 'Musterstraße 1' },
+            { key: 'imprint_zip' as const,     label: 'PLZ',               placeholder: '55122' },
+            { key: 'imprint_reg_nr' as const,  label: 'Registernummer',    placeholder: 'VR 12345' },
+            { key: 'imprint_email' as const,   label: 'E-Mail',            placeholder: 'kontakt@calisthenics-mainz.de' },
+          ].map(({ key, label, placeholder }) => (
+            <div key={key} style={statBox}>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9.5, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--fg-mute)', marginBottom: 10 }}>{label}</div>
+              <input value={form[key] ?? ''} onChange={(e) => setForm(p => ({ ...p, [key]: e.target.value }))} placeholder={placeholder} style={inp}
+                onFocus={(e) => (e.currentTarget.style.borderColor = 'var(--fg)')}
+                onBlur={(e) => (e.currentTarget.style.borderColor = 'var(--line)')} />
+            </div>
+          ))}
         </div>
       </div>
 

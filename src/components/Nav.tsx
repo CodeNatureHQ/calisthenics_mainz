@@ -16,7 +16,6 @@ const navItems = (lang: Lang, showAusruestung: boolean, base: string) =>
         { href: `${base}#blog`, label: "Blog" },
         { href: `${base}#faq`, label: "FAQ" },
         ...(showAusruestung ? [{ href: `/de/ausruestung`, label: "Ausrüstung" }] : []),
-        { href: `${base}#mitmachen`, label: "Mitmachen" },
       ]
     : [
         { href: `${base}#training`, label: "Training" },
@@ -26,7 +25,6 @@ const navItems = (lang: Lang, showAusruestung: boolean, base: string) =>
         { href: `${base}#blog`, label: "Blog" },
         { href: `${base}#faq`, label: "FAQ" },
         ...(showAusruestung ? [{ href: `/en/ausruestung`, label: "Equipment" }] : []),
-        { href: `${base}#join`, label: "Join" },
       ];
 
 export default function Nav({ lang, showAusruestung = false }: { lang: Lang; showAusruestung?: boolean }) {
