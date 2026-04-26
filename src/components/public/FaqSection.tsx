@@ -3,6 +3,19 @@
 import { useState } from 'react'
 import type { Lang } from '@/lib/types'
 
+const URL_REGEX = /(https?:\/\/[^\s]+)/g
+function renderWithLinks(text: string) {
+  const parts = text.split(URL_REGEX)
+  return parts.map((part, i) =>
+    URL_REGEX.test(part) ? (
+      <a key={i} href={part} target="_blank" rel="noopener noreferrer"
+        style={{ color: 'var(--accent-spark)', textDecoration: 'underline', textUnderlineOffset: 3, wordBreak: 'break-all' }}>
+        {part}
+      </a>
+    ) : part
+  )
+}
+
 type Props = { lang: Lang }
 
 const copy = {
@@ -16,7 +29,7 @@ const copy = {
       },
       {
         q: 'Kann ich einfach zum Training dazu kommen?',
-        a: 'Da wir mit unserem Training aktuell Teil des AHS-Angebots sind, gelten die Teilnahmevoraussetzungen des AHS. Auf der AHS-Website könnt ihr diese für eure individuelle Situation nachlesen. Eine Anmeldung bei uns ist nicht erforderlich.',
+        a: 'Unsere Outdoor-Spots (Goetheplatz, Volkspark, Wiesbaden-Biebrich) sind für alle frei zugänglich — einfach vorbeikommen!\n\nFür das Hallentraining auf dem JGU Campus gelten die Teilnahmevoraussetzungen des AHS. Studierende der JGU Mainz können ohne weitere Anmeldung direkt teilnehmen.\n\nAlle anderen können über das AHS-Angebot mitmachen oder eine Einheit als Probetraining besuchen. Schickt dafür das Probetrainingsformular spätestens 3 Tage vorher an das AHS.\n\nDa es am Eingang Kontrollen gibt, denkt bitte daran, eure Anmeldung oder euren Probetrainingsantrag mitzubringen.\n\nAlle Infos und Formulare gibt\'s hier: https://www.ahs.uni-mainz.de/foerderverein/',
       },
       {
         q: 'Kann ich auch als Anfänger:in zum Training kommen?',
@@ -175,17 +188,11 @@ export default function FaqSection({ lang }: Props) {
                     transition: 'max-height 0.3s ease',
                   }}
                 >
-                  <p
-                    style={{
-                      color: 'var(--fg-dim)',
-                      fontSize: 16,
-                      lineHeight: 1.65,
-                      margin: '0 0 24px',
-                      paddingRight: 32,
-                    }}
-                  >
-                    {item.a}
-                  </p>
+                  <div style={{ color: 'var(--fg-dim)', fontSize: 16, lineHeight: 1.65, margin: '0 0 24px', paddingRight: 32 }}>
+                    {item.a.split('\n\n').map((para, j) => (
+                      <p key={j} style={{ margin: j === 0 ? 0 : '12px 0 0' }}>{renderWithLinks(para)}</p>
+                    ))}
+                  </div>
                 </div>
               </div>
             )
