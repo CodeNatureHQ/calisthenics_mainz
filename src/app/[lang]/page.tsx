@@ -65,7 +65,7 @@ export default async function HomePage({
 
   return (
     <>
-      <Nav lang={lang} />
+      <Nav lang={lang} showAusruestung={settings?.show_ausruestung ?? false} />
       <main style={{ paddingTop: 68 }}>
         <Hero lang={lang} settings={settings} />
         <TrainingSection lang={lang} sessions={sessions ?? []} overrides={overrides ?? []} spots={spots ?? []} events={events ?? []} />

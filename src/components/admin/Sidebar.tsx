@@ -10,8 +10,9 @@ const navItems = [
   { href: '/admin/blog',     label: 'Blogposts',    icon: 'B' },
   { href: '/admin/events',   label: 'Events',       icon: 'E' },
   { href: '/admin/training', label: 'Training',     icon: 'T' },
-  { href: '/admin/spots',    label: 'Spots',        icon: 'S' },
-  { href: '/admin/settings', label: 'Hero & Stats', icon: 'H' },
+  { href: '/admin/spots',        label: 'Spots',        icon: 'SP' },
+  { href: '/admin/ausruestung',  label: 'Ausrüstung',   icon: 'A' },
+  { href: '/admin/settings',     label: 'Settings',     icon: 'S' },
 ]
 
 export default function AdminSidebar({ user }: { user: User }) {

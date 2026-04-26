@@ -27,6 +27,7 @@ export default function AdminSettingsPage() {
       hero_spot: form.hero_spot, hero_fee: form.hero_fee,
       about_members: form.about_members, about_founded: form.about_founded,
       about_spots: form.about_spots, about_sessions: form.about_sessions,
+      show_ausruestung: form.show_ausruestung,
     }).eq('id', 1)
     if (error) setError(error.message)
     else { setSaved(true); setTimeout(() => setSaved(false), 3000) }
@@ -101,6 +102,32 @@ export default function AdminSettingsPage() {
               </div>
             ))}
           </div>
+        </div>
+      </div>
+
+      {/* Feature flags */}
+      <div style={{ ...card, marginTop: 20 }}>
+        <div style={cardHead}>
+          <h3 style={cardTitle}>Feature-Flags</h3>
+          <span style={cardMeta}>Seiten ein- / ausschalten</span>
+        </div>
+        <div style={{ padding: 20 }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 14, cursor: 'pointer', padding: '14px 16px', background: 'var(--bg)', border: '1px solid var(--line-soft)', borderRadius: 10 }}>
+            <input
+              type="checkbox"
+              checked={form.show_ausruestung ?? false}
+              onChange={(e) => setForm((p) => ({ ...p, show_ausruestung: e.target.checked }))}
+              style={{ width: 16, height: 16, accentColor: 'var(--ok)', flexShrink: 0, cursor: 'pointer' }}
+            />
+            <div>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: form.show_ausruestung ? 'var(--ok)' : 'var(--fg)', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 600 }}>
+                Ausrüstungs-Seite {form.show_ausruestung ? '● aktiv' : '○ inaktiv'}
+              </div>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--fg-mute)', marginTop: 3, letterSpacing: '0.04em' }}>
+                /de/ausruestung — Affiliate-Links zu Amazon
+              </div>
+            </div>
+          </label>
         </div>
       </div>
 

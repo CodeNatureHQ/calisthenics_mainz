@@ -4,32 +4,39 @@ import { useLang } from "@/lib/i18n";
 import type { Lang } from "@/lib/types";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 
-const navItems = (lang: Lang) =>
+const navItems = (lang: Lang, showAusruestung: boolean, base: string) =>
   lang === "de"
     ? [
-        { href: "#training", label: "Training" },
-        { href: "#events", label: "Events" },
-        { href: "#spots", label: "Spots" },
-        { href: "#ueber-uns", label: "Über uns" },
-        { href: "#blog", label: "Blog" },
-        { href: "#faq", label: "FAQ" },
-        { href: "#mitmachen", label: "Mitmachen" },
+        { href: `${base}#training`, label: "Training" },
+        { href: `${base}#events`, label: "Events" },
+        { href: `${base}#spots`, label: "Spots" },
+        { href: `${base}#ueber-uns`, label: "Über uns" },
+        { href: `${base}#blog`, label: "Blog" },
+        { href: `${base}#faq`, label: "FAQ" },
+        ...(showAusruestung ? [{ href: `/de/ausruestung`, label: "Ausrüstung" }] : []),
+        { href: `${base}#mitmachen`, label: "Mitmachen" },
       ]
     : [
-        { href: "#training", label: "Training" },
-        { href: "#events", label: "Events" },
-        { href: "#spots", label: "Spots" },
-        { href: "#about", label: "About" },
-        { href: "#blog", label: "Blog" },
-        { href: "#faq", label: "FAQ" },
-        { href: "#join", label: "Join" },
+        { href: `${base}#training`, label: "Training" },
+        { href: `${base}#events`, label: "Events" },
+        { href: `${base}#spots`, label: "Spots" },
+        { href: `${base}#about`, label: "About" },
+        { href: `${base}#blog`, label: "Blog" },
+        { href: `${base}#faq`, label: "FAQ" },
+        ...(showAusruestung ? [{ href: `/en/ausruestung`, label: "Equipment" }] : []),
+        { href: `${base}#join`, label: "Join" },
       ];
 
-export default function Nav({ lang }: { lang: Lang }) {
+export default function Nav({ lang, showAusruestung = false }: { lang: Lang; showAusruestung?: boolean }) {
   const { setLang } = useLang();
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const pathname = usePathname();
+  const homePath = `/${lang}`;
+  const isHome = pathname === homePath || pathname === `${homePath}/`;
+  const base = isHome ? "" : homePath;
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -46,7 +53,7 @@ export default function Nav({ lang }: { lang: Lang }) {
     return () => document.removeEventListener("keydown", onKey);
   }, [menuOpen]);
 
-  const items = navItems(lang);
+  const items = navItems(lang, showAusruestung, base);
 
   return (
     <>

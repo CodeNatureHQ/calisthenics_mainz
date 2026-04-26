@@ -282,8 +282,20 @@ export default function JoinForm({ lang }: Props) {
                 }
                 const inner = (
                   <>
-                    <div style={{ width: 32, height: 32, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)', border: '1px solid var(--line-soft)', fontFamily: 'var(--font-display)', fontSize: 11, color: 'var(--fg)', flexShrink: 0 }}>
-                      {s.icon}
+                    <div style={{ width: 32, height: 32, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)', border: '1px solid var(--line-soft)', flexShrink: 0 }}>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                        <defs>
+                          <linearGradient id="ig" x1="0%" y1="100%" x2="100%" y2="0%">
+                            <stop offset="0%" stopColor="#FCAF45"/>
+                            <stop offset="35%" stopColor="#E1306C"/>
+                            <stop offset="70%" stopColor="#833AB4"/>
+                            <stop offset="100%" stopColor="#405DE6"/>
+                          </linearGradient>
+                        </defs>
+                        <rect x="2" y="2" width="20" height="20" rx="5" ry="5" stroke="url(#ig)"/>
+                        <circle cx="12" cy="12" r="4" stroke="url(#ig)"/>
+                        <circle cx="17.5" cy="6.5" r="1" fill="url(#ig)" stroke="none"/>
+                      </svg>
                     </div>
                     <span style={{ flex: 1 }}>{s.label}</span>
                     <span className="social-handle" style={{ color: 'var(--fg-mute)' }}>{s.handle}</span>

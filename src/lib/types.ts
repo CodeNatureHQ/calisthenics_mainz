@@ -100,7 +100,23 @@ export type SiteSettings = {
   about_founded: string
   about_spots: string
   about_sessions: string
+  show_ausruestung: boolean
   updated_at: string
+}
+
+export type Product = {
+  id: string
+  glyph: string
+  category: string
+  name_de: string
+  name_en: string
+  desc_de: string
+  desc_en: string
+  href: string
+  image_url: string | null
+  sort_order: number
+  visible: boolean
+  created_at: string
 }
 
 export type ExperienceLevel = 'beginner' | 'intermediate' | 'advanced' | 'unsure'
