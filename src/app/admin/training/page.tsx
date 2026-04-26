@@ -327,10 +327,10 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   )
 }
 
-function LangPair({ label, deValue, enValue, onDe, onEn, textarea = false, placeholder }: {
+function LangPair({ label, deValue, enValue, onDe, onEn, textarea = false, rows = 3, placeholder }: {
   label: string; deValue: string; enValue: string
   onDe: (v: string) => void; onEn: (v: string) => void
-  textarea?: boolean; placeholder?: { de?: string; en?: string }
+  textarea?: boolean; rows?: number; placeholder?: { de?: string; en?: string }
 }) {
   const Tag = textarea ? 'textarea' : 'input'
   return (
@@ -344,7 +344,7 @@ function LangPair({ label, deValue, enValue, onDe, onEn, textarea = false, place
               onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => cb(e.target.value)}
               placeholder={ph}
               style={{ ...inputStyle, paddingRight: 44, ...(textarea ? { minHeight: 76, resize: 'vertical' as const, lineHeight: 1.5 } : {}) }}
-              rows={textarea ? 3 : undefined}
+              rows={textarea ? rows : undefined}
             />
             <span style={{ position: 'absolute', top: 8, right: 10, fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.1em', color: 'var(--fg-mute)', background: 'var(--bg)', padding: '2px 7px', borderRadius: 999, border: '1px solid var(--line-soft)', pointerEvents: 'none' }}>{tag}</span>
           </div>
