@@ -249,9 +249,11 @@ function TrainingModal({
 
           {/* Description */}
           {description && (
-            <p style={{ color: 'var(--fg-dim)', fontSize: 14, lineHeight: 1.65, margin: '0 0 20px' }}>
-              {t(description, lang)}
-            </p>
+            <div
+              className="prose-cm"
+              dangerouslySetInnerHTML={{ __html: t(description, lang) }}
+              style={{ fontSize: 14, lineHeight: 1.65, margin: '0 0 20px' }}
+            />
           )}
 
           {/* Spot link */}

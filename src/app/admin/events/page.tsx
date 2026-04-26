@@ -5,6 +5,8 @@ import type { Event, EventCategory } from '@/lib/types'
 import { createClient } from '@/lib/supabase/client'
 import { formatDate } from '@/lib/utils'
 import { pageHead, crumbStyle, h1Style, card, listRow, empty, inp, fieldLabel, errorBox, btnPrimary, btnGhost, btnDanger, metaItem, chipStyle } from '../shared'
+import dynamic from 'next/dynamic'
+const RichText = dynamic(() => import('@/components/admin/RichText'), { ssr: false })
 
 function autoEventId(category: string, dateStr: string): string {
   const date = dateStr ? dateStr.slice(0, 10) : ''
@@ -121,7 +123,19 @@ export default function AdminEventsPage() {
             )}
             <LangPair label="Titel" deValue={form.title_de} enValue={form.title_en} onDe={(v) => f('title_de', v)} onEn={(v) => f('title_en', v)} />
             <LangPair label="Ort" deValue={form.place_de} enValue={form.place_en} onDe={(v) => f('place_de', v)} onEn={(v) => f('place_en', v)} />
-            <LangPair label="Beschreibung" deValue={form.desc_de} enValue={form.desc_en} onDe={(v) => f('desc_de', v)} onEn={(v) => f('desc_en', v)} textarea />
+            <div>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--fg-mute)', marginBottom: 8 }}>Beschreibung</div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }} className="admin-lang-pair">
+                {[{ val: form.desc_de, key: 'desc_de' as const, ph: 'Beschreibung (DE) …' }, { val: form.desc_en, key: 'desc_en' as const, ph: 'Description (EN) …' }].map(({ val, key, ph }) => (
+                  <div key={key} style={{ position: 'relative' }}>
+                    <div style={{ position: 'absolute', top: 8, right: 10, zIndex: 10, fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.1em', color: 'var(--fg-mute)', background: 'var(--bg)', padding: '2px 7px', borderRadius: 999, border: '1px solid var(--line-soft)', pointerEvents: 'none' }}>
+                      {key === 'desc_de' ? 'DE' : 'EN'}
+                    </div>
+                    <RichText value={val} onChange={(v) => f(key, v)} placeholder={ph} minHeight={80} />
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
           <div style={{ display: 'flex', gap: 10, marginTop: 20 }}>
             <button onClick={() => setForm(null)} style={btnGhost}>Abbrechen</button>

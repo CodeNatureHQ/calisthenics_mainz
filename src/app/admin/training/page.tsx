@@ -5,6 +5,8 @@ import type { TrainingSession, CalendarOverride, SessionLevel, Spot } from '@/li
 import { createClient } from '@/lib/supabase/client'
 import { fullDayLabel, levelLabel, t } from '@/lib/utils'
 import { pageHead, crumbStyle, h1Style, sectionHead, sectionTitle, card, formCard, listRow as sharedListRow, empty, inp, fieldLabel, errorBox, btnPrimary, btnGhost, btnDanger } from '../shared'
+import dynamic from 'next/dynamic'
+const RichText = dynamic(() => import('@/components/admin/RichText'), { ssr: false })
 
 const LEVELS: SessionLevel[] = ['beginner', 'advanced', 'open', 'comp', 'training']
 
@@ -55,21 +57,20 @@ export default function AdminTrainingPage() {
       </div>
 
       {/* ---- Sessions ---- */}
-      <section style={{ marginBottom: '2.5rem' }}>
+      {editingOverride === null && <section style={{ marginBottom: '2.5rem' }}>
         <div style={sectionHead}>
           <h2 style={sectionTitle}>Wochenplan</h2>
-          <button onClick={() => setEditingSession('new')} style={btnPrimary}>+ Hinzufügen</button>
+          {editingSession === null && <button onClick={() => setEditingSession('new')} style={btnPrimary}>+ Hinzufügen</button>}
         </div>
 
-        {editingSession !== null && (
+        {editingSession !== null ? (
           <SessionForm
             session={editingSession === 'new' ? null : editingSession}
             spots={spots}
             onSave={() => { setEditingSession(null); load() }}
             onCancel={() => setEditingSession(null)}
           />
-        )}
-
+        ) : (
         <div style={card}>
           {sessions.length === 0 ? <div style={empty}>Keine Einheiten</div> : sessions.map((s) => (
             <div key={s.id} style={sharedListRow} className="admin-list-row">
@@ -89,23 +90,23 @@ export default function AdminTrainingPage() {
             </div>
           ))}
         </div>
-      </section>
+        )}
+      </section>}
 
       {/* ---- Overrides ---- */}
-      <section>
+      {editingSession === null && <section>
         <div style={sectionHead}>
           <h2 style={sectionTitle}>Einmaltermine & Ausfälle</h2>
-          <button onClick={() => setEditingOverride('new')} style={btnPrimary}>+ Hinzufügen</button>
+          {editingOverride === null && <button onClick={() => setEditingOverride('new')} style={btnPrimary}>+ Hinzufügen</button>}
         </div>
 
-        {editingOverride !== null && (
+        {editingOverride !== null ? (
           <OverrideForm
             override={editingOverride === 'new' ? null : editingOverride}
             onSave={() => { setEditingOverride(null); load() }}
             onCancel={() => setEditingOverride(null)}
           />
-        )}
-
+        ) : (
         <div style={card}>
           {overrides.length === 0 ? <div style={empty}>Keine Einträge</div> : overrides.map((o) => (
             <div key={o.id} style={sharedListRow} className="admin-list-row">
@@ -130,7 +131,8 @@ export default function AdminTrainingPage() {
             </div>
           ))}
         </div>
-      </section>
+        )}
+      </section>}
     </div>
   )
 }
@@ -214,13 +216,19 @@ function SessionForm({ session, spots, onSave, onCancel }: { session: TrainingSe
         />
       </div>
 
-      <LangPair
-        label="Beschreibung (optional)"
-        deValue={descDe} enValue={descEn}
-        onDe={setDescDe} onEn={setDescEn}
-        textarea rows={2}
-        placeholder={{ de: 'Worauf liegt der Fokus heute?', en: "What's the focus today?" }}
-      />
+      <div>
+        <div style={fieldLabel}>Beschreibung (optional)</div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }} className="admin-lang-pair">
+          {[{ val: descDe, set: setDescDe, ph: 'Worauf liegt der Fokus?', tag: 'DE' }, { val: descEn, set: setDescEn, ph: "What's the focus?", tag: 'EN' }].map(({ val, set, ph, tag }) => (
+            <div key={tag} style={{ position: 'relative' }}>
+              <div style={{ position: 'absolute', top: 8, right: 10, zIndex: 10, fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.1em', color: 'var(--fg-mute)', background: 'var(--bg)', padding: '2px 7px', borderRadius: 999, border: '1px solid var(--line-soft)', pointerEvents: 'none' }}>
+                {tag}
+              </div>
+              <RichText value={val} onChange={set} placeholder={ph} minHeight={80} />
+            </div>
+          ))}
+        </div>
+      </div>
 
       <div style={{ display: 'flex', gap: 8, marginTop: 20, paddingTop: 16, borderTop: '1px solid var(--line-soft)' }}>
         <button onClick={onCancel} style={btnGhost}>Abbrechen</button>

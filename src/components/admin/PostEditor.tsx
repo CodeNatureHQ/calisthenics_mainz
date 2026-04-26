@@ -2,11 +2,22 @@
 
 import { useRef, useState } from 'react'
 import { useEditor, useEditorState, EditorContent } from '@tiptap/react'
+import { Extension } from '@tiptap/core'
 import StarterKit from '@tiptap/starter-kit'
 import Link from '@tiptap/extension-link'
 import Underline from '@tiptap/extension-underline'
 import Placeholder from '@tiptap/extension-placeholder'
 import Image from '@tiptap/extension-image'
+
+const TabHandler = Extension.create({
+  name: 'tabHandler',
+  addKeyboardShortcuts() {
+    return {
+      Tab: () => this.editor.commands.sinkListItem('listItem'),
+      'Shift-Tab': () => this.editor.commands.liftListItem('listItem'),
+    }
+  },
+})
 import type { Post } from '@/lib/types'
 import { createClient } from '@/lib/supabase/client'
 import { slugify } from '@/lib/slugify'
@@ -27,7 +38,6 @@ function autoDate(): string {
 export default function PostEditor({ post, onSave, onCancel }: Props) {
   const isNew = !post?.id
   const [id, setId] = useState(post?.id ?? '')
-  const [glyph, setGlyph] = useState(post?.glyph ?? '')
   const [title, setTitle] = useState(post?.title?.de ?? '')
   const [excerpt, setExcerpt] = useState(post?.excerpt?.de ?? '')
   const [published, setPublished] = useState(post?.published ?? true)
@@ -43,6 +53,7 @@ export default function PostEditor({ post, onSave, onCancel }: Props) {
       Link.configure({ openOnClick: false }),
       Image.configure({ inline: false }),
       Placeholder.configure({ placeholder: 'Artikeltext …' }),
+      TabHandler,
     ],
     content: post?.body_html?.de ?? '',
   })
@@ -65,7 +76,7 @@ export default function PostEditor({ post, onSave, onCancel }: Props) {
       const date = post?.date_label?.de ?? autoDate()
       const data = {
         id: slug,
-        glyph: glyph.trim() || null,
+        glyph: null,
         category:   { de: 'Post', en: 'Post' },
         date_label: { de: date, en: date },
         read_time:  { de: readTime, en: readTime },
@@ -105,12 +116,8 @@ export default function PostEditor({ post, onSave, onCancel }: Props) {
       {error && <div style={errorBox}>{error}</div>}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-        {/* Glyph + Status */}
+        {/* Status */}
         <div style={{ display: 'flex', gap: 12, alignItems: 'flex-end', flexWrap: 'wrap' }}>
-          <Field label="Glyph" hint="optional">
-            <input value={glyph} onChange={e => setGlyph(e.target.value)} placeholder="A1"
-              style={{ ...inp, width: 80, fontFamily: 'var(--font-mono)' }} />
-          </Field>
           <Field label="Status">
             <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', height: 42, padding: '0 14px', background: 'var(--bg)', border: '1px solid var(--line)', borderRadius: 8 }}>
               <input type="checkbox" checked={published} onChange={e => setPublished(e.target.checked)}
@@ -151,10 +158,10 @@ export default function PostEditor({ post, onSave, onCancel }: Props) {
               {/* Toolbar-height placeholder so preview aligns with editor */}
               <div style={{
                 padding: '4px 6px',
-                background: 'var(--bg-elev-2)',
-                border: '1px solid var(--border)',
+                background: 'var(--bg-3)',
+                border: '1px solid var(--line-soft)',
                 borderBottom: 'none',
-                borderRadius: 'var(--radius) var(--radius) 0 0',
+                borderRadius: '8px 8px 0 0',
                 display: 'flex', alignItems: 'center', gap: 4,
                 minHeight: 33,
               }}>
@@ -171,7 +178,7 @@ export default function PostEditor({ post, onSave, onCancel }: Props) {
                   minHeight: 200,
                   overflowY: 'auto',
                   cursor: 'default',
-                  borderRadius: '0 0 var(--radius) var(--radius)',
+                  borderRadius: '0 0 8px 8px',
                   borderTop: 'none',
                 }}
               />
@@ -229,29 +236,29 @@ function ToolBar({ editor }: { editor: ReturnType<typeof useEditor> | null }) {
 
   const btn = (onClick: () => void, active: boolean, label: string) => (
     <button key={label} type="button" onMouseDown={e => { e.preventDefault(); onClick() }}
-      style={{ padding: '4px 7px', fontSize: '0.75rem', borderRadius: 4, cursor: 'pointer', fontWeight: active ? 700 : 400, border: '1px solid transparent', color: active ? 'var(--fg)' : 'var(--fg-muted)', background: active ? 'var(--bg-elev)' : 'transparent' }}>
+      style={{ padding: '4px 7px', fontSize: '0.75rem', borderRadius: 4, cursor: 'pointer', fontWeight: active ? 700 : 400, border: '1px solid transparent', color: active ? 'var(--fg)' : 'var(--fg-mute)', background: active ? 'var(--bg-2)' : 'transparent' }}>
       {label}
     </button>
   )
 
   return (
-    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 2, padding: '4px 6px', background: 'var(--bg-elev-2)', border: '1px solid var(--border)', borderBottom: 'none', borderRadius: 'var(--radius) var(--radius) 0 0', alignItems: 'center' }}>
+    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 2, padding: '4px 6px', background: 'var(--bg-3)', border: '1px solid var(--line-soft)', borderBottom: 'none', borderRadius: '8px 8px 0 0', alignItems: 'center' }}>
       {btn(() => editor.chain().focus().toggleBold().run(), state.bold, 'B')}
       {btn(() => editor.chain().focus().toggleItalic().run(), state.italic, 'I')}
       {btn(() => editor.chain().focus().toggleUnderline().run(), state.underline, 'U')}
-      <div style={{ width: 1, height: 16, background: 'var(--border)', margin: '0 3px' }} />
+      <div style={{ width: 1, height: 16, background: 'var(--line-soft)', margin: '0 3px' }} />
       {btn(() => editor.chain().focus().toggleHeading({ level: 1 }).run(), state.h1, 'H1')}
       {btn(() => editor.chain().focus().toggleHeading({ level: 2 }).run(), state.h2, 'H2')}
-      <div style={{ width: 1, height: 16, background: 'var(--border)', margin: '0 3px' }} />
+      <div style={{ width: 1, height: 16, background: 'var(--line-soft)', margin: '0 3px' }} />
       {btn(() => editor.chain().focus().toggleBulletList().run(), state.bulletList, 'UL')}
       {btn(() => editor.chain().focus().toggleOrderedList().run(), state.orderedList, 'OL')}
       {btn(() => editor.chain().focus().toggleBlockquote().run(), state.blockquote, '"')}
-      <div style={{ width: 1, height: 16, background: 'var(--border)', margin: '0 3px' }} />
+      <div style={{ width: 1, height: 16, background: 'var(--line-soft)', margin: '0 3px' }} />
       <button type="button" onMouseDown={e => {
         e.preventDefault()
         if (state.link) editor.chain().focus().unsetLink().run()
         else { const url = window.prompt('URL:', 'https://'); if (url) editor.chain().focus().setLink({ href: url, target: '_blank' }).run() }
-      }} style={{ padding: '4px 7px', fontSize: '0.75rem', borderRadius: 4, cursor: 'pointer', border: '1px solid transparent', color: state.link ? 'var(--fg)' : 'var(--fg-muted)', background: state.link ? 'var(--bg-elev)' : 'transparent', display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+      }} style={{ padding: '4px 7px', fontSize: '0.75rem', borderRadius: 4, cursor: 'pointer', border: '1px solid transparent', color: state.link ? 'var(--fg)' : 'var(--fg-mute)', background: state.link ? 'var(--bg-2)' : 'transparent', display: 'inline-flex', alignItems: 'center', gap: 3 }}>
         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
           <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/>
           <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/>
@@ -259,7 +266,7 @@ function ToolBar({ editor }: { editor: ReturnType<typeof useEditor> | null }) {
         {state.link ? 'Entfernen' : 'Link'}
       </button>
       <button type="button" onMouseDown={e => { e.preventDefault(); fileRef.current?.click() }} disabled={uploading}
-        style={{ padding: '4px 7px', fontSize: '0.75rem', borderRadius: 4, cursor: 'pointer', border: '1px solid transparent', color: 'var(--fg-muted)', background: 'transparent', display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+        style={{ padding: '4px 7px', fontSize: '0.75rem', borderRadius: 4, cursor: 'pointer', border: '1px solid transparent', color: 'var(--fg-mute)', background: 'transparent', display: 'inline-flex', alignItems: 'center', gap: 3 }}>
         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
           <polyline points="21 15 16 10 5 21"/>
