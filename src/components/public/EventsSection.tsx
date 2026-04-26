@@ -21,13 +21,35 @@ const CAT_LABELS: Record<string, Record<string, string>> = {
   social:   { de: 'Social',    en: 'Social' },
 }
 
+const URL_REGEX = /(https?:\/\/[^\s]+)/g
+
+function renderWithLinks(text: string) {
+  const parts = text.split(URL_REGEX)
+  return parts.map((part, i) =>
+    URL_REGEX.test(part) ? (
+      <a
+        key={i}
+        href={part}
+        target="_blank"
+        rel="noopener noreferrer"
+        onClick={(e) => e.stopPropagation()}
+        style={{ color: 'var(--accent-spark)', textDecoration: 'underline', textUnderlineOffset: 3, wordBreak: 'break-all' }}
+      >
+        {part}
+      </a>
+    ) : (
+      part
+    )
+  )
+}
+
 function daysUntil(iso: string): number {
   return Math.ceil((new Date(iso).getTime() - Date.now()) / 86400000)
 }
 
 const copy = {
   de: {
-    label: '02', title: 'Events', upcoming: 'Upcoming', archive: 'Archiv',
+    label: '02', title: 'Events', upcoming: 'Bevorstehend', archive: 'Archiv',
     clock: 'Uhr', soon: 'Bald', days: (n: number) => `in ${n} Tagen`,
     past: 'Vorbei', empty: 'Keine Events.',
     dateLabel: 'Datum', timeLabel: 'Uhrzeit', placeLabel: 'Ort', close: 'Schließen',
@@ -221,7 +243,7 @@ function EventRow({
           {t(ev.title, lang)}
         </h3>
         <p style={{ margin: 0, color: 'var(--fg-dim)', fontSize: 14.5, lineHeight: 1.55, maxWidth: '62ch' }}>
-          {t(ev.description, lang)}
+          {renderWithLinks(t(ev.description, lang))}
         </p>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 18, fontFamily: 'var(--font-mono)', fontSize: 11.5, color: 'var(--fg-dim)', letterSpacing: '0.04em' }}>
           <span>
@@ -413,7 +435,7 @@ function EventDialog({
 
           {/* Description */}
           <p style={{ margin: 0, color: 'var(--fg-dim)', fontSize: 16, lineHeight: 1.7 }}>
-            {t(event.description, lang)}
+            {renderWithLinks(t(event.description, lang))}
           </p>
         </div>
       </div>

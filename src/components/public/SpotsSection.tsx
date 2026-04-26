@@ -15,7 +15,7 @@ const copy = {
     title: 'Spots',
     sub: 'Calisthenics überall in Mainz und Umgebung.',
     mapMeta: 'Interaktive Karte',
-    mapFooter: '3 Spots · Mainz & Mainz-Kastel',
+    mapFooter: '4 Spots · Mainz & Wiesbaden',
     emptyPanel: 'Wähle links einen Spot, um Details zu sehen.',
     adresse: 'Adresse',
     zugang: 'Zugang',
@@ -27,7 +27,7 @@ const copy = {
     title: 'Spots',
     sub: 'Calisthenics all over Mainz and surroundings.',
     mapMeta: 'Interactive map',
-    mapFooter: '3 spots · Mainz & Mainz-Kastel',
+    mapFooter: '4 spots · Mainz & Wiesbaden',
     emptyPanel: 'Select a spot on the map to see details.',
     adresse: 'Address',
     zugang: 'Access',
@@ -329,7 +329,10 @@ function SectionHead({ label, title, sub }: { label: string; title: string; sub?
   return (
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 40, marginBottom: 64, paddingBottom: 20, borderBottom: '1px solid var(--line-soft)', flexWrap: 'wrap' }}>
       <div>
-        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--fg-mute)', letterSpacing: '0.08em', marginBottom: 8 }}>{label}</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+          <div style={{ width: 20, height: 3, background: 'var(--accent-2)', borderRadius: 2, flexShrink: 0 }} />
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--accent-2)', letterSpacing: '0.08em' }}>{label}</div>
+        </div>
         <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(36px, 5.5vw, 72px)', lineHeight: 0.95, letterSpacing: '-0.01em', textTransform: 'uppercase', color: 'var(--fg)', margin: 0 }}>{title}</h2>
       </div>
       {sub && <p style={{ color: 'var(--fg-dim)', maxWidth: 460, fontSize: 16, lineHeight: 1.55, margin: 0 }}>{sub}</p>}

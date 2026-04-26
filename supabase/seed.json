@@ -1,57 +1,5 @@
 {
-  "posts": [
-    {
-      "id": "beginner",
-      "glyph": "A1",
-      "category": { "de": "Guide", "en": "Guide" },
-      "date_label": { "de": "12. März 2026", "en": "March 12, 2026" },
-      "read_time": { "de": "6 Min. Lesezeit", "en": "6 min read" },
-      "title": {
-        "de": "Dein erstes halbes Jahr Calisthenics",
-        "en": "Your first six months of calisthenics"
-      },
-      "excerpt": {
-        "de": "Was du als Einsteiger:in wirklich brauchst — und was du getrost ignorieren kannst.",
-        "en": "What you actually need as a beginner — and what you can safely ignore."
-      },
-      "body_html": {
-        "de": "<p>Die erste Klimmzugstange ist höher, als sie von unten aussieht. Keine Sorge: Wir haben alle da unten angefangen.</p><h4>Die ersten vier Wochen</h4><p>Zwei Mal pro Woche reicht völlig. Fokus: <strong>aktiver Hang</strong>, Stützhaltung, Liegestütz an der Wand.</p>",
-        "en": "<p>The first pull-up bar is higher than it looks from below. Don't worry: we all started down there.</p><h4>First four weeks</h4><p>Twice a week is plenty. Focus: <strong>active hang</strong>, support hold, wall push-ups.</p>"
-      },
-      "published": true,
-      "sort_order": 0
-    },
-    {
-      "id": "battle-koeln",
-      "glyph": "W",
-      "category": { "de": "Wettkampf", "en": "Competition" },
-      "date_label": { "de": "24. November 2025", "en": "November 24, 2025" },
-      "read_time": { "de": "4 Min. Lesezeit", "en": "4 min read" },
-      "title": { "de": "Rhein-Battle Köln: Silber im Freestyle", "en": "Rhein Battle Cologne: silver in freestyle" },
-      "excerpt": { "de": "Vier Mainzer, ein Minivan und ein Podium.", "en": "Four Mainz athletes, one van, one podium." },
-      "body_html": {
-        "de": "<p>Samstag 6 Uhr früh, vier Athleten, ein Minivan. Tobi holt Silber im 1v1-Freestyle.</p>",
-        "en": "<p>Saturday 6am, four athletes, one van. Tobi took silver in the 1v1 freestyle.</p>"
-      },
-      "published": true,
-      "sort_order": 1
-    },
-    {
-      "id": "plan",
-      "glyph": "P",
-      "category": { "de": "Training", "en": "Training" },
-      "date_label": { "de": "3. Februar 2026", "en": "February 3, 2026" },
-      "read_time": { "de": "5 Min. Lesezeit", "en": "5 min read" },
-      "title": { "de": "Unser Fortgeschrittenen-Plan", "en": "Our advanced programme" },
-      "excerpt": { "de": "Wie wir sechs Wochen strukturieren, wenn die Basics sitzen.", "en": "How we structure six weeks once the basics are in." },
-      "body_html": {
-        "de": "<p>Sechs Wochen, drei Einheiten pro Woche. Fokus auf Push-Pull-Symmetrie.</p>",
-        "en": "<p>Six weeks, three sessions a week. Push-pull symmetry focus.</p>"
-      },
-      "published": true,
-      "sort_order": 2
-    }
-  ],
+  "posts": [],
   "events": [
     {
       "id": "jam-rheinufer-2026-05",
@@ -179,6 +127,19 @@
       "access": { "de": "Öffentlich zugänglich", "en": "Publicly accessible" },
       "gear": ["Pull-up", "Dips", "Parallettes"],
       "sort_order": 2
+    },
+    {
+      "id": "goetheplatz",
+      "glyph": "GP",
+      "map_x": 320,
+      "map_y": 300,
+      "label_anchor": "left",
+      "name": { "de": "Goetheplatz Mainz", "en": "Goetheplatz Mainz" },
+      "subtitle": { "de": "Outdoor-Anlage in der Neustadt", "en": "Outdoor park in Neustadt" },
+      "address": "Goetheplatz, 55116 Mainz",
+      "access": { "de": "Öffentlich zugänglich", "en": "Publicly accessible" },
+      "gear": ["Pull-up", "Dips", "Monkey bars"],
+      "sort_order": 3
     }
   ],
   "site_settings": {
@@ -186,9 +147,9 @@
     "hero_sessions": "2 + Open",
     "hero_spot": "JGU Campus",
     "hero_fee": "€ 0 / Monat",
-    "about_members": "120",
-    "about_founded": "2018",
-    "about_spots": "3",
-    "about_sessions": "2"
+    "about_members": "120+",
+    "about_founded": "2013",
+    "about_spots": "4+",
+    "about_sessions": "2+"
   }
 }

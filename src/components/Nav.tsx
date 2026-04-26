@@ -13,6 +13,7 @@ const navItems = (lang: Lang) =>
         { href: "#spots", label: "Spots" },
         { href: "#ueber-uns", label: "Über uns" },
         { href: "#blog", label: "Blog" },
+        { href: "#faq", label: "FAQ" },
         { href: "#mitmachen", label: "Mitmachen" },
       ]
     : [
@@ -21,6 +22,7 @@ const navItems = (lang: Lang) =>
         { href: "#spots", label: "Spots" },
         { href: "#about", label: "About" },
         { href: "#blog", label: "Blog" },
+        { href: "#faq", label: "FAQ" },
         { href: "#join", label: "Join" },
       ];
 
@@ -63,7 +65,7 @@ export default function Nav({ lang }: { lang: Lang }) {
 
       <header
         style={{
-          position: "sticky",
+          position: "fixed",
           top: 0,
           left: 0,
           right: 0,

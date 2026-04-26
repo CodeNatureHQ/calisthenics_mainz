@@ -7,11 +7,11 @@ const copy = {
     label: '04',
     title: 'Über uns',
     p1: 'Calisthenics Mainz ist ein gemeinnütziger Verein. Wir glauben daran, dass Beweglichkeit, Kraft und Kontrolle für jeden erlernbar sind — ohne Gym-Abo, ohne Equipment, ohne Ausreden.',
-    p2: 'Seit 2018 wächst unsere Community rund um den JGU Campus und die Parks am Rhein. Wir sind offen für alle — vom absoluten Anfänger bis zum Wettkampfathleten.',
+    p2: 'Seit 2013 wächst unsere Community rund um den JGU Campus und die Parks am Rhein. Wir sind offen für alle — vom absoluten Anfänger bis zum Wettkampfathleten.',
     statLabels: ['Mitglieder', 'Gegründet', 'Spots', 'Einh. / Woche'],
     values: [
-      { num: '01', title: 'Community first', text: 'Wir helfen uns gegenseitig. Vom Anfänger-Hang bis zur Elbow-Lever-Progression — jemand hat immer den richtigen Tipp.' },
-      { num: '02', title: 'Open für alle', text: 'Kein Fitness-Level, keine Altersgrenze, kein Mitgliedsbeitrag. Komm einfach vorbei.' },
+      { num: '01', title: 'Gemeinschaft zuerst', text: 'Wir helfen uns gegenseitig. Vom Anfänger-Hang bis zur Elbow-Lever-Progression — jemand hat immer den richtigen Tipp.' },
+      { num: '02', title: 'Offen für alle', text: 'Kein Fitness-Level, keine Altersgrenze, kein Mitgliedsbeitrag. Komm einfach vorbei.' },
       { num: '03', title: 'Draußen trainieren', text: 'Unsere Heimat ist die Klimmzugstange im Freien. Wetter ist keine Ausrede.' },
       { num: '04', title: 'Konstant besser', text: 'Jede Einheit zählt. Progressives Training, ehrliches Feedback, keine Abkürzungen.' },
     ],
@@ -20,7 +20,7 @@ const copy = {
     label: '04',
     title: 'About us',
     p1: 'Calisthenics Mainz is a non-profit club. We believe that mobility, strength and control are learnable by anyone — no gym membership, no equipment, no excuses.',
-    p2: 'Since 2018 our community has grown around the JGU Campus and parks along the Rhine. Open to everyone — from absolute beginners to competitive athletes.',
+    p2: 'Since 2013 our community has grown around the JGU Campus and parks along the Rhine. Open to everyone — from absolute beginners to competitive athletes.',
     statLabels: ['Members', 'Founded', 'Spots', 'Sessions / wk'],
     values: [
       { num: '01', title: 'Community first', text: "We help each other. From beginner hangs to elbow lever progressions — someone always has the right tip." },
@@ -145,7 +145,10 @@ function SectionHead({ label, title }: { label: string; title: string }) {
   return (
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 40, marginBottom: 64, paddingBottom: 20, borderBottom: '1px solid var(--line-soft)', flexWrap: 'wrap' }}>
       <div>
-        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--fg-mute)', letterSpacing: '0.08em', marginBottom: 8 }}>{label}</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+          <div style={{ width: 20, height: 3, background: 'var(--accent-2)', borderRadius: 2, flexShrink: 0 }} />
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--accent-2)', letterSpacing: '0.08em' }}>{label}</div>
+        </div>
         <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(36px, 5.5vw, 72px)', lineHeight: 0.95, letterSpacing: '-0.01em', textTransform: 'uppercase', color: 'var(--fg)' }}>{title}</h2>
       </div>
     </div>

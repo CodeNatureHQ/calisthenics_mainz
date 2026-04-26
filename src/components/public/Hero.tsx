@@ -10,9 +10,9 @@ const copy = {
     eyebrow: "Calisthenics Verein Mainz",
     h1a: "Calisthenics.",
     h1b: "Mainz.",
-    ledePre: "Wir trainieren, wettkämpfen und lernen gemeinsam. ",
+    ledePre: "Gemeinsam trainieren, gemeinsam wachsen. ",
     ledeStrong: "Vom ersten Klimmzug bis zur Masters-Stage",
-    ledePost: " — jede:r ist willkommen.",
+    ledePost: " — jeder ist willkommen.",
     cta: "Jetzt mitmachen",
     ctaGhost: "Trainingsplan ansehen",
     metaLabels: [

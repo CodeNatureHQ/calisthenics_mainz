@@ -20,7 +20,7 @@ type FormValues = z.infer<typeof schema>
 
 const copy = {
   de: {
-    label: '06',
+    label: '07',
     title: 'Mitmachen',
     sub: 'Kein Aufnahmetest, kein Minimum-Level — schreib uns und wir sagen dir, wann und wo du einfach vorbeikommen kannst.',
     name: 'Name',
@@ -41,10 +41,10 @@ const copy = {
     success: 'Danke — wir melden uns schnell!',
     error: 'Etwas ist schiefgelaufen. Bitte versuch es nochmal.',
     connectTitle: 'Oder direkt',
-    connectText: 'Kein Bock auf Formulare? Schreib uns auf Instagram oder spring direkt in die WhatsApp-Gruppe.',
+    connectText: 'Kein Bock auf Formulare? Schreib uns einfach auf Instagram.',
   },
   en: {
-    label: '06',
+    label: '07',
     title: 'Join',
     sub: "No entry test, no minimum level — write to us and we'll tell you when and where you can just come by.",
     name: 'Name',
@@ -65,7 +65,7 @@ const copy = {
     success: "Thanks — we'll be in touch soon!",
     error: 'Something went wrong. Please try again.',
     connectTitle: 'Or directly',
-    connectText: "Not into forms? Message us on Instagram or join the WhatsApp group directly.",
+    connectText: "Not into forms? Just message us on Instagram.",
   },
 }
 
@@ -262,63 +262,42 @@ export default function JoinForm({ lang }: Props) {
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 6 }}>
               {[
-                { icon: 'IG', label: 'Instagram', handle: '@calisthenics_mainz', href: 'https://instagram.com/calisthenics_mainz' },
-                { icon: 'WA', label: 'WhatsApp', handle: lang === 'de' ? 'Zur Gruppe →' : 'Join group →', href: '#' },
-                { icon: 'YT', label: 'YouTube', handle: '@calisthenics_mainz', href: 'https://youtube.com/@calisthenics_mainz' },
-              ].map((s) => (
-                <a
-                  key={s.label}
-                  href={s.href}
-                  target={s.href !== '#' ? '_blank' : undefined}
-                  rel="noopener noreferrer"
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    gap: 12,
-                    padding: '16px 18px',
-                    border: '1px solid var(--line-soft)',
-                    borderRadius: 12,
-                    fontFamily: 'var(--font-mono)',
-                    fontSize: 13,
-                    letterSpacing: '0.04em',
-                    color: 'var(--fg)',
-                    textDecoration: 'none',
-                    transition: 'border-color 0.2s, background 0.2s',
-                  }}
-                  onMouseEnter={(e) => {
-                    const el = e.currentTarget as HTMLElement
-                    el.style.borderColor = 'var(--fg)'
-                    el.style.background = 'var(--bg)'
-                  }}
-                  onMouseLeave={(e) => {
-                    const el = e.currentTarget as HTMLElement
-                    el.style.borderColor = 'var(--line-soft)'
-                    el.style.background = 'transparent'
-                  }}
-                >
-                  <div
-                    style={{
-                      width: 32,
-                      height: 32,
-                      borderRadius: 8,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      background: 'var(--bg)',
-                      border: '1px solid var(--line-soft)',
-                      fontFamily: 'var(--font-display)',
-                      fontSize: 11,
-                      color: 'var(--fg)',
-                      flexShrink: 0,
-                    }}
-                  >
-                    {s.icon}
-                  </div>
-                  <span style={{ flex: 1 }}>{s.label}</span>
-                  <span className="social-handle" style={{ color: 'var(--fg-mute)' }}>{s.handle}</span>
-                </a>
-              ))}
+                { icon: 'IG', label: 'Instagram', handle: '@calisthenicsmainz', href: 'https://instagram.com/calisthenicsmainz' },
+              ].map((s) => {
+                const rowStyle: React.CSSProperties = {
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: 12,
+                  padding: '16px 18px',
+                  border: '1px solid var(--line-soft)',
+                  borderRadius: 12,
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: 13,
+                  letterSpacing: '0.04em',
+                  color: s.href ? 'var(--fg)' : 'var(--fg-mute)',
+                  textDecoration: 'none',
+                  cursor: s.href ? 'pointer' : 'default',
+                  transition: 'border-color 0.2s, background 0.2s',
+                }
+                const inner = (
+                  <>
+                    <div style={{ width: 32, height: 32, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)', border: '1px solid var(--line-soft)', fontFamily: 'var(--font-display)', fontSize: 11, color: 'var(--fg)', flexShrink: 0 }}>
+                      {s.icon}
+                    </div>
+                    <span style={{ flex: 1 }}>{s.label}</span>
+                    <span className="social-handle" style={{ color: 'var(--fg-mute)' }}>{s.handle}</span>
+                  </>
+                )
+                return s.href ? (
+                  <a key={s.label} href={s.href} target="_blank" rel="noopener noreferrer" style={rowStyle}
+                    onMouseEnter={(e) => { const el = e.currentTarget as HTMLElement; el.style.borderColor = 'var(--fg)'; el.style.background = 'var(--bg)' }}
+                    onMouseLeave={(e) => { const el = e.currentTarget as HTMLElement; el.style.borderColor = 'var(--line-soft)'; el.style.background = 'transparent' }}
+                  >{inner}</a>
+                ) : (
+                  <div key={s.label} style={rowStyle}>{inner}</div>
+                )
+              })}
             </div>
           </aside>
         </div>
@@ -390,7 +369,10 @@ function SectionHead({ label, title, sub }: { label: string; title: string; sub?
   return (
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 40, marginBottom: 64, paddingBottom: 20, borderBottom: '1px solid var(--line-soft)', flexWrap: 'wrap' }}>
       <div>
-        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--fg-mute)', letterSpacing: '0.08em', marginBottom: 8 }}>{label}</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+          <div style={{ width: 20, height: 3, background: 'var(--accent-2)', borderRadius: 2, flexShrink: 0 }} />
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--accent-2)', letterSpacing: '0.08em' }}>{label}</div>
+        </div>
         <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(36px, 5.5vw, 72px)', lineHeight: 0.95, letterSpacing: '-0.01em', textTransform: 'uppercase', color: 'var(--fg)', margin: 0 }}>{title}</h2>
       </div>
       {sub && <p style={{ color: 'var(--fg-dim)', maxWidth: 460, fontSize: 16, lineHeight: 1.55, margin: 0 }}>{sub}</p>}

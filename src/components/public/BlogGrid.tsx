@@ -7,8 +7,8 @@ import Link from "next/link";
 type Props = { lang: Lang; posts: Post[] };
 
 const copy = {
-  de: { label: "05", title: "Blog" },
-  en: { label: "05", title: "Blog" },
+  de: { label: "05", title: "Blog", empty: "Bald verfügbar — hier erscheinen bald Beiträge zu Training, Events und mehr." },
+  en: { label: "05", title: "Blog", empty: "Coming soon — posts about training, events and more will appear here." },
 };
 
 export default function BlogGrid({ lang, posts }: Props) {
@@ -18,6 +18,12 @@ export default function BlogGrid({ lang, posts }: Props) {
     <section id="blog" className="section">
       <div className="container">
         <SectionHead label={c.label} title={c.title} />
+
+        {posts.length === 0 ? (
+          <p style={{ color: "var(--fg-mute)", fontFamily: "var(--font-mono)", fontSize: 13, letterSpacing: "0.06em" }}>
+            {c.empty}
+          </p>
+        ) : null}
 
         <div
           style={{
@@ -222,16 +228,9 @@ function SectionHead({ label, title }: { label: string; title: string }) {
       }}
     >
       <div>
-        <div
-          style={{
-            fontFamily: "var(--font-mono)",
-            fontSize: 13,
-            color: "var(--fg-mute)",
-            letterSpacing: "0.08em",
-            marginBottom: 8,
-          }}
-        >
-          {label}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+          <div style={{ width: 20, height: 3, background: 'var(--accent-2)', borderRadius: 2, flexShrink: 0 }} />
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--accent-2)', letterSpacing: '0.08em' }}>{label}</div>
         </div>
         <h2
           style={{

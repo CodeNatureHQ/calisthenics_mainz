@@ -9,9 +9,10 @@ import { t } from '@/lib/utils'
 
 // Default lat/lng for known spots (fallback if DB has no lat/lng)
 const FALLBACK_COORDS: Record<string, [number, number]> = {
-  jgu:       [49.9926, 8.2416],
-  volkspark: [49.9878, 8.2900],
-  kastel:    [50.0101, 8.2785],
+  jgu:         [49.9926, 8.2416],
+  volkspark:   [49.9878, 8.2900],
+  kastel:      [50.0101, 8.2785],
+  goetheplatz: [49.9984, 8.2677],
 }
 
 // Center covers all three spots

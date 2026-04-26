@@ -8,6 +8,7 @@ import EventsSection from '@/components/public/EventsSection'
 import SpotsSection from '@/components/public/SpotsSection'
 import AboutSection from '@/components/public/AboutSection'
 import BlogGrid from '@/components/public/BlogGrid'
+import FaqSection from '@/components/public/FaqSection'
 import JoinForm from '@/components/public/JoinForm'
 import Footer from '@/components/public/Footer'
 
@@ -65,13 +66,14 @@ export default async function HomePage({
   return (
     <>
       <Nav lang={lang} />
-      <main>
+      <main style={{ paddingTop: 68 }}>
         <Hero lang={lang} settings={settings} />
         <TrainingSection lang={lang} sessions={sessions ?? []} overrides={overrides ?? []} spots={spots ?? []} events={events ?? []} />
         <EventsSection lang={lang} events={events ?? []} />
         <SpotsSection lang={lang} spots={spots ?? []} />
         <AboutSection lang={lang} settings={settings} />
         <BlogGrid lang={lang} posts={posts ?? []} />
+        <FaqSection lang={lang} />
         <JoinForm lang={lang} />
       </main>
       <Footer lang={lang} />
