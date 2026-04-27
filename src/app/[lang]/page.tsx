@@ -65,8 +65,89 @@ export default async function HomePage({
     supabase.from('faq_items').select('*').eq('visible', true).order('sort_order'),
   ])
 
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://calisthenics-mainz.de'
+  const now = new Date().toISOString()
+
+  const sportsClubJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'SportsClub',
+    name: 'Calisthenics Mainz',
+    url: `${siteUrl}/${lang}`,
+    logo: `${siteUrl}/logo.png`,
+    description:
+      lang === 'de'
+        ? 'Calisthenics-Verein in Mainz — Training, Events und Community.'
+        : 'Calisthenics club in Mainz — training, events and community.',
+    sport: 'Calisthenics',
+    ...(settings?.imprint_street && {
+      address: {
+        '@type': 'PostalAddress',
+        streetAddress: settings.imprint_street,
+        postalCode: settings.imprint_zip ?? undefined,
+        addressLocality: settings.imprint_city ?? 'Mainz',
+        addressCountry: 'DE',
+      },
+    }),
+    ...(settings?.imprint_email && { email: settings.imprint_email }),
+  }
+
+  const faqJsonLd =
+    faqItems && faqItems.length > 0
+      ? {
+          '@context': 'https://schema.org',
+          '@type': 'FAQPage',
+          mainEntity: faqItems.map((item) => ({
+            '@type': 'Question',
+            name: lang === 'de' ? item.question_de : item.question_en,
+            acceptedAnswer: {
+              '@type': 'Answer',
+              text: lang === 'de' ? item.answer_de : item.answer_en,
+            },
+          })),
+        }
+      : null
+
+  const futureEvents = (events ?? []).filter((e) => e.starts_at >= now)
+  const eventsJsonLd =
+    futureEvents.length > 0
+      ? futureEvents.map((e) => ({
+          '@context': 'https://schema.org',
+          '@type': 'Event',
+          name: lang === 'de' ? e.title.de : e.title.en,
+          startDate: e.starts_at,
+          description: lang === 'de' ? e.description?.de : e.description?.en,
+          location: {
+            '@type': 'Place',
+            name: lang === 'de' ? e.place.de : e.place.en,
+            address: {
+              '@type': 'PostalAddress',
+              addressLocality: 'Mainz',
+              addressCountry: 'DE',
+            },
+          },
+          organizer: { '@type': 'Organization', name: 'Calisthenics Mainz', url: `${siteUrl}/${lang}` },
+        }))
+      : null
+
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(sportsClubJsonLd) }}
+      />
+      {faqJsonLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+        />
+      )}
+      {eventsJsonLd && eventsJsonLd.map((ev, i) => (
+        <script
+          key={i}
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(ev) }}
+        />
+      ))}
       <Nav lang={lang} showAusruestung={settings?.show_ausruestung ?? false} />
       <main style={{ paddingTop: 68 }}>
         <Hero lang={lang} settings={settings} />

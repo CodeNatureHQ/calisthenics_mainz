@@ -78,16 +78,25 @@ export default async function BlogPostPage({
 
   if (!post) notFound()
 
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://calisthenics-mainz.de'
+  const postUrl = `${siteUrl}/${lang}/blog/${slug}`
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Article',
     headline: t(post.title, lang),
     description: t(post.excerpt, lang),
-    author: { '@type': 'Organization', name: 'Calisthenics Mainz' },
-    publisher: { '@type': 'Organization', name: 'Calisthenics Mainz' },
+    url: postUrl,
+    mainEntityOfPage: { '@type': 'WebPage', '@id': postUrl },
+    datePublished: post.created_at,
+    dateModified: post.updated_at,
+    author: { '@type': 'Organization', name: 'Calisthenics Mainz', url: siteUrl },
+    publisher: {
+      '@type': 'Organization',
+      name: 'Calisthenics Mainz',
+      url: siteUrl,
+      logo: { '@type': 'ImageObject', url: `${siteUrl}/logo.png` },
+    },
   }
-
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://calisthenics-mainz.de'
 
   return (
     <>
