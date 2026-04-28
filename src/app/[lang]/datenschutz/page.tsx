@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import type { Lang } from '@/lib/types'
+import { createClient } from '@/lib/supabase/server'
 
 export const metadata: Metadata = { title: 'Datenschutz' }
 
@@ -9,13 +10,18 @@ export default async function DatenschutzPage({ params }: { params: Promise<{ la
   const lang = (rawLang === 'en' ? 'en' : 'de') as Lang
   const isDE = lang === 'de'
 
+  const supabase = await createClient()
+  const { data: s } = await supabase.from('site_settings').select('imprint_street,imprint_zip,imprint_city,imprint_email').single()
+
+  const street = s?.imprint_street ?? (isDE ? '[Straße und Hausnummer]' : '[Street and number]')
+  const zip = s?.imprint_zip ?? (isDE ? '55[PLZ]' : '55[ZIP]')
+  const city = s?.imprint_city ?? 'Mainz'
+  const email = s?.imprint_email ?? 'kontakt@calisthenics-mainz.de'
+
   const sections = isDE ? [
     {
       heading: '1. Verantwortlicher',
-      content: `Calisthenics Mainz e.V.
-[Straße und Hausnummer]
-55[PLZ] Mainz
-E-Mail: kontakt@calisthenics-mainz.de`,
+      content: `Calisthenics Mainz e.V.\n${street}\n${zip} ${city}\nE-Mail: ${email}`,
     },
     {
       heading: '2. Hosting',
@@ -62,10 +68,7 @@ Zur Ausübung dieser Rechte wenden Sie sich an: kontakt@calisthenics-mainz.de`,
   ] : [
     {
       heading: '1. Controller',
-      content: `Calisthenics Mainz e.V.
-[Street and number]
-55[ZIP] Mainz, Germany
-Email: kontakt@calisthenics-mainz.de`,
+      content: `Calisthenics Mainz e.V.\n${street}\n${zip} ${city}, Germany\nEmail: ${email}`,
     },
     {
       heading: '2. Hosting',
