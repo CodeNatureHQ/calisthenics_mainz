@@ -2,8 +2,8 @@
 
 import { useState, useMemo, useEffect, useCallback } from 'react'
 import { createPortal } from 'react-dom'
-import type { Lang, TrainingSession, CalendarOverride, Spot, Event } from '@/lib/types'
-import { t, levelLabel, dayLabel, fullDayLabel } from '@/lib/utils'
+import type { Lang, TrainingSession, CalendarOverride, Spot, Event, RecurringEvent } from '@/lib/types'
+import { t, levelLabel, dayLabel, fullDayLabel, nthWeekdayOfMonth } from '@/lib/utils'
 
 type SessionEntry = {
   type: 'fixed' | 'extra'
@@ -17,6 +17,7 @@ type Props = {
   overrides: CalendarOverride[]
   spots: Spot[]
   events: Event[]
+  recurringEvents: RecurringEvent[]
 }
 
 const DAYS = [0, 1, 2, 3, 4, 5, 6]
@@ -56,11 +57,11 @@ const levelColors: Record<string, string> = {
   training: '#a78bfa',
 }
 
-export default function TrainingSection({ lang, sessions, overrides, spots, events }: Props) {
+export default function TrainingSection({ lang, sessions, overrides, spots, events, recurringEvents }: Props) {
   const c = copy[lang]
   const [tab, setTab] = useState<'week' | 'cal'>('week')
   const [calDate, setCalDate] = useState(() => new Date())
-  const [activeEntry, setActiveEntry] = useState<{ session?: TrainingSession; override?: CalendarOverride; dateStr?: string } | null>(null)
+  const [activeEntry, setActiveEntry] = useState<{ session?: TrainingSession; override?: CalendarOverride; recurringEvent?: RecurringEvent; dateStr?: string } | null>(null)
 
   const closeModal = useCallback(() => setActiveEntry(null), [])
 
@@ -122,13 +123,14 @@ export default function TrainingSection({ lang, sessions, overrides, spots, even
         </div>
 
         {tab === 'week' ? (
-          <WeekView lang={lang} sessions={sessions} overrides={overrides} c={c} onSelect={setActiveEntry} />
+          <WeekView lang={lang} sessions={sessions} overrides={overrides} recurringEvents={recurringEvents} c={c} onSelect={setActiveEntry} />
         ) : (
           <CalendarView
             lang={lang}
             sessions={sessions}
             overrides={overrides}
             events={events}
+            recurringEvents={recurringEvents}
             calDate={calDate}
             setCalDate={setCalDate}
             c={c}
@@ -151,7 +153,7 @@ export default function TrainingSection({ lang, sessions, overrides, spots, even
 function TrainingModal({
   entry, lang, spots, onClose, c,
 }: {
-  entry: { session?: TrainingSession; override?: CalendarOverride; dateStr?: string }
+  entry: { session?: TrainingSession; override?: CalendarOverride; recurringEvent?: RecurringEvent; dateStr?: string }
   lang: Lang
   spots: Spot[]
   onClose: () => void
@@ -161,14 +163,16 @@ function TrainingModal({
   useEffect(() => setMounted(true), [])
   if (!mounted) return null
 
+  const re = entry.recurringEvent
   const s = entry.session
   const o = entry.override
-  const place = s?.place ?? o?.place
-  const time = s?.time_label ?? o?.time_label
+  const place = re?.place ?? s?.place ?? o?.place
+  const time = re?.time_label ?? s?.time_label ?? o?.time_label
   const level = s?.level ?? o?.level
-  const description = s?.description ?? o?.description
+  const description = re?.description ?? s?.description ?? o?.description
   const spotId = s?.spot_id ?? o?.spot_id
   const spot = spots.find(sp => sp.id === spotId)
+  const stripeColor = re ? (CAT_COLORS_EVENT[re.category] ?? 'var(--accent-2)') : 'var(--accent-2)'
 
   return createPortal(
     <div
@@ -189,7 +193,7 @@ function TrainingModal({
         }}
       >
         {/* Top stripe */}
-        <div style={{ height: 4, background: 'var(--accent-2)' }} />
+        <div style={{ height: 4, background: stripeColor }} />
 
         {/* Close */}
         <button
@@ -207,8 +211,21 @@ function TrainingModal({
         >×</button>
 
         <div style={{ padding: '28px 32px 32px' }}>
-          {/* Level badge */}
-          {level && (
+          {/* Category badge for recurring events, level badge for sessions */}
+          {re ? (
+            <div style={{
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+              marginBottom: 16,
+              fontFamily: 'var(--font-mono)', fontSize: 10,
+              letterSpacing: '0.1em', textTransform: 'uppercase',
+              padding: '4px 10px', borderRadius: 999,
+              border: `1px solid ${CAT_COLORS_EVENT[re.category] ?? 'var(--line)'}`,
+              background: CAT_COLORS_EVENT[re.category] ?? 'transparent',
+              color: 'var(--accent-ink)',
+            }}>
+              {lang === 'de' ? 'Social' : 'Social'}
+            </div>
+          ) : level && (
             <div style={{
               display: 'inline-flex', alignItems: 'center', gap: 6,
               marginBottom: 16,
@@ -223,9 +240,16 @@ function TrainingModal({
             </div>
           )}
 
+          {/* Title for recurring events */}
+          {re && (
+            <div style={{ fontFamily: 'var(--font-display)', fontSize: 32, letterSpacing: '-0.02em', textTransform: 'uppercase', color: 'var(--fg)', marginBottom: 4 }}>
+              {t(re.title, lang)}
+            </div>
+          )}
+
           {/* Time */}
           {time && (
-            <div style={{ fontFamily: 'var(--font-display)', fontSize: 32, letterSpacing: '-0.02em', textTransform: 'uppercase', color: 'var(--fg)', marginBottom: 8 }}>
+            <div style={{ fontFamily: re ? 'var(--font-mono)' : 'var(--font-display)', fontSize: re ? 18 : 32, letterSpacing: re ? '0.04em' : '-0.02em', textTransform: 'uppercase', color: re ? 'var(--fg-dim)' : 'var(--fg)', marginBottom: 8 }}>
               {time}
             </div>
           )}
@@ -307,14 +331,16 @@ function WeekView({
   lang,
   sessions,
   overrides,
+  recurringEvents,
   c,
   onSelect,
 }: {
   lang: Lang
   sessions: TrainingSession[]
   overrides: CalendarOverride[]
+  recurringEvents: RecurringEvent[]
   c: (typeof copy)['de']
-  onSelect: (entry: { session?: TrainingSession; override?: CalendarOverride; dateStr?: string }) => void
+  onSelect: (entry: { session?: TrainingSession; override?: CalendarOverride; recurringEvent?: RecurringEvent; dateStr?: string }) => void
 }) {
   const today = new Date().toISOString().slice(0, 10)
 
@@ -343,7 +369,7 @@ function WeekView({
       @media (max-width: 640px) { .week-desktop { display: none !important; } }
     `}</style>
     <div className="week-mobile">
-      <MobileWeekView lang={lang} byDay={byDay} overridesByDate={overridesByDate} today={today} c={c} onSelect={onSelect} />
+      <MobileWeekView lang={lang} byDay={byDay} overridesByDate={overridesByDate} recurringEvents={recurringEvents} today={today} c={c} onSelect={onSelect} />
     </div>
     <div className="week-desktop" style={{ overflowX: 'auto', borderRadius: 18 }}>
     <div
@@ -365,10 +391,12 @@ function WeekView({
         const hasCancelOverride = dayOverrides.some((o) => o.type === 'cancel')
         const extraSessions = dayOverrides.filter((o) => o.type === 'training')
         const fixedSessions = hasCancelOverride ? [] : (byDay[dow] ?? [])
-        const hasAnything = fixedSessions.length > 0 || extraSessions.length > 0 || hasCancelOverride
+        const d = new Date(dateStr + 'T12:00:00')
+        const nth = nthWeekdayOfMonth(d)
+        const dayRecurring = recurringEvents.filter(re => re.day_of_week === dow && re.week_of_month === nth)
+        const hasAnything = fixedSessions.length > 0 || extraSessions.length > 0 || hasCancelOverride || dayRecurring.length > 0
 
         // Human-readable date for the column header
-        const d = new Date(dateStr + 'T12:00:00')
         const dateNum = d.getDate()
         const monthShort = d.toLocaleDateString(lang === 'de' ? 'de-DE' : 'en-GB', { month: 'short' })
 
@@ -470,6 +498,29 @@ function WeekView({
                 </div>
               ))}
 
+              {/* Recurring events (e.g. Stammtisch) */}
+              {dayRecurring.map((re) => (
+                <div key={re.id} onClick={() => onSelect({ recurringEvent: re, dateStr })} style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 4,
+                  background: 'transparent',
+                  border: '1px solid var(--line-soft)',
+                  borderLeft: `3px solid ${CAT_COLORS_EVENT[re.category] ?? 'var(--fg-dim)'}`,
+                  borderRadius: 8,
+                  padding: '8px 10px',
+                  cursor: 'pointer',
+                }}>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, fontWeight: 600, color: 'var(--fg-mute)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                    {t(re.title, lang)}
+                  </div>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--fg)', fontWeight: 500 }}>
+                    {re.time_label}
+                  </div>
+                  <div style={{ fontSize: 11, color: 'var(--fg-dim)' }}>{t(re.place, lang)}</div>
+                </div>
+              ))}
+
               {!hasAnything && (
                 <div style={{ fontSize: 12, color: 'var(--fg-mute)' }}>{c.noTraining}</div>
               )}
@@ -484,14 +535,15 @@ function WeekView({
 }
 
 function MobileWeekView({
-  lang, byDay, overridesByDate, today, c, onSelect,
+  lang, byDay, overridesByDate, recurringEvents, today, c, onSelect,
 }: {
   lang: Lang
   byDay: Record<number, TrainingSession[]>
   overridesByDate: Record<string, CalendarOverride[]>
+  recurringEvents: RecurringEvent[]
   today: string
   c: (typeof copy)['de']
-  onSelect: (entry: { session?: TrainingSession; override?: CalendarOverride; dateStr?: string }) => void
+  onSelect: (entry: { session?: TrainingSession; override?: CalendarOverride; recurringEvent?: RecurringEvent; dateStr?: string }) => void
 }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -502,9 +554,10 @@ function MobileWeekView({
         const hasCancelOverride = dayOverrides.some((o) => o.type === 'cancel')
         const extraSessions = dayOverrides.filter((o) => o.type === 'training')
         const fixedSessions = hasCancelOverride ? [] : (byDay[dow] ?? [])
-        const hasAnything = fixedSessions.length > 0 || extraSessions.length > 0 || hasCancelOverride
-
         const d = new Date(dateStr + 'T12:00:00')
+        const nth = nthWeekdayOfMonth(d)
+        const dayRecurring = recurringEvents.filter(re => re.day_of_week === dow && re.week_of_month === nth)
+        const hasAnything = fixedSessions.length > 0 || extraSessions.length > 0 || hasCancelOverride || dayRecurring.length > 0
         const dateNum = d.getDate()
         const monthShort = d.toLocaleDateString(lang === 'de' ? 'de-DE' : 'en-GB', { month: 'short' })
 
@@ -591,6 +644,18 @@ function MobileWeekView({
                     {o.note && <div style={{ fontSize: 11, color: 'var(--fg-dim)', fontStyle: 'italic' }}>{t(o.note, lang)}</div>}
                   </div>
                 ))}
+                {dayRecurring.map((re) => (
+                  <div key={re.id} onClick={() => onSelect({ recurringEvent: re, dateStr })} style={{
+                    display: 'flex', flexDirection: 'column', gap: 4,
+                    background: 'transparent', border: '1px solid var(--line-soft)',
+                    borderLeft: `3px solid ${CAT_COLORS_EVENT[re.category] ?? 'var(--fg-dim)'}`,
+                    borderRadius: 8, padding: '8px 10px', cursor: 'pointer',
+                  }}>
+                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, fontWeight: 600, color: 'var(--fg-mute)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{t(re.title, lang)}</div>
+                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--fg)', fontWeight: 500 }}>{re.time_label}</div>
+                    <div style={{ fontSize: 11, color: 'var(--fg-dim)' }}>{t(re.place, lang)}</div>
+                  </div>
+                ))}
               </div>
             )}
           </div>
@@ -663,6 +728,7 @@ function CalendarView({
   sessions,
   overrides,
   events,
+  recurringEvents,
   calDate,
   setCalDate,
   c,
@@ -672,10 +738,11 @@ function CalendarView({
   sessions: TrainingSession[]
   overrides: CalendarOverride[]
   events: Event[]
+  recurringEvents: RecurringEvent[]
   calDate: Date
   setCalDate: (d: Date) => void
   c: (typeof copy)['de']
-  onSelect: (entry: { session?: TrainingSession; override?: CalendarOverride; dateStr?: string }) => void
+  onSelect: (entry: { session?: TrainingSession; override?: CalendarOverride; recurringEvent?: RecurringEvent; dateStr?: string }) => void
 }) {
   const year = calDate.getFullYear()
   const month = calDate.getMonth()
@@ -732,6 +799,19 @@ function CalendarView({
     const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
     cells.push({ day: d, dateStr, dow })
   }
+
+  // Build recurring events lookup by date for the visible month
+  const recurringEventsByDate = useMemo(() => {
+    const map: Record<string, RecurringEvent[]> = {}
+    for (const cell of cells) {
+      if (!cell) continue
+      const d = new Date(cell.dateStr + 'T12:00:00')
+      const nth = nthWeekdayOfMonth(d)
+      const matching = recurringEvents.filter(re => re.day_of_week === cell.dow && re.week_of_month === nth)
+      if (matching.length) map[cell.dateStr] = matching
+    }
+    return map
+  }, [cells, recurringEvents])
 
   const dayHeaders = lang === 'de'
     ? ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So']
@@ -840,6 +920,7 @@ function CalendarView({
             const extraSessions = dayOverrides.filter((o) => o.type === 'training')
             const fixedSessions = hasCancelOverride ? [] : (sessionsByDow[dow] ?? [])
             const dayEvents = eventsByDate[dateStr] ?? []
+            const dayRecurring = recurringEventsByDate[dateStr] ?? []
 
             return (
               <div
@@ -971,6 +1052,43 @@ function CalendarView({
                     {t(ev.title, lang)}
                   </a>
                 ))}
+
+                {/* Recurring events (e.g. Stammtisch) */}
+                {dayRecurring.map((re) => (
+                  <div
+                    key={re.id}
+                    onClick={(e) => { e.stopPropagation(); onSelect({ recurringEvent: re, dateStr }) }}
+                    style={{
+                      display: 'block',
+                      fontSize: '0.625rem',
+                      fontWeight: 600,
+                      color: 'var(--fg)',
+                      background: 'transparent',
+                      borderLeft: `2px solid ${CAT_COLORS_EVENT[re.category] ?? 'var(--cat-event)'}`,
+                      borderRadius: '0 3px 3px 0',
+                      padding: '2px 4px',
+                      marginBottom: 2,
+                      cursor: 'pointer',
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      transition: 'background 0.15s, color 0.15s',
+                    }}
+                    title={t(re.title, lang)}
+                    onMouseEnter={(e) => {
+                      const el = e.currentTarget as HTMLElement
+                      el.style.background = 'var(--fg)'
+                      el.style.color = 'var(--accent-ink)'
+                    }}
+                    onMouseLeave={(e) => {
+                      const el = e.currentTarget as HTMLElement
+                      el.style.background = 'transparent'
+                      el.style.color = 'var(--fg)'
+                    }}
+                  >
+                    {t(re.title, lang)}
+                  </div>
+                ))}
               </div>
             )
           })}
@@ -984,6 +1102,7 @@ function CalendarView({
         sessions={sessions}
         overrides={overrides}
         events={events}
+        recurringEvents={recurringEvents}
         calDate={calDate}
         setCalDate={setCalDate}
         c={c}
@@ -996,16 +1115,17 @@ function CalendarView({
 }
 
 function MobileCalendarView({
-  lang, sessions, overrides, events, calDate, setCalDate, c, onSelect, todayStr,
+  lang, sessions, overrides, events, recurringEvents, calDate, setCalDate, c, onSelect, todayStr,
 }: {
   lang: Lang
   sessions: TrainingSession[]
   overrides: CalendarOverride[]
   events: Event[]
+  recurringEvents: RecurringEvent[]
   calDate: Date
   setCalDate: (d: Date) => void
   c: (typeof copy)['de']
-  onSelect: (entry: { session?: TrainingSession; override?: CalendarOverride; dateStr?: string }) => void
+  onSelect: (entry: { session?: TrainingSession; override?: CalendarOverride; recurringEvent?: RecurringEvent; dateStr?: string }) => void
   todayStr: string
 }) {
   const year = calDate.getFullYear()
@@ -1052,6 +1172,18 @@ function MobileCalendarView({
     cells.push({ day: d, dateStr, dow })
   }
 
+  const recurringEventsByDate = useMemo(() => {
+    const map: Record<string, RecurringEvent[]> = {}
+    for (const cell of cells) {
+      if (!cell) continue
+      const d = new Date(cell.dateStr + 'T12:00:00')
+      const nth = nthWeekdayOfMonth(d)
+      const matching = recurringEvents.filter(re => re.day_of_week === cell.dow && re.week_of_month === nth)
+      if (matching.length) map[cell.dateStr] = matching
+    }
+    return map
+  }, [cells, recurringEvents])
+
   const dayHeaders = lang === 'de'
     ? ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So']
     : ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su']
@@ -1064,7 +1196,8 @@ function MobileCalendarView({
   const selDow = (new Date(selectedDate + 'T12:00:00').getDay() + 6) % 7
   const selFixed = selHasCancel ? [] : (sessionsByDow[selDow] ?? [])
   const selEvents = eventsByDate[selectedDate] ?? []
-  const hasAnything = selFixed.length > 0 || selExtra.length > 0 || selEvents.length > 0 || selHasCancel
+  const selRecurring = recurringEventsByDate[selectedDate] ?? []
+  const hasAnything = selFixed.length > 0 || selExtra.length > 0 || selEvents.length > 0 || selRecurring.length > 0 || selHasCancel
 
   const selDateLabel = new Date(selectedDate + 'T12:00:00').toLocaleDateString(
     lang === 'de' ? 'de-DE' : 'en-GB',
@@ -1101,15 +1234,17 @@ function MobileCalendarView({
             const hasCancel = dayOvr.some(o => o.type === 'cancel')
             const hasSessions = hasCancel ? false : (sessionsByDow[dow] ?? []).length > 0 || dayOvr.some(o => o.type === 'training')
             const dayEvs = eventsByDate[dateStr] ?? []
-            const hasContent = hasCancel || hasSessions || dayEvs.length > 0
+            const dayRecurring = recurringEventsByDate[dateStr] ?? []
+            const hasContent = hasCancel || hasSessions || dayEvs.length > 0 || dayRecurring.length > 0
+            const allEvs = [...dayEvs, ...dayRecurring]
             const primaryColor = hasCancel
               ? 'var(--danger)'
               : hasSessions
               ? 'var(--accent-2)'
-              : dayEvs.length > 0
-              ? (CAT_COLORS_EVENT[dayEvs[0].category] ?? 'var(--fg-dim)')
+              : allEvs.length > 0
+              ? (CAT_COLORS_EVENT[allEvs[0].category] ?? 'var(--fg-dim)')
               : null
-            const eventDots = dayEvs.slice(0, 2).map(ev => CAT_COLORS_EVENT[ev.category] ?? 'var(--fg-dim)')
+            const eventDots = allEvs.slice(0, 2).map(ev => CAT_COLORS_EVENT[ev.category] ?? 'var(--fg-dim)')
 
             return (
               <div
@@ -1207,6 +1342,16 @@ function MobileCalendarView({
               <div style={{ fontSize: 14, color: 'var(--fg)', fontWeight: 500 }}>{t(ev.title, lang)}</div>
             </div>
           </a>
+        ))}
+        {selRecurring.map(re => (
+          <div key={re.id} onClick={() => onSelect({ recurringEvent: re, dateStr: selectedDate })}
+            style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', background: 'var(--bg-2)', border: '1px solid var(--line-soft)', borderLeft: `3px solid ${CAT_COLORS_EVENT[re.category] ?? 'var(--fg-dim)'}`, borderRadius: 10, marginBottom: 8, cursor: 'pointer' }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--fg)', fontWeight: 600 }}>{t(re.title, lang)}</div>
+              <div style={{ fontSize: 12, color: 'var(--fg-dim)', marginTop: 2 }}>{re.time_label} · {t(re.place, lang)}</div>
+            </div>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--fg-mute)" strokeWidth="2" style={{ flexShrink: 0 }}><path d="M9 18l6-6-6-6"/></svg>
+          </div>
         ))}
       </div>
     </div>

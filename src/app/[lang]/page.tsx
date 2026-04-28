@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import type { Lang } from '@/lib/types'
+import type { Lang, RecurringEvent } from '@/lib/types'
 import { createClient } from '@/lib/supabase/server'
 import Nav from '@/components/Nav'
 import Hero from '@/components/public/Hero'
@@ -55,6 +55,7 @@ export default async function HomePage({
     { data: spots },
     { data: settings },
     { data: faqItems },
+    { data: recurringEventsRaw },
   ] = await Promise.all([
     supabase.from('posts').select('*').eq('published', true).order('sort_order'),
     supabase.from('events').select('*').order('starts_at', { ascending: false }),
@@ -63,7 +64,9 @@ export default async function HomePage({
     supabase.from('spots').select('*').order('sort_order'),
     supabase.from('site_settings').select('*').single(),
     supabase.from('faq_items').select('*').eq('visible', true).order('sort_order'),
+    supabase.from('recurring_events').select('*').order('sort_order'),
   ])
+  const recurringEvents: RecurringEvent[] = recurringEventsRaw ?? []
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://calisthenics-mainz.de'
   const now = new Date().toISOString()
@@ -151,7 +154,7 @@ export default async function HomePage({
       <Nav lang={lang} showAusruestung={settings?.show_ausruestung ?? false} />
       <main style={{ paddingTop: 68 }}>
         <Hero lang={lang} settings={settings} />
-        <TrainingSection lang={lang} sessions={sessions ?? []} overrides={overrides ?? []} spots={spots ?? []} events={events ?? []} />
+        <TrainingSection lang={lang} sessions={sessions ?? []} overrides={overrides ?? []} spots={spots ?? []} events={events ?? []} recurringEvents={recurringEvents} />
         <EventsSection lang={lang} events={events ?? []} />
         <SpotsSection lang={lang} spots={spots ?? []} />
         <AboutSection lang={lang} settings={settings} />

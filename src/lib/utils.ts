@@ -68,3 +68,8 @@ export function formatTime(iso: string): string {
 export function isFuture(iso: string): boolean {
   return new Date(iso) > new Date()
 }
+
+/** Returns 1–5: which nth occurrence of this weekday it is within its month. */
+export function nthWeekdayOfMonth(date: Date): number {
+  return Math.ceil(date.getDate() / 7)
+}

@@ -1,9 +1,9 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import type { Event, EventCategory } from '@/lib/types'
+import type { Event, EventCategory, RecurringEvent } from '@/lib/types'
 import { createClient } from '@/lib/supabase/client'
-import { formatDate } from '@/lib/utils'
+import { formatDate, dayLabel } from '@/lib/utils'
 import { pageHead, crumbStyle, h1Style, card, listRow, empty, inp, fieldLabel, errorBox, btnPrimary, btnGhost, btnDanger, metaItem, chipStyle } from '../shared'
 import dynamic from 'next/dynamic'
 const RichText = dynamic(() => import('@/components/admin/RichText'), { ssr: false })
@@ -24,6 +24,8 @@ const CAT_COLORS: Record<string, { color: string; border: string }> = {
 
 const CAT_LABELS: Record<string, string> = { comp: 'Wettkampf', jam: 'Jam', workshop: 'Workshop', social: 'Social' }
 
+const WEEK_LABELS: Record<number, string> = { 1: '1. (1.–7.)', 2: '2. (8.–14.)', 3: '3. (15.–21.)', 4: '4. (22.–28.)', 5: '5. (29.–31.)' }
+
 type FormState = {
   id: string; category: EventCategory; starts_at: string
   place_de: string; place_en: string
@@ -31,10 +33,20 @@ type FormState = {
   desc_de: string; desc_en: string
 }
 
+type RecurringFormState = {
+  id: string; category: EventCategory
+  day_of_week: number; week_of_month: number
+  time_label: string
+  place_de: string; place_en: string
+  title_de: string; title_en: string
+  desc_de: string; desc_en: string
+  sort_order: number
+}
+
 const emptyForm = (): FormState => ({ id: '', category: 'jam', starts_at: '', place_de: '', place_en: '', title_de: '', title_en: '', desc_de: '', desc_en: '' })
+const emptyRecurringForm = (): RecurringFormState => ({ id: '', category: 'social', day_of_week: 0, week_of_month: 1, time_label: '', place_de: '', place_en: '', title_de: '', title_en: '', desc_de: '', desc_en: '', sort_order: 0 })
 
 function toLocalDatetimeInput(iso: string): string {
-  // Convert UTC ISO string to local datetime-local value (YYYY-MM-DDTHH:MM)
   const d = new Date(iso)
   const pad = (n: number) => String(n).padStart(2, '0')
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
@@ -44,6 +56,10 @@ function eventToForm(e: Event): FormState {
   return { id: e.id, category: e.category, starts_at: toLocalDatetimeInput(e.starts_at), place_de: e.place.de, place_en: e.place.en, title_de: e.title.de, title_en: e.title.en, desc_de: e.description.de, desc_en: e.description.en }
 }
 
+function recurringToForm(re: RecurringEvent): RecurringFormState {
+  return { id: re.id, category: re.category, day_of_week: re.day_of_week, week_of_month: re.week_of_month, time_label: re.time_label, place_de: re.place.de, place_en: re.place.en, title_de: re.title.de, title_en: re.title.en, desc_de: re.description.de, desc_en: re.description.en, sort_order: re.sort_order }
+}
+
 export default function AdminEventsPage() {
   const [events, setEvents] = useState<Event[]>([])
   const [form, setForm] = useState<FormState | null>(null)
@@ -51,15 +67,29 @@ export default function AdminEventsPage() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
+  const [recurringEvents, setRecurringEvents] = useState<RecurringEvent[]>([])
+  const [recurringForm, setRecurringForm] = useState<RecurringFormState | null>(null)
+  const [recurringIsNew, setRecurringIsNew] = useState(false)
+  const [recurringSaving, setRecurringSaving] = useState(false)
+  const [recurringError, setRecurringError] = useState('')
+
   async function load() {
     const supabase = createClient()
     const { data } = await supabase.from('events').select('*').order('starts_at', { ascending: false })
     setEvents(data ?? [])
   }
 
-  useEffect(() => { load() }, [])
+  async function loadRecurring() {
+    const supabase = createClient()
+    const { data } = await supabase.from('recurring_events').select('*').order('sort_order')
+    setRecurringEvents(data ?? [])
+  }
+
+  useEffect(() => { load(); loadRecurring() }, [])
 
   const f = (key: keyof FormState, value: string) => setForm((p) => p ? { ...p, [key]: value } : p)
+  const rf = <K extends keyof RecurringFormState>(key: K, value: RecurringFormState[K]) =>
+    setRecurringForm((p) => p ? { ...p, [key]: value } : p)
 
   async function save() {
     if (!form) return
@@ -69,7 +99,6 @@ export default function AdminEventsPage() {
     setSaving(true); setError('')
     try {
       const supabase = createClient()
-      // datetime-local has no timezone — parse as local time and convert to UTC ISO string
       const starts_at = form.starts_at ? new Date(form.starts_at).toISOString() : form.starts_at
       const data = { id: form.id, category: form.category, starts_at, place: { de: form.place_de, en: form.place_en }, title: { de: form.title_de, en: form.title_en }, description: { de: form.desc_de, en: form.desc_en } }
       const { error } = isNew ? await supabase.from('events').insert(data) : await supabase.from('events').update(data).eq('id', form.id)
@@ -85,6 +114,37 @@ export default function AdminEventsPage() {
     load()
   }
 
+  async function saveRecurring() {
+    if (!recurringForm) return
+    if (!recurringForm.title_de.trim()) { setRecurringError('"Titel (DE)" ist ein Pflichtfeld.'); return }
+    setRecurringSaving(true); setRecurringError('')
+    try {
+      const supabase = createClient()
+      const data = {
+        category: recurringForm.category,
+        day_of_week: recurringForm.day_of_week,
+        week_of_month: recurringForm.week_of_month,
+        time_label: recurringForm.time_label,
+        place: { de: recurringForm.place_de, en: recurringForm.place_en },
+        title: { de: recurringForm.title_de, en: recurringForm.title_en },
+        description: { de: recurringForm.desc_de, en: recurringForm.desc_en },
+        sort_order: recurringForm.sort_order,
+      }
+      const { error } = recurringIsNew
+        ? await supabase.from('recurring_events').insert(data)
+        : await supabase.from('recurring_events').update(data).eq('id', recurringForm.id)
+      if (error) throw error
+      setRecurringForm(null); loadRecurring()
+    } catch (e: unknown) { setRecurringError(e instanceof Error ? e.message : 'Fehler') }
+    finally { setRecurringSaving(false) }
+  }
+
+  async function delRecurring(id: string) {
+    if (!confirm('Löschen?')) return
+    await createClient().from('recurring_events').delete().eq('id', id)
+    loadRecurring()
+  }
+
   return (
     <div>
       <div style={pageHead}>
@@ -92,7 +152,9 @@ export default function AdminEventsPage() {
           <span style={crumbStyle}>02 / Content</span>
           <h1 style={h1Style}>Events</h1>
         </div>
-        {!form && <button onClick={() => { setForm(emptyForm()); setIsNew(true) }} style={btnPrimary}>+ Neues Event</button>}
+        {!form && !recurringForm && (
+          <button onClick={() => { setForm(emptyForm()); setIsNew(true) }} style={btnPrimary}>+ Neues Event</button>
+        )}
       </div>
 
       {form && (
@@ -169,6 +231,87 @@ export default function AdminEventsPage() {
           )
         })}
       </div>}
+
+      {/* Recurring Events (Stammtisch etc.) */}
+      <div style={{ marginTop: 40 }}>
+        <div style={{ ...pageHead, marginBottom: 16 }}>
+          <div>
+            <span style={crumbStyle}>Wiederkehrend</span>
+            <h2 style={{ ...h1Style, fontSize: 20, marginTop: 4 }}>Wiederkehrende Events</h2>
+          </div>
+          {!recurringForm && !form && (
+            <button onClick={() => { setRecurringForm(emptyRecurringForm()); setRecurringIsNew(true) }} style={btnPrimary}>
+              + Neu
+            </button>
+          )}
+        </div>
+
+        {recurringForm && (
+          <div style={{ ...card, marginBottom: 20, padding: 24 }}>
+            <h3 style={cardTitle}>{recurringIsNew ? 'Neues wiederkehrendes Event' : 'Bearbeiten'}</h3>
+            {recurringError && <div style={errorBox}>{recurringError}</div>}
+            <div style={{ display: 'grid', gap: 18, marginTop: 16 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 12, alignItems: 'end' }}>
+                <Field label="Kategorie">
+                  <select value={recurringForm.category} onChange={(e) => rf('category', e.target.value as EventCategory)} style={inp}>
+                    {CATEGORIES.map((c) => <option key={c} value={c}>{CAT_LABELS[c]}</option>)}
+                  </select>
+                </Field>
+                <Field label="Wochentag">
+                  <select value={recurringForm.day_of_week} onChange={(e) => rf('day_of_week', Number(e.target.value))} style={inp}>
+                    {[0,1,2,3,4,5,6].map(d => <option key={d} value={d}>{dayLabel(d, 'de')} ({['Mo','Di','Mi','Do','Fr','Sa','So'][d]})</option>)}
+                  </select>
+                </Field>
+                <Field label="Woche im Monat">
+                  <select value={recurringForm.week_of_month} onChange={(e) => rf('week_of_month', Number(e.target.value))} style={inp}>
+                    {[1,2,3,4,5].map(w => <option key={w} value={w}>{WEEK_LABELS[w]}</option>)}
+                  </select>
+                </Field>
+                <Field label="Uhrzeit">
+                  <input type="text" value={recurringForm.time_label} onChange={(e) => rf('time_label', e.target.value)} placeholder="nach dem Training" style={inp} />
+                </Field>
+                <Field label="Reihenfolge">
+                  <input type="number" value={recurringForm.sort_order} onChange={(e) => rf('sort_order', Number(e.target.value))} style={inp} />
+                </Field>
+              </div>
+              <LangPair label="Titel" deValue={recurringForm.title_de} enValue={recurringForm.title_en} onDe={(v) => rf('title_de', v)} onEn={(v) => rf('title_en', v)} />
+              <LangPair label="Ort" deValue={recurringForm.place_de} enValue={recurringForm.place_en} onDe={(v) => rf('place_de', v)} onEn={(v) => rf('place_en', v)} />
+              <LangPair label="Beschreibung" deValue={recurringForm.desc_de} enValue={recurringForm.desc_en} onDe={(v) => rf('desc_de', v)} onEn={(v) => rf('desc_en', v)} textarea />
+            </div>
+            <div style={{ display: 'flex', gap: 10, marginTop: 20 }}>
+              <button onClick={() => setRecurringForm(null)} style={btnGhost}>Abbrechen</button>
+              <button onClick={saveRecurring} disabled={recurringSaving} style={btnPrimary}>{recurringSaving ? '…' : 'Speichern'}</button>
+            </div>
+          </div>
+        )}
+
+        <div style={card}>
+          {recurringEvents.length === 0 ? (
+            <div style={empty}>Keine wiederkehrenden Events</div>
+          ) : recurringEvents.map((re) => {
+            const cat = CAT_COLORS[re.category]
+            return (
+              <div key={re.id} style={listRow} className="admin-list-row">
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                    <span style={{ fontWeight: 500, color: 'var(--fg)', fontSize: 14 }}>{re.title.de}</span>
+                  </div>
+                  <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+                    <span style={{ ...chipStyle, color: cat.color, borderColor: cat.border }}>{CAT_LABELS[re.category]}</span>
+                    <span style={metaItem}>{['Mo','Di','Mi','Do','Fr','Sa','So'][re.day_of_week]} · Woche {re.week_of_month}</span>
+                    <span style={metaItem}>{re.time_label}</span>
+                    <span style={metaItem}>{re.place.de}</span>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: 6 }} className="admin-list-row-actions">
+                  <button onClick={() => { setRecurringForm(recurringToForm(re)); setRecurringIsNew(false) }} style={btnGhost}>Bearbeiten</button>
+                  <button onClick={() => delRecurring(re.id)} style={btnDanger}>Löschen</button>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      </div>
     </div>
   )
 }

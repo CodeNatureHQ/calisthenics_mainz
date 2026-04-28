@@ -53,6 +53,20 @@ export type TrainingSession = {
   updated_at: string
 }
 
+export type RecurringEvent = {
+  id: string
+  category: EventCategory
+  day_of_week: number
+  week_of_month: number
+  time_label: string
+  place: L10n
+  title: L10n
+  description: L10n
+  sort_order: number
+  created_at: string
+  updated_at: string
+}
+
 export type OverrideType = 'training' | 'cancel'
 
 export type CalendarOverride = {
