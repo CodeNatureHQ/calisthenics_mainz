@@ -224,7 +224,7 @@ function EventRow({
         <div
           className="prose-cm"
           dangerouslySetInnerHTML={{ __html: t(ev.description, lang) }}
-          style={{ margin: 0, fontSize: 14.5, lineHeight: 1.55, maxWidth: '62ch' }}
+          style={{ margin: 0, fontSize: 14.5, lineHeight: 1.55, maxWidth: '62ch', display: '-webkit-box', WebkitLineClamp: 4, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}
         />
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 18, fontFamily: 'var(--font-mono)', fontSize: 11.5, color: 'var(--fg-dim)', letterSpacing: '0.04em' }}>
           <span>
