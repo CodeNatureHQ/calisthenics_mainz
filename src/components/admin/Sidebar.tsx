@@ -12,6 +12,7 @@ const navItems = [
   { href: '/admin/events',      label: 'Events',       icon: 'E' },
   { href: '/admin/training',    label: 'Training',     icon: 'T' },
   { href: '/admin/spots',       label: 'Spots',        icon: 'SP' },
+  { href: '/admin/team',        label: 'Team',         icon: 'TM' },
   { href: '/admin/faq',         label: 'FAQ',          icon: 'F' },
   { href: '/admin/ausruestung', label: 'Ausrüstung',   icon: 'A' },
   { href: '/admin/settings',    label: 'Settings',     icon: 'S' },
