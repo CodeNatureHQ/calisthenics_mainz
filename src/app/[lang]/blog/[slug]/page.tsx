@@ -109,7 +109,7 @@ export default async function BlogPostPage({
       <header
         style={{
           position: 'sticky',
-          top: 0,
+          top: 'var(--banner-h, 0px)',
           zIndex: 100,
           background: 'rgba(10,10,11,0.9)',
           backdropFilter: 'blur(12px)',

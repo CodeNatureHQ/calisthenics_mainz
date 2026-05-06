@@ -1,6 +1,10 @@
 import type { Metadata } from 'next'
 import type { Lang } from '@/lib/types'
 import { LangProvider } from '@/lib/i18n'
+import { createClient } from '@/lib/supabase/server'
+import AnnouncementBanner from '@/components/public/AnnouncementBanner'
+
+export const revalidate = 60
 
 export async function generateStaticParams() {
   return [{ lang: 'de' }, { lang: 'en' }]
@@ -34,10 +38,31 @@ export default async function LangLayout({
   const { lang } = await params
   const safeLang = (lang === 'en' ? 'en' : 'de') as Lang
 
+  const supabase = await createClient()
+  const { data: settings } = await supabase.from('site_settings').select('*').single()
+
+  const today = new Date().toISOString().slice(0, 10)
+  const showAnnouncement =
+    settings?.announcement_active &&
+    (!settings.announcement_starts_at || settings.announcement_starts_at <= today) &&
+    (!settings.announcement_ends_at || settings.announcement_ends_at >= today)
+
   return (
     <html lang={safeLang} suppressHydrationWarning>
       <body>
-        <LangProvider initialLang={safeLang}>{children}</LangProvider>
+        <LangProvider initialLang={safeLang}>
+          {showAnnouncement && (
+            <AnnouncementBanner
+              titleDe={settings.announcement_title_de ?? ''}
+              titleEn={settings.announcement_title_en ?? ''}
+              bodyDe={settings.announcement_body_de ?? ''}
+              bodyEn={settings.announcement_body_en ?? ''}
+              imageUrl={settings.announcement_image_url ?? null}
+              lang={safeLang}
+            />
+          )}
+          {children}
+        </LangProvider>
       </body>
     </html>
   )

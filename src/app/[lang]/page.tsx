@@ -152,7 +152,7 @@ export default async function HomePage({
         />
       ))}
       <Nav lang={lang} showAusruestung={settings?.show_ausruestung ?? false} />
-      <main style={{ paddingTop: 68 }}>
+      <main style={{ paddingTop: 'calc(68px + var(--banner-h, 0px))' }}>
         <Hero lang={lang} settings={settings} />
         <TrainingSection lang={lang} sessions={sessions ?? []} overrides={overrides ?? []} spots={spots ?? []} events={events ?? []} recurringEvents={recurringEvents} />
         <EventsSection lang={lang} events={events ?? []} />

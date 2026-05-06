@@ -61,7 +61,7 @@ export default function Nav({ lang, showAusruestung = false }: { lang: Lang; sho
           style={{
             position: "fixed",
             inset: 0,
-            top: 68,
+            top: "calc(68px + var(--banner-h, 0px))",
             zIndex: 45,
             background: "rgba(0,0,0,0.45)",
           }}
@@ -71,7 +71,7 @@ export default function Nav({ lang, showAusruestung = false }: { lang: Lang; sho
       <header
         style={{
           position: "fixed",
-          top: 0,
+          top: "var(--banner-h, 0px)",
           left: 0,
           right: 0,
           zIndex: 50,

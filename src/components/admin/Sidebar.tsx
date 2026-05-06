@@ -7,15 +7,16 @@ import type { User } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/client'
 
 const navItems = [
-  { href: '/admin/nachrichten', label: 'Nachrichten',  icon: '✉' },
-  { href: '/admin/blog',        label: 'Blogposts',    icon: 'B' },
-  { href: '/admin/events',      label: 'Events',       icon: 'E' },
-  { href: '/admin/training',    label: 'Training',     icon: 'T' },
-  { href: '/admin/spots',       label: 'Spots',        icon: 'SP' },
-  { href: '/admin/team',        label: 'Team',         icon: 'TM' },
-  { href: '/admin/faq',         label: 'FAQ',          icon: 'F' },
-  { href: '/admin/ausruestung', label: 'Ausrüstung',   icon: 'A' },
-  { href: '/admin/settings',    label: 'Settings',     icon: 'S' },
+  { href: '/admin/ankuendigung', label: 'Meldung',      icon: '⚠' },
+  { href: '/admin/nachrichten',  label: 'Nachrichten',  icon: '✉' },
+  { href: '/admin/blog',         label: 'Blogposts',    icon: 'B' },
+  { href: '/admin/events',       label: 'Events',       icon: 'E' },
+  { href: '/admin/training',     label: 'Training',     icon: 'T' },
+  { href: '/admin/spots',        label: 'Spots',        icon: 'SP' },
+  { href: '/admin/team',         label: 'Team',         icon: 'TM' },
+  { href: '/admin/faq',          label: 'FAQ',          icon: 'F' },
+  { href: '/admin/ausruestung',  label: 'Ausrüstung',   icon: 'A' },
+  { href: '/admin/settings',     label: 'Settings',     icon: 'S' },
 ]
 
 export default function AdminSidebar({ user }: { user: User }) {
@@ -151,13 +152,13 @@ export default function AdminSidebar({ user }: { user: User }) {
         />
       )}
 
-      {/* ── Desktop sidebar (unchanged) ── */}
+      {/* ── Desktop sidebar ── */}
       <aside className="admin-sidebar" style={{
         width: 240, flexShrink: 0,
         background: 'var(--bg-2)', borderRight: '1px solid var(--line-soft)',
         display: 'flex', flexDirection: 'column', gap: 4,
         padding: '24px 16px 20px',
-        position: 'sticky', top: 0, height: '100svh', overflowY: 'auto',
+        position: 'fixed', top: 0, left: 0, height: '100svh', overflowY: 'auto',
       }}>
         {/* Brand */}
         <div style={{
@@ -266,6 +267,8 @@ export default function AdminSidebar({ user }: { user: User }) {
             padding-right: 16px !important;
             padding-bottom: 48px !important;
           }
+          /* reset the fixed-sidebar offset on mobile */
+          .admin-main { padding-left: 16px !important; }
           .admin-list-row { grid-template-columns: 1fr !important; gap: 10px !important; }
           .admin-list-row-actions { justify-content: flex-start !important; }
           .admin-lang-pair { grid-template-columns: 1fr !important; }

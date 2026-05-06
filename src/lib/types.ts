@@ -115,6 +115,14 @@ export type SiteSettings = {
   about_spots: string
   about_sessions: string
   show_ausruestung: boolean
+  announcement_active: boolean
+  announcement_title_de: string | null
+  announcement_title_en: string | null
+  announcement_body_de: string | null
+  announcement_body_en: string | null
+  announcement_starts_at: string | null
+  announcement_ends_at: string | null
+  announcement_image_url: string | null
   imprint_street: string | null
   imprint_zip: string | null
   imprint_city: string | null
