@@ -2,6 +2,15 @@
 
 import { useEffect, useState } from "react";
 import type { Lang, Event } from "@/lib/types";
+import EventRegistrationModal, { type RegistrationConfig } from "@/components/public/EventRegistrationModal";
+
+function getRegConfig(event: Event): RegistrationConfig | undefined {
+  const max = event.registration_max_team_size ?? 4
+  if (event.registration_mode === "individual") return { mode: "individual" }
+  if (event.registration_mode === "team") return { mode: "team", maxTeamSize: max }
+  if (event.registration_mode === "both") return { mode: "team", maxTeamSize: max, allowIndividual: true }
+  return undefined
+}
 
 type Phase = "modal" | "banner" | "hidden";
 
@@ -22,14 +31,15 @@ export default function AnnouncementBanner({
   imageUrl: string | null; lang: Lang; event?: Event;
 }) {
   const isEventMode = !!event;
+  const regConfig = isEventMode ? getRegConfig(event) : undefined;
   const title = isEventMode
     ? (lang === "de" ? event.title.de : event.title.en)
     : (lang === "de" ? titleDe : titleEn);
   const body = isEventMode
     ? (lang === "de" ? event.description.de : event.description.en)
     : (lang === "de" ? bodyDe : bodyEn);
-
   const [phase, setPhase] = useState<Phase>("hidden");
+  const [showRegistration, setShowRegistration] = useState(false);
 
   useEffect(() => {
     if (sessionStorage.getItem("ann_dismissed")) {
@@ -62,11 +72,15 @@ export default function AnnouncementBanner({
     document.documentElement.style.setProperty("--banner-h", "0px");
   }
 
-  function goToEvent() {
-    closeModal();
-    setTimeout(() => {
-      document.querySelector("#events")?.scrollIntoView({ behavior: "smooth" });
-    }, 150);
+  function handleEventCta() {
+    if (regConfig) {
+      setShowRegistration(true);
+    } else {
+      closeModal();
+      setTimeout(() => {
+        document.querySelector("#events")?.scrollIntoView({ behavior: "smooth" });
+      }, 150);
+    }
   }
 
   if (phase === "hidden") return null;
@@ -218,7 +232,7 @@ export default function AnnouncementBanner({
                     />
                   )}
                   <button
-                    onClick={goToEvent}
+                    onClick={handleEventCta}
                     style={{
                       display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
                       width: "100%", background: "#D97757", color: "#FFF8F0",
@@ -230,7 +244,9 @@ export default function AnnouncementBanner({
                     onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.opacity = "0.88")}
                     onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.opacity = "1")}
                   >
-                    {lang === "de" ? "Zum Event" : "See the event"}
+                    {regConfig
+                      ? (lang === "de" ? "Jetzt anmelden" : "Sign up now")
+                      : (lang === "de" ? "Zum Event" : "See the event")}
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                       <path d="M5 12h14M12 5l7 7-7 7" />
                     </svg>
@@ -291,6 +307,15 @@ export default function AnnouncementBanner({
             </div>
           </div>
         </div>
+      )}
+
+      {showRegistration && isEventMode && regConfig && (
+        <EventRegistrationModal
+          event={event}
+          config={regConfig}
+          lang={lang}
+          onClose={() => setShowRegistration(false)}
+        />
       )}
     </>
   );
