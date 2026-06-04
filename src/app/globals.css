@@ -19,7 +19,7 @@
   --color-accent-ink:  #0B0B0D;
   --color-danger:      #FF7A7A;
   --color-ok:          #8EE88E;
-  --color-cat-comp:    #E6C6FF;
+  --color-cat-comp:    #D97757;
   --color-cat-jam:     #D8FF3D;
   --color-cat-workshop:#8EC5FF;
   --color-cat-social:  #FFB48E;
@@ -48,11 +48,13 @@
   --accent-spark: #D8FF3D;
   --accent-ink:   #0B0B0D;
   --accent-2:     #4A9EFF;
+  --accent-event: #D97757;
+  --accent-event-ink: #FFF8F0;
   /* Status */
   --danger:     #FF7A7A;
   --ok:         #8EE88E;
   /* Category */
-  --cat-comp:     #E6C6FF;
+  --cat-comp:     #D97757;
   --cat-jam:      #D8FF3D;
   --cat-workshop: #8EC5FF;
   --cat-social:   #FFB48E;

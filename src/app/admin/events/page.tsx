@@ -16,7 +16,7 @@ function autoEventId(category: string, dateStr: string): string {
 const CATEGORIES: EventCategory[] = ['comp', 'jam', 'workshop', 'social']
 
 const CAT_COLORS: Record<string, { color: string; border: string }> = {
-  comp:     { color: '#E6C6FF', border: 'rgba(230,198,255,0.3)' },
+  comp:     { color: '#D97757', border: 'rgba(217,119,87,0.3)' },
   jam:      { color: '#D8FF3D', border: 'rgba(216,255,61,0.3)' },
   workshop: { color: '#8EC5FF', border: 'rgba(142,197,255,0.3)' },
   social:   { color: '#FFB48E', border: 'rgba(255,180,142,0.3)' },
@@ -26,11 +26,25 @@ const CAT_LABELS: Record<string, string> = { comp: 'Wettkampf', jam: 'Jam', work
 
 const WEEK_LABELS: Record<number, string> = { 1: '1. (1.–7.)', 2: '2. (8.–14.)', 3: '3. (15.–21.)', 4: '4. (22.–28.)', 5: '5. (29.–31.)' }
 
+type RegistrationMember = {
+  id: string; registration_id: string; name: string; email: string | null; sort_order: number
+}
+
+type Registration = {
+  id: string; event_id: string; type: 'team' | 'individual'
+  name: string | null; email: string | null; team_name: string | null
+  created_at: string
+  event_registration_members: RegistrationMember[]
+}
+
 type FormState = {
   id: string; category: EventCategory; starts_at: string
   place_de: string; place_en: string
   title_de: string; title_en: string
   desc_de: string; desc_en: string
+  registration_mode: string
+  registration_max_team_size: number
+  image_url: string | null
 }
 
 type RecurringFormState = {
@@ -43,7 +57,7 @@ type RecurringFormState = {
   sort_order: number
 }
 
-const emptyForm = (): FormState => ({ id: '', category: 'jam', starts_at: '', place_de: '', place_en: '', title_de: '', title_en: '', desc_de: '', desc_en: '' })
+const emptyForm = (): FormState => ({ id: '', category: 'jam', starts_at: '', place_de: '', place_en: '', title_de: '', title_en: '', desc_de: '', desc_en: '', registration_mode: 'none', registration_max_team_size: 4, image_url: null })
 const emptyRecurringForm = (): RecurringFormState => ({ id: '', category: 'social', day_of_week: 0, week_of_month: 1, time_label: '', place_de: '', place_en: '', title_de: '', title_en: '', desc_de: '', desc_en: '', sort_order: 0 })
 
 function toLocalDatetimeInput(iso: string): string {
@@ -53,7 +67,7 @@ function toLocalDatetimeInput(iso: string): string {
 }
 
 function eventToForm(e: Event): FormState {
-  return { id: e.id, category: e.category, starts_at: toLocalDatetimeInput(e.starts_at), place_de: e.place.de, place_en: e.place.en, title_de: e.title.de, title_en: e.title.en, desc_de: e.description.de, desc_en: e.description.en }
+  return { id: e.id, category: e.category, starts_at: toLocalDatetimeInput(e.starts_at), place_de: e.place.de, place_en: e.place.en, title_de: e.title.de, title_en: e.title.en, desc_de: e.description.de, desc_en: e.description.en, registration_mode: e.registration_mode ?? 'none', registration_max_team_size: e.registration_max_team_size ?? 4, image_url: e.image_url ?? null }
 }
 
 function recurringToForm(re: RecurringEvent): RecurringFormState {
@@ -73,10 +87,62 @@ export default function AdminEventsPage() {
   const [recurringSaving, setRecurringSaving] = useState(false)
   const [recurringError, setRecurringError] = useState('')
 
+  const [regCounts, setRegCounts] = useState<Record<string, number>>({})
+  const [expandedEventId, setExpandedEventId] = useState<string | null>(null)
+  const [registrations, setRegistrations] = useState<Registration[]>([])
+  const [regsLoading, setRegsLoading] = useState(false)
+  const [regsError, setRegsError] = useState<string | null>(null)
+  const [imageUploading, setImageUploading] = useState(false)
+
   async function load() {
     const supabase = createClient()
     const { data } = await supabase.from('events').select('*').order('starts_at', { ascending: false })
     setEvents(data ?? [])
+  }
+
+  async function loadRegCounts() {
+    const supabase = createClient()
+    const { data } = await supabase.from('event_registrations').select('event_id')
+    const map: Record<string, number> = {}
+    data?.forEach((r: { event_id: string }) => { map[r.event_id] = (map[r.event_id] ?? 0) + 1 })
+    setRegCounts(map)
+  }
+
+  async function expandRegistrations(eventId: string) {
+    if (expandedEventId === eventId) { setExpandedEventId(null); return }
+    setExpandedEventId(eventId); setRegsLoading(true); setRegsError(null)
+    const supabase = createClient()
+    const [{ data: regsData, error: regsErr }, { data: countData }] = await Promise.all([
+      supabase.from('event_registrations').select('*, event_registration_members(*)').eq('event_id', eventId).order('created_at'),
+      supabase.from('event_registrations').select('event_id'),
+    ])
+    if (regsErr) setRegsError(`${regsErr.code}: ${regsErr.message}`)
+    setRegistrations((regsData as Registration[]) ?? [])
+    const map: Record<string, number> = {}
+    countData?.forEach((r: { event_id: string }) => { map[r.event_id] = (map[r.event_id] ?? 0) + 1 })
+    setRegCounts(map)
+    setRegsLoading(false)
+  }
+
+  async function handleEventImageUpload(file: File) {
+    setImageUploading(true)
+    const supabase = createClient()
+    const ext = file.name.split('.').pop()
+    const path = `${form?.id || 'draft'}-${Date.now()}.${ext}`
+    const { error: uploadError } = await supabase.storage.from('event-images').upload(path, file, { upsert: true })
+    if (uploadError) { setError(uploadError.message); setImageUploading(false); return }
+    const { data } = supabase.storage.from('event-images').getPublicUrl(path)
+    setForm((p) => p ? { ...p, image_url: data.publicUrl } : p)
+    setImageUploading(false)
+  }
+
+  async function deleteRegistration(regId: string) {
+    if (!confirm('Anmeldung löschen?')) return
+    await createClient().from('event_registrations').delete().eq('id', regId)
+    setRegistrations((prev) => prev.filter((r) => r.id !== regId))
+    if (expandedEventId) {
+      setRegCounts((prev) => ({ ...prev, [expandedEventId]: Math.max(0, (prev[expandedEventId] ?? 1) - 1) }))
+    }
   }
 
   async function loadRecurring() {
@@ -85,7 +151,7 @@ export default function AdminEventsPage() {
     setRecurringEvents(data ?? [])
   }
 
-  useEffect(() => { load(); loadRecurring() }, [])
+  useEffect(() => { load(); loadRecurring(); loadRegCounts() }, [])
 
   const f = (key: keyof FormState, value: string) => setForm((p) => p ? { ...p, [key]: value } : p)
   const rf = <K extends keyof RecurringFormState>(key: K, value: RecurringFormState[K]) =>
@@ -100,7 +166,8 @@ export default function AdminEventsPage() {
     try {
       const supabase = createClient()
       const starts_at = form.starts_at ? new Date(form.starts_at).toISOString() : form.starts_at
-      const data = { id: form.id, category: form.category, starts_at, place: { de: form.place_de, en: form.place_en }, title: { de: form.title_de, en: form.title_en }, description: { de: form.desc_de, en: form.desc_en } }
+      const hasTeams = form.registration_mode === 'team' || form.registration_mode === 'both'
+      const data = { id: form.id, category: form.category, starts_at, place: { de: form.place_de, en: form.place_en }, title: { de: form.title_de, en: form.title_en }, description: { de: form.desc_de, en: form.desc_en }, registration_mode: form.registration_mode, registration_max_team_size: hasTeams ? form.registration_max_team_size : null, image_url: form.image_url || null }
       const { error } = isNew ? await supabase.from('events').insert(data) : await supabase.from('events').update(data).eq('id', form.id)
       if (error) throw error
       setForm(null); load()
@@ -198,6 +265,47 @@ export default function AdminEventsPage() {
                 ))}
               </div>
             </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'auto auto', gap: 12, alignItems: 'end' }} className="admin-form-2col">
+              <Field label="Anmeldung">
+                <select value={form.registration_mode} onChange={(e) => f('registration_mode', e.target.value)} style={inp}>
+                  <option value="none">Keine</option>
+                  <option value="individual">Nur Einzelpersonen</option>
+                  <option value="team">Nur Teams</option>
+                  <option value="both">Teams &amp; Einzelpersonen</option>
+                </select>
+              </Field>
+              {(form.registration_mode === 'team' || form.registration_mode === 'both') && (
+                <Field label="Max. Teamgröße">
+                  <input
+                    type="number" min={2} max={20}
+                    value={form.registration_max_team_size}
+                    onChange={(e) => setForm((p) => p ? { ...p, registration_max_team_size: Number(e.target.value) } : p)}
+                    style={inp}
+                  />
+                </Field>
+              )}
+            </div>
+            {/* Image upload */}
+            <div>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--fg-mute)', marginBottom: 8 }}>Bild</div>
+              <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start', flexWrap: 'wrap' }}>
+                {form.image_url && (
+                  <div style={{ flexShrink: 0, position: 'relative' }}>
+                    <img src={form.image_url} alt="" style={{ width: 140, height: 84, objectFit: 'cover', borderRadius: 8, display: 'block', border: '1px solid var(--line-soft)' }} />
+                    <button
+                      onClick={() => setForm((p) => p ? { ...p, image_url: null } : p)}
+                      style={{ position: 'absolute', top: -8, right: -8, width: 22, height: 22, borderRadius: '50%', background: 'var(--bg-3)', border: '1px solid var(--line)', color: 'var(--fg-mute)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, lineHeight: 1 }}
+                    >✕</button>
+                  </div>
+                )}
+                <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 16px', borderRadius: 8, border: '1px solid var(--line)', cursor: imageUploading ? 'wait' : 'pointer', fontFamily: 'var(--font-mono)', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--fg-dim)' }}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12" /></svg>
+                  {imageUploading ? 'Hochladen …' : 'Bild hochladen'}
+                  <input type="file" accept="image/*" style={{ display: 'none' }} disabled={imageUploading} onChange={(e) => { const file = e.target.files?.[0]; if (file) handleEventImageUpload(file); e.target.value = '' }} />
+                </label>
+                {form.image_url && <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--fg-mute)', alignSelf: 'center', letterSpacing: '0.04em' }}>Wird in Ankündigung angezeigt</div>}
+              </div>
+            </div>
           </div>
           <div style={{ display: 'flex', gap: 10, marginTop: 20 }}>
             <button onClick={() => setForm(null)} style={btnGhost}>Abbrechen</button>
@@ -211,22 +319,47 @@ export default function AdminEventsPage() {
           <div style={empty}>Keine Events</div>
         ) : events.map((ev) => {
           const cat = CAT_COLORS[ev.category]
+          const isExpanded = expandedEventId === ev.id
+          const count = regCounts[ev.id] ?? 0
           return (
-            <div key={ev.id} style={listRow} className="admin-list-row">
-              <div style={{ minWidth: 0 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                  <span style={{ fontWeight: 500, color: 'var(--fg)', fontSize: 14, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ev.title.de}</span>
+            <div key={ev.id}>
+              <div style={listRow} className="admin-list-row">
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                    <span style={{ fontWeight: 500, color: 'var(--fg)', fontSize: 14, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ev.title.de}</span>
+                  </div>
+                  <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+                    <span style={{ ...chipStyle, color: cat.color, borderColor: cat.border }}>{CAT_LABELS[ev.category]}</span>
+                    <span style={metaItem}>{formatDate(ev.starts_at, 'de')}</span>
+                    <span style={metaItem}>{ev.place.de}</span>
+                  </div>
                 </div>
-                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
-                  <span style={{ ...chipStyle, color: cat.color, borderColor: cat.border }}>{CAT_LABELS[ev.category]}</span>
-                  <span style={metaItem}>{formatDate(ev.starts_at, 'de')}</span>
-                  <span style={metaItem}>{ev.place.de}</span>
+                <div style={{ display: 'flex', gap: 6, alignItems: 'center' }} className="admin-list-row-actions">
+                  <button
+                    onClick={() => expandRegistrations(ev.id)}
+                    style={{
+                      ...btnGhost,
+                      color: isExpanded ? 'var(--accent-2)' : count > 0 ? 'var(--fg-dim)' : 'var(--fg-mute)',
+                      borderColor: isExpanded ? 'var(--accent-2)' : 'var(--line)',
+                      display: 'inline-flex', alignItems: 'center', gap: 6,
+                    }}
+                  >
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, minWidth: 14, textAlign: 'center' }}>{count}</span>
+                    Anmeldungen
+                    <span style={{ fontSize: 9, marginLeft: 2 }}>{isExpanded ? '▲' : '▼'}</span>
+                  </button>
+                  <button onClick={() => { setForm(eventToForm(ev)); setIsNew(false) }} style={btnGhost}>Bearbeiten</button>
+                  <button onClick={() => del(ev.id)} style={btnDanger}>Löschen</button>
                 </div>
               </div>
-              <div style={{ display: 'flex', gap: 6 }} className="admin-list-row-actions">
-                <button onClick={() => { setForm(eventToForm(ev)); setIsNew(false) }} style={btnGhost}>Bearbeiten</button>
-                <button onClick={() => del(ev.id)} style={btnDanger}>Löschen</button>
-              </div>
+              {isExpanded && (
+                <RegistrationPanel
+                  loading={regsLoading}
+                  registrations={registrations}
+                  error={regsError}
+                  onDelete={deleteRegistration}
+                />
+              )}
             </div>
           )
         })}
@@ -348,3 +481,133 @@ function LangPair({ label, deValue, enValue, onDe, onEn, textarea = false }: { l
 }
 
 const cardTitle: React.CSSProperties = { fontFamily: 'var(--font-mono)', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.1em', margin: 0, color: 'var(--fg)', fontWeight: 600 }
+
+function RegistrationPanel({
+  loading, registrations, error, onDelete,
+}: {
+  loading: boolean
+  registrations: Registration[]
+  error: string | null
+  onDelete: (id: string) => void
+}) {
+  if (loading) {
+    return (
+      <div style={{ padding: '16px 24px', borderTop: '1px solid var(--line-soft)', background: 'var(--bg-3)', color: 'var(--fg-mute)', fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '0.08em' }}>
+        …
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div style={{ padding: '14px 24px', borderTop: '1px solid var(--line-soft)', background: 'var(--bg-3)', color: 'var(--danger)', fontFamily: 'var(--font-mono)', fontSize: 11 }}>
+        {error}
+      </div>
+    )
+  }
+
+  const teams = registrations.filter((r) => r.type === 'team')
+  const individuals = registrations.filter((r) => r.type === 'individual')
+  const totalPeople = teams.reduce((n, t) => n + t.event_registration_members.length, 0) + individuals.length
+
+  if (registrations.length === 0) {
+    return (
+      <div style={{ padding: '16px 24px', borderTop: '1px solid var(--line-soft)', background: 'var(--bg-3)', color: 'var(--fg-mute)', fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '0.06em' }}>
+        Noch keine Anmeldungen
+      </div>
+    )
+  }
+
+  return (
+    <div style={{ background: 'var(--bg-3)', borderTop: '1px solid var(--line-soft)' }}>
+
+      {/* Summary bar */}
+      <div style={{ padding: '10px 24px', borderBottom: '1px solid var(--line-soft)', display: 'flex', gap: 20 }}>
+        {teams.length > 0 && (
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--fg-mute)', letterSpacing: '0.06em' }}>
+            <span style={{ color: '#D97757', fontWeight: 600 }}>{teams.length}</span> {teams.length === 1 ? 'Team' : 'Teams'}
+          </span>
+        )}
+        {individuals.length > 0 && (
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--fg-mute)', letterSpacing: '0.06em' }}>
+            <span style={{ color: '#D97757', fontWeight: 600 }}>{individuals.length}</span> Einzeln
+          </span>
+        )}
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--fg-mute)', letterSpacing: '0.06em', marginLeft: 'auto' }}>
+          <span style={{ color: 'var(--fg-dim)', fontWeight: 600 }}>{totalPeople}</span> Personen gesamt
+        </span>
+      </div>
+
+      <div style={{ padding: '20px 24px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 24 }}>
+
+        {/* Teams */}
+        {teams.length > 0 && (
+          <div>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--fg-mute)', marginBottom: 12 }}>
+              Teams
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 10 }}>
+              {teams.map((team) => (
+                <div key={team.id} style={{ background: 'var(--bg-2)', border: '1px solid var(--line-soft)', borderRadius: 10, overflow: 'hidden' }}>
+                  {/* Team header */}
+                  <div style={{ padding: '10px 14px', borderBottom: '1px solid var(--line-soft)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg)' }}>
+                    <span style={{ fontWeight: 600, color: 'var(--fg)', fontSize: 13 }}>{team.team_name}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--fg-mute)' }}>
+                        {team.event_registration_members.length} Pers.
+                      </span>
+                      <button
+                        onClick={() => onDelete(team.id)}
+                        title="Anmeldung löschen"
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--fg-mute)', padding: '2px 4px', lineHeight: 1, transition: 'color 0.15s', fontSize: 16 }}
+                        onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--danger)' }}
+                        onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--fg-mute)' }}
+                      >×</button>
+                    </div>
+                  </div>
+                  {/* Members */}
+                  <div style={{ padding: '8px 14px 10px' }}>
+                    {[...team.event_registration_members]
+                      .sort((a, b) => a.sort_order - b.sort_order)
+                      .map((m, i) => (
+                        <div key={m.id} style={{ display: 'flex', alignItems: 'baseline', gap: 8, padding: '4px 0', borderBottom: i < team.event_registration_members.length - 1 ? '1px solid var(--line-soft)' : 'none' }}>
+                          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: '#D97757', minWidth: 14, fontWeight: 600 }}>{i + 1}</span>
+                          <span style={{ fontSize: 13, color: 'var(--fg)', flex: 1 }}>{m.name}</span>
+                          {m.email && <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--fg-mute)' }}>{m.email}</span>}
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Individuals */}
+        {individuals.length > 0 && (
+          <div>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--fg-mute)', marginBottom: 12 }}>
+              Einzelanmeldungen
+            </div>
+            <div style={{ background: 'var(--bg-2)', border: '1px solid var(--line-soft)', borderRadius: 10, overflow: 'hidden' }}>
+              {individuals.map((ind, i) => (
+                <div key={ind.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', borderBottom: i < individuals.length - 1 ? '1px solid var(--line-soft)' : 'none' }}>
+                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: '#D97757', fontWeight: 600, minWidth: 16 }}>{i + 1}</span>
+                  <span style={{ fontSize: 13, color: 'var(--fg)', flex: 1 }}>{ind.name}</span>
+                  {ind.email && <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--fg-mute)' }}>{ind.email}</span>}
+                  <button
+                    onClick={() => onDelete(ind.id)}
+                    title="Anmeldung löschen"
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--fg-mute)', padding: '2px 4px', lineHeight: 1, transition: 'color 0.15s', fontSize: 16, flexShrink: 0 }}
+                    onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--danger)' }}
+                    onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--fg-mute)' }}
+                  >×</button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}

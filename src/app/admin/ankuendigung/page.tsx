@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import type { SiteSettings } from '@/lib/types'
+import type { SiteSettings, Event } from '@/lib/types'
 import { createClient } from '@/lib/supabase/client'
 import {
   pageHead, crumbStyle, h1Style, card, cardHead, cardMeta,
@@ -18,6 +18,7 @@ type AnnFields = Pick<
   | 'announcement_starts_at'
   | 'announcement_ends_at'
   | 'announcement_image_url'
+  | 'announcement_event_id'
 >
 
 const defaultForm: AnnFields = {
@@ -29,6 +30,7 @@ const defaultForm: AnnFields = {
   announcement_starts_at: null,
   announcement_ends_at: null,
   announcement_image_url: null,
+  announcement_event_id: null,
 }
 
 export default function AdminAnkuendigungPage() {
@@ -37,15 +39,20 @@ export default function AdminAnkuendigungPage() {
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState('')
   const [uploading, setUploading] = useState(false)
+  const [events, setEvents] = useState<Event[]>([])
 
   useEffect(() => {
-    createClient()
+    const supabase = createClient()
+    supabase
       .from('site_settings')
-      .select('announcement_active,announcement_title_de,announcement_title_en,announcement_body_de,announcement_body_en,announcement_starts_at,announcement_ends_at,announcement_image_url')
+      .select('announcement_active,announcement_title_de,announcement_title_en,announcement_body_de,announcement_body_en,announcement_starts_at,announcement_ends_at,announcement_image_url,announcement_event_id')
       .single()
-      .then(({ data }) => {
-        if (data) setForm(data as AnnFields)
-      })
+      .then(({ data }) => { if (data) setForm(data as AnnFields) })
+    supabase
+      .from('events')
+      .select('id,title,starts_at,category')
+      .order('starts_at', { ascending: true })
+      .then(({ data }) => { setEvents((data as Event[]) ?? []) })
   }, [])
 
   async function handleImageUpload(file: File) {
@@ -75,6 +82,7 @@ export default function AdminAnkuendigungPage() {
         announcement_starts_at: form.announcement_starts_at || null,
         announcement_ends_at: form.announcement_ends_at || null,
         announcement_image_url: form.announcement_image_url || null,
+        announcement_event_id: form.announcement_event_id || null,
       })
       .eq('id', 1)
     if (error) setError(error.message)
@@ -139,6 +147,34 @@ export default function AdminAnkuendigungPage() {
         </div>
       </div>
 
+      {/* Event link */}
+      <div style={{ ...card, marginBottom: 20 }}>
+        <div style={cardHead}>
+          <h3 style={cardTitle}>Event verknüpfen</h3>
+          <span style={cardMeta}>Optional — überschreibt Titel und Text mit Event-Daten</span>
+        </div>
+        <div style={{ padding: 20 }}>
+          <label style={fieldLabel}>Event</label>
+          <select
+            value={form.announcement_event_id ?? ''}
+            onChange={(e) => setForm((p) => ({ ...p, announcement_event_id: e.target.value || null }))}
+            style={inp}
+          >
+            <option value="">– Kein Event –</option>
+            {events.map((ev) => (
+              <option key={ev.id} value={ev.id}>
+                {ev.title.de} · {new Date(ev.starts_at).toLocaleDateString('de-DE', { day: 'numeric', month: 'short', year: 'numeric' })}
+              </option>
+            ))}
+          </select>
+          {form.announcement_event_id && (
+            <div style={{ marginTop: 8, fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--fg-mute)', letterSpacing: '0.04em' }}>
+              Titel, Beschreibung und Ort werden direkt aus dem Event übernommen
+            </div>
+          )}
+        </div>
+      </div>
+
       {/* Date range */}
       <div style={{ ...card, marginBottom: 20 }}>
         <div style={cardHead}>
@@ -171,8 +207,8 @@ export default function AdminAnkuendigungPage() {
         </div>
       </div>
 
-      {/* Image */}
-      <div style={{ ...card, marginBottom: 20 }}>
+      {/* Image — only when no event linked */}
+      {!form.announcement_event_id && <div style={{ ...card, marginBottom: 20 }}>
         <div style={cardHead}>
           <h3 style={cardTitle}>Bild</h3>
           <span style={cardMeta}>Optional — wird oben im Dialog angezeigt</span>
@@ -228,10 +264,10 @@ export default function AdminAnkuendigungPage() {
             </div>
           </div>
         </div>
-      </div>
+      </div>}
 
-      {/* Content */}
-      <div style={card}>
+      {/* Content — only when no event linked */}
+      {!form.announcement_event_id && <div style={card}>
         <div style={cardHead}>
           <h3 style={cardTitle}>Inhalt</h3>
           <span style={cardMeta}>DE + EN</span>
@@ -307,7 +343,7 @@ export default function AdminAnkuendigungPage() {
             </div>
           </div>
         </div>
-      </div>
+      </div>}
 
       <style>{`@media(max-width:640px){.ann-grid{grid-template-columns:1fr!important}}`}</style>
     </div>

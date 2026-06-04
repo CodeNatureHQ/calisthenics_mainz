@@ -27,6 +27,8 @@ export type Post = {
 
 export type EventCategory = 'comp' | 'jam' | 'workshop' | 'social'
 
+export type RegistrationMode = 'none' | 'individual' | 'team' | 'both'
+
 export type Event = {
   id: string
   category: EventCategory
@@ -34,6 +36,9 @@ export type Event = {
   place: L10n
   title: L10n
   description: L10n
+  registration_mode: RegistrationMode
+  registration_max_team_size: number | null
+  image_url: string | null
   created_at: string
   updated_at: string
 }
@@ -123,6 +128,7 @@ export type SiteSettings = {
   announcement_starts_at: string | null
   announcement_ends_at: string | null
   announcement_image_url: string | null
+  announcement_event_id: string | null
   imprint_street: string | null
   imprint_zip: string | null
   imprint_city: string | null

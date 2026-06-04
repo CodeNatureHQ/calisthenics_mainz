@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import type { Lang } from '@/lib/types'
+import type { Lang, Event } from '@/lib/types'
 import { LangProvider } from '@/lib/i18n'
 import { createClient } from '@/lib/supabase/server'
 import AnnouncementBanner from '@/components/public/AnnouncementBanner'
@@ -47,6 +47,12 @@ export default async function LangLayout({
     (!settings.announcement_starts_at || settings.announcement_starts_at <= today) &&
     (!settings.announcement_ends_at || settings.announcement_ends_at >= today)
 
+  let announcementEvent: Event | null = null
+  if (showAnnouncement && settings?.announcement_event_id) {
+    const { data } = await supabase.from('events').select('*').eq('id', settings.announcement_event_id).single()
+    announcementEvent = data ?? null
+  }
+
   return (
     <html lang={safeLang} suppressHydrationWarning>
       <body>
@@ -58,6 +64,7 @@ export default async function LangLayout({
               bodyDe={settings.announcement_body_de ?? ''}
               bodyEn={settings.announcement_body_en ?? ''}
               imageUrl={settings.announcement_image_url ?? null}
+              event={announcementEvent ?? undefined}
               lang={safeLang}
             />
           )}

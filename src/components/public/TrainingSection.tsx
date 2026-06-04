@@ -720,7 +720,7 @@ function SessionCard({ time, place, level, levelLabel_, hasSpot, onClick }: {
 }
 
 const CAT_COLORS_EVENT: Record<string, string> = {
-  comp: '#E6C6FF', jam: '#D8FF3D', workshop: '#8EC5FF', social: '#FFB48E',
+  comp: '#D97757', jam: '#D8FF3D', workshop: '#8EC5FF', social: '#FFB48E',
 }
 
 function CalendarView({

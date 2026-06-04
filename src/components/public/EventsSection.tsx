@@ -4,11 +4,20 @@ import { useState, useMemo, useEffect, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import type { Lang, Event } from '@/lib/types'
 import { t, isFuture } from '@/lib/utils'
+import EventRegistrationModal, { type RegistrationConfig } from './EventRegistrationModal'
 
 type Props = { lang: Lang; events: Event[] }
 
+function getRegConfig(ev: { registration_mode: string; registration_max_team_size: number | null }): RegistrationConfig | undefined {
+  const maxTeamSize = ev.registration_max_team_size ?? 4
+  if (ev.registration_mode === 'individual') return { mode: 'individual' }
+  if (ev.registration_mode === 'team') return { mode: 'team', maxTeamSize }
+  if (ev.registration_mode === 'both') return { mode: 'team', maxTeamSize, allowIndividual: true }
+  return undefined
+}
+
 const CAT_COLORS: Record<string, string> = {
-  comp:     '#E6C6FF',
+  comp:     '#D97757',
   jam:      '#D8FF3D',
   workshop: '#8EC5FF',
   social:   '#FFB48E',
@@ -32,12 +41,14 @@ const copy = {
     clock: 'Uhr', soon: 'Bald', days: (n: number) => `in ${n} Tagen`,
     past: 'Vorbei', empty: 'Keine Events.',
     dateLabel: 'Datum', timeLabel: 'Uhrzeit', placeLabel: 'Ort', close: 'Schließen',
+    register: 'Jetzt anmelden',
   },
   en: {
     label: '02', title: 'Events', upcoming: 'Upcoming', archive: 'Archive',
     clock: '', soon: 'Soon', days: (n: number) => `in ${n} days`,
     past: 'Past', empty: 'No events.',
     dateLabel: 'Date', timeLabel: 'Time', placeLabel: 'Location', close: 'Close',
+    register: 'Sign up now',
   },
 }
 
@@ -45,6 +56,7 @@ export default function EventsSection({ lang, events }: Props) {
   const c = copy[lang]
   const [tab, setTab] = useState<'upcoming' | 'archive'>('upcoming')
   const [activeEvent, setActiveEvent] = useState<Event | null>(null)
+  const [showRegistration, setShowRegistration] = useState(false)
 
   const { upcoming, past } = useMemo(() => {
     const sorted = [...events].sort((a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime())
@@ -56,7 +68,10 @@ export default function EventsSection({ lang, events }: Props) {
 
   const displayed = tab === 'upcoming' ? upcoming : past
 
-  const closeDialog = useCallback(() => setActiveEvent(null), [])
+  const closeDialog = useCallback(() => {
+    setActiveEvent(null)
+    setShowRegistration(false)
+  }, [])
 
   // Close on Escape + blur page content
   useEffect(() => {
@@ -64,7 +79,8 @@ export default function EventsSection({ lang, events }: Props) {
     const header = document.querySelector('header') as HTMLElement | null
 
     if (activeEvent) {
-      const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') closeDialog() }
+      // Only close event dialog on Escape when registration modal is not open
+      const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape' && !showRegistration) closeDialog() }
       window.addEventListener('keydown', onKey)
       document.body.style.overflow = 'hidden'
       if (main)   { main.style.transition = 'filter 0.3s'; main.style.filter = 'blur(6px)' }
@@ -76,7 +92,7 @@ export default function EventsSection({ lang, events }: Props) {
         if (header) header.style.filter = ''
       }
     }
-  }, [activeEvent, closeDialog])
+  }, [activeEvent, closeDialog, showRegistration])
 
   return (
     <section id="events" className="section">
@@ -146,7 +162,24 @@ export default function EventsSection({ lang, events }: Props) {
 
       {/* Dialog */}
       {activeEvent && (
-        <EventDialog event={activeEvent} lang={lang} c={c} onClose={closeDialog} />
+        <EventDialog
+          event={activeEvent}
+          lang={lang}
+          c={c}
+          onClose={closeDialog}
+          registrationConfig={getRegConfig(activeEvent)}
+          onRegister={() => setShowRegistration(true)}
+        />
+      )}
+
+      {/* Registration modal — rendered above event dialog (z-index 300 vs 200) */}
+      {activeEvent && showRegistration && getRegConfig(activeEvent) && (
+        <EventRegistrationModal
+          event={activeEvent}
+          config={getRegConfig(activeEvent)!}
+          lang={lang}
+          onClose={() => setShowRegistration(false)}
+        />
       )}
 
       <style>{`
@@ -261,12 +294,14 @@ function EventRow({
 /* Event Dialog                                                         */
 /* ------------------------------------------------------------------ */
 function EventDialog({
-  event, lang, c, onClose,
+  event, lang, c, onClose, registrationConfig, onRegister,
 }: {
   event: Event
   lang: Lang
   c: (typeof copy)['de']
   onClose: () => void
+  registrationConfig?: RegistrationConfig
+  onRegister: () => void
 }) {
   const [mounted, setMounted] = useState(false)
   useEffect(() => setMounted(true), [])
@@ -309,8 +344,12 @@ function EventDialog({
           overflow: 'hidden',
         }}
       >
-        {/* Colored top stripe */}
-        <div style={{ height: 4, background: catColor, width: '100%' }} />
+        {/* Image or colored stripe */}
+        {event.image_url ? (
+          <img src={event.image_url} alt="" style={{ display: 'block', width: '100%', height: 360, objectFit: 'cover', objectPosition: 'center' }} />
+        ) : (
+          <div style={{ height: 4, background: catColor, width: '100%' }} />
+        )}
 
         {/* Close button */}
         <button
@@ -420,6 +459,30 @@ function EventDialog({
             dangerouslySetInnerHTML={{ __html: t(event.description, lang) }}
             style={{ fontSize: 16, lineHeight: 1.7 }}
           />
+
+          {/* Register button */}
+          {registrationConfig && !isPast && (
+            <div style={{ marginTop: 28, paddingTop: 24, borderTop: '1px solid var(--line-soft)' }}>
+              <button
+                onClick={onRegister}
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 8,
+                  padding: '12px 24px', borderRadius: 8, border: 'none',
+                  background: 'var(--fg)', color: 'var(--accent-ink)',
+                  fontFamily: 'var(--font-mono)', fontSize: 12, letterSpacing: '0.08em',
+                  textTransform: 'uppercase', cursor: 'pointer', fontWeight: 600,
+                  transition: 'opacity 0.15s',
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.opacity = '0.88' }}
+                onMouseLeave={(e) => { e.currentTarget.style.opacity = '1' }}
+              >
+                {c.register}
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <path d="M5 12h14M12 5l7 7-7 7" />
+                </svg>
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
