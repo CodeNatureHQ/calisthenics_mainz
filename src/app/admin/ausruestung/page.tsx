@@ -3,7 +3,9 @@
 import { useEffect, useRef, useState } from 'react'
 import type { Product } from '@/lib/types'
 import { createClient } from '@/lib/supabase/client'
-import { pageHead, crumbStyle, h1Style, card, formCard, listRow, empty, inp, fieldLabel, errorBox, btnPrimary, btnGhost, btnDanger } from '../shared'
+import { pageHead, crumbStyle, h1Style, card, listRow, empty, inp, btnPrimary, btnGhost, btnDanger } from '../shared'
+import { FormShell, FormSection, Field, Grid, Toggle } from '@/components/admin/Form'
+import LangPair from '@/components/admin/LangPair'
 
 const CATEGORIES = ['ringe', 'stangen', 'parallettes', 'zubehoer'] as const
 const CAT_LABELS: Record<string, string> = { ringe: 'Ringe', stangen: 'Stangen', parallettes: 'Parallettes', zubehoer: 'Zubehör' }
@@ -105,98 +107,42 @@ export default function AdminAusruestungPage() {
       </div>
 
       {editing !== null && (
-        <div style={{ ...formCard, marginBottom: 16 }}>
-          <h2 style={formTitle}>{editing === 'new' ? 'Neues Produkt' : 'Produkt bearbeiten'}</h2>
-          {error && <div style={errorBox}>{error}</div>}
-
-          {/* Bild-Upload */}
-          <div style={{ marginBottom: 16 }}>
-            <label style={fieldLabel}>Produktbild</label>
-            <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
-              {/* Preview */}
-              <div style={{
-                width: 120, height: 90, borderRadius: 10, overflow: 'hidden', flexShrink: 0,
-                border: '1px solid var(--line-soft)', background: 'var(--bg)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-              }}>
-                {form.image_url ? (
-                  <img src={form.image_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                ) : (
-                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--fg-mute)', textAlign: 'center', padding: 8 }}>Kein Bild</span>
-                )}
+        <FormShell title={editing === 'new' ? 'Neues Produkt' : 'Produkt bearbeiten'} error={error} onCancel={() => setEditing(null)} onSave={save} saving={saving} disabled={uploading || !form.name_de.trim()}>
+          <FormSection title="Produkt">
+            <Grid>
+              <Field label="Kategorie">
+                <select value={form.category} onChange={(e) => f('category', e.target.value)} style={inp}>
+                  {CATEGORIES.map((c) => <option key={c} value={c}>{CAT_LABELS[c]}</option>)}
+                </select>
+              </Field>
+            </Grid>
+            <LangPair label="Name" deValue={form.name_de} enValue={form.name_en} onDe={(v) => f('name_de', v)} onEn={(v) => f('name_en', v)} placeholder={{ de: 'Holzringe mit Schlaufen', en: 'Wooden rings with straps' }} />
+            <LangPair label="Beschreibung" optional textarea rows={2} deValue={form.desc_de} enValue={form.desc_en} onDe={(v) => f('desc_de', v)} onEn={(v) => f('desc_en', v)} hint="Ein, zwei Sätze: Wofür nutzen wir es, was ist gut daran?" />
+          </FormSection>
+          <FormSection title="Bild" description="JPG, PNG oder WebP, maximal 5 MB. Freigestellte Produktbilder wirken am ruhigsten.">
+            <div style={{ display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
+              <div style={{ width: 128, height: 96, flexShrink: 0, background: 'var(--bg-3)', border: '1px solid var(--line-soft)', borderRadius: 'var(--radius)', overflow: 'hidden', display: 'grid', placeItems: 'center' }}>
+                {form.image_url ? <img src={form.image_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <span style={{ font: '600 12px var(--font-sans)', color: 'var(--fg-mute)' }}>Kein Bild</span>}
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                <input
-                  ref={fileRef}
-                  type="file"
-                  accept="image/*"
-                  style={{ display: 'none' }}
-                  onChange={(e) => { const f = e.target.files?.[0]; if (f) handleImageUpload(f) }}
-                />
-                <button
-                  onClick={() => fileRef.current?.click()}
-                  disabled={uploading}
-                  style={{ ...btnGhost, opacity: uploading ? 0.6 : 1 }}
-                >
-                  {uploading ? 'Wird hochgeladen …' : 'Bild hochladen'}
-                </button>
-                {form.image_url && (
-                  <button onClick={() => setForm((p) => ({ ...p, image_url: '' }))} style={{ ...btnGhost, color: 'var(--danger)', borderColor: 'rgba(255,122,122,0.3)' }}>
-                    Bild entfernen
-                  </button>
-                )}
-                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--fg-mute)', letterSpacing: '0.04em' }}>
-                  JPG, PNG, WebP · max. 5 MB
-                </span>
-              </div>
+              <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={(e) => { const file = e.target.files?.[0]; if (file) handleImageUpload(file) }} />
+              <button type="button" onClick={() => fileRef.current?.click()} disabled={uploading} style={btnGhost}>{uploading ? 'Hochladen …' : form.image_url ? 'Bild ersetzen' : 'Bild hochladen'}</button>
+              {form.image_url && <button type="button" onClick={() => setForm((p) => ({ ...p, image_url: '' }))} style={btnDanger}>Bild entfernen</button>}
             </div>
-          </div>
-
-          {/* Kategorie */}
-          <div style={{ marginBottom: 16 }}>
-            <label style={fieldLabel}>Kategorie</label>
-            <select value={form.category} onChange={(e) => f('category', e.target.value)} className="admin-input" style={inp}>
-              {CATEGORIES.map((c) => <option key={c} value={c}>{CAT_LABELS[c]}</option>)}
-            </select>
-          </div>
-
-          {/* Namen */}
-          <div style={{ marginBottom: 16 }}>
-            <label style={fieldLabel}>Name</label>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }} className="admin-lang-pair">
-              {[{ val: form.name_de, key: 'name_de' as const, tag: 'DE' }, { val: form.name_en, key: 'name_en' as const, tag: 'EN' }].map(({ val, key, tag }) => (
-                <div key={tag} style={{ position: 'relative' }}>
-                  <input value={val} onChange={(e) => f(key, e.target.value)} style={{ ...inp, paddingRight: 44 }} />
-                  <span style={badge}>{tag}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Beschreibungen */}
-          <div style={{ marginBottom: 16 }}>
-            <label style={fieldLabel}>Beschreibung (optional)</label>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }} className="admin-lang-pair">
-              {[{ val: form.desc_de, key: 'desc_de' as const, tag: 'DE' }, { val: form.desc_en, key: 'desc_en' as const, tag: 'EN' }].map(({ val, key, tag }) => (
-                <div key={tag} style={{ position: 'relative' }}>
-                  <textarea value={val} onChange={(e) => f(key, e.target.value)} rows={2} style={{ ...inp, resize: 'vertical', minHeight: 64, paddingRight: 44, lineHeight: 1.5 }} />
-                  <span style={{ ...badge, top: 8 }}>{tag}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Amazon-Link */}
-          <div style={{ marginBottom: 20, borderTop: '1px solid var(--line-soft)', paddingTop: 16 }}>
-            <label style={fieldLabel}>Amazon-Link (Affiliate-URL)</label>
-            <input value={form.href} onChange={(e) => f('href', e.target.value)} placeholder="https://amzn.to/..." style={inp} type="url" />
-          </div>
-
-          <div style={{ display: 'flex', gap: 8, paddingTop: 16, borderTop: '1px solid var(--line-soft)' }}>
-            <button onClick={() => setEditing(null)} style={btnGhost}>Abbrechen</button>
-            <button onClick={save} disabled={saving || uploading} style={btnPrimary}>{saving ? '…' : 'Speichern'}</button>
-          </div>
-        </div>
+          </FormSection>
+          <FormSection title="Link" description="Der Affiliate-Hinweis steht automatisch unter der Liste.">
+            <Field label="Amazon-Link">
+              <input value={form.href} onChange={(e) => f('href', e.target.value)} placeholder="https://amzn.to/…" style={inp} type="url" />
+            </Field>
+          </FormSection>
+          <FormSection title="Anzeige">
+            <Grid>
+              <Field label="Reihenfolge" hint="Kleinere Zahl steht weiter vorne.">
+                <input type="number" value={form.sort_order} onChange={(e) => f('sort_order', e.target.value)} style={inp} />
+              </Field>
+            </Grid>
+            <Toggle checked={form.visible} onChange={(v) => setForm(p => ({ ...p, visible: v }))} label={form.visible ? 'Auf der Ausrüstungsseite sichtbar' : 'Versteckt'} />
+          </FormSection>
+        </FormShell>
       )}
 
       {!editing && <div style={card}>
@@ -222,7 +168,7 @@ export default function AdminAusruestungPage() {
               </div>
             </div>
             <div style={{ display: 'flex', gap: 6 }} className="admin-list-row-actions">
-              <button onClick={() => toggleVisible(p)} style={{ ...btnGhost, color: p.visible ? 'var(--ok)' : 'var(--fg-mute)', borderColor: p.visible ? 'rgba(142,232,142,0.3)' : 'var(--line)' }}>
+              <button onClick={() => toggleVisible(p)} style={{ ...btnGhost, color: p.visible ? 'var(--ok)' : 'var(--fg-mute)', borderColor: p.visible ? 'color-mix(in srgb, var(--ok) 35%, transparent)' : 'var(--line)' }}>
                 {p.visible ? '● Sichtbar' : '○ Versteckt'}
               </button>
               <button onClick={() => startEdit(p)} style={btnGhost}>Bearbeiten</button>
@@ -235,5 +181,3 @@ export default function AdminAusruestungPage() {
   )
 }
 
-const formTitle: React.CSSProperties = { fontFamily: 'var(--font-mono)', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--fg)', margin: '0 0 16px', fontWeight: 600 }
-const badge: React.CSSProperties = { position: 'absolute', top: 8, right: 10, fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.1em', color: 'var(--fg-mute)', background: 'var(--bg)', padding: '2px 7px', borderRadius: 999, border: '1px solid var(--line-soft)', pointerEvents: 'none' }

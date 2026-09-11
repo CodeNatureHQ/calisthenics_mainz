@@ -4,7 +4,9 @@ import { useEffect, useState } from 'react'
 import type { Event, EventCategory, RecurringEvent } from '@/lib/types'
 import { createClient } from '@/lib/supabase/client'
 import { formatDate, dayLabel } from '@/lib/utils'
-import { pageHead, crumbStyle, h1Style, card, listRow, empty, inp, fieldLabel, errorBox, btnPrimary, btnGhost, btnDanger, metaItem, chipStyle } from '../shared'
+import { pageHead, crumbStyle, h1Style, card, listRow, empty, inp, btnPrimary, btnGhost, btnDanger, metaItem, chipStyle } from '../shared'
+import { FormShell, FormSection, Field, Grid, LangColumns } from '@/components/admin/Form'
+import LangPair from '@/components/admin/LangPair'
 import dynamic from 'next/dynamic'
 const RichText = dynamic(() => import('@/components/admin/RichText'), { ssr: false })
 
@@ -16,10 +18,10 @@ function autoEventId(category: string, dateStr: string): string {
 const CATEGORIES: EventCategory[] = ['comp', 'jam', 'workshop', 'social']
 
 const CAT_COLORS: Record<string, { color: string; border: string }> = {
-  comp:     { color: '#D97757', border: 'rgba(217,119,87,0.3)' },
-  jam:      { color: '#D8FF3D', border: 'rgba(216,255,61,0.3)' },
-  workshop: { color: '#8EC5FF', border: 'rgba(142,197,255,0.3)' },
-  social:   { color: '#FFB48E', border: 'rgba(255,180,142,0.3)' },
+  comp:     { color: 'var(--cat-comp)', border: 'color-mix(in srgb, var(--cat-comp) 35%, transparent)' },
+  jam:      { color: 'var(--accent)', border: 'var(--accent-ring)' },
+  workshop: { color: 'var(--cat-workshop)', border: 'color-mix(in srgb, var(--cat-workshop) 35%, transparent)' },
+  social:   { color: 'var(--cat-social)', border: 'color-mix(in srgb, var(--cat-social) 35%, transparent)' },
 }
 
 const CAT_LABELS: Record<string, string> = { comp: 'Wettkampf', jam: 'Jam', workshop: 'Workshop', social: 'Social' }
@@ -225,93 +227,52 @@ export default function AdminEventsPage() {
       </div>
 
       {form && (
-        <div style={{ ...card, marginBottom: 20, padding: 24 }}>
-          <h3 style={cardTitle}>{isNew ? 'Neues Event' : 'Event bearbeiten'}</h3>
-          {error && <div style={errorBox}>{error}</div>}
-          <div style={{ display: 'grid', gap: 18, marginTop: 16 }}>
-            <div style={{ display: 'grid', gridTemplateColumns: 'auto auto', gap: 12, alignItems: 'end' }} className="admin-form-2col">
+        <FormShell title={isNew ? 'Neues Event' : 'Event bearbeiten'} error={error} onCancel={() => setForm(null)} onSave={save} saving={saving}>
+          <FormSection title="Termin" description="Kategorie und Zeitpunkt legen auch die Kennung des Events fest.">
+            <Grid>
               <Field label="Kategorie">
-                <select value={form.category} onChange={(e) => {
-                  f('category', e.target.value)
-                  if (isNew) f('id', autoEventId(e.target.value, form.starts_at))
-                }} style={inp}>
+                <select value={form.category} onChange={(e) => { f('category', e.target.value); if (isNew) f('id', autoEventId(e.target.value, form.starts_at)) }} style={inp}>
                   {CATEGORIES.map((c) => <option key={c} value={c}>{CAT_LABELS[c]}</option>)}
                 </select>
               </Field>
-              <Field label="Datum & Zeit">
-                <input type="datetime-local" value={form.starts_at} onChange={(e) => {
-                  f('starts_at', e.target.value)
-                  if (isNew) f('id', autoEventId(form.category, e.target.value))
-                }} style={inp} />
+              <Field label="Datum & Uhrzeit" hint={isNew && form.id ? `Kennung: ${form.id}` : undefined}>
+                <input type="datetime-local" value={form.starts_at} onChange={(e) => { f('starts_at', e.target.value); if (isNew) f('id', autoEventId(form.category, e.target.value)) }} style={inp} />
               </Field>
-            </div>
-            {isNew && form.id && (
-              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--fg-mute)', letterSpacing: '0.06em' }}>
-                ID: <span style={{ color: 'var(--accent-2)' }}>{form.id}</span>
-              </div>
-            )}
-            <LangPair label="Titel" deValue={form.title_de} enValue={form.title_en} onDe={(v) => f('title_de', v)} onEn={(v) => f('title_en', v)} />
-            <LangPair label="Ort" deValue={form.place_de} enValue={form.place_en} onDe={(v) => f('place_de', v)} onEn={(v) => f('place_en', v)} />
-            <div>
-              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--fg-mute)', marginBottom: 8 }}>Beschreibung</div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }} className="admin-lang-pair">
-                {[{ val: form.desc_de, key: 'desc_de' as const, ph: 'Beschreibung (DE) …' }, { val: form.desc_en, key: 'desc_en' as const, ph: 'Description (EN) …' }].map(({ val, key, ph }) => (
-                  <div key={key} style={{ position: 'relative' }}>
-                    <div style={{ position: 'absolute', top: 8, right: 10, zIndex: 10, fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.1em', color: 'var(--fg-mute)', background: 'var(--bg)', padding: '2px 7px', borderRadius: 999, border: '1px solid var(--line-soft)', pointerEvents: 'none' }}>
-                      {key === 'desc_de' ? 'DE' : 'EN'}
-                    </div>
-                    <RichText value={val} onChange={(v) => f(key, v)} placeholder={ph} minHeight={80} />
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'auto auto', gap: 12, alignItems: 'end' }} className="admin-form-2col">
-              <Field label="Anmeldung">
+            </Grid>
+          </FormSection>
+          <FormSection title="Inhalt" description="Titel und Ort stehen auf der Event-Karte, die Beschreibung im Detail-Dialog.">
+            <LangPair label="Titel" deValue={form.title_de} enValue={form.title_en} onDe={(v) => f('title_de', v)} onEn={(v) => f('title_en', v)} placeholder={{ de: 'z. B. Sommer-Jam im Volkspark', en: 'e.g. Summer jam at Volkspark' }} />
+            <LangPair label="Ort" deValue={form.place_de} enValue={form.place_en} onDe={(v) => f('place_de', v)} onEn={(v) => f('place_en', v)} placeholder={{ de: 'Volkspark Mainz', en: 'Volkspark Mainz' }} />
+            <LangColumns label="Beschreibung" de={<RichText value={form.desc_de} onChange={(v) => f('desc_de', v)} placeholder="Worum geht es, was sollte man wissen?" minHeight={120} />} en={<RichText value={form.desc_en} onChange={(v) => f('desc_en', v)} placeholder="What is it about, what should people know?" minHeight={120} />} />
+          </FormSection>
+          <FormSection title="Anmeldung" description="Mit Anmeldung erscheint im Event-Dialog ein Button, über den sich Leute eintragen können.">
+            <Grid>
+              <Field label="Wer kann sich anmelden?">
                 <select value={form.registration_mode} onChange={(e) => f('registration_mode', e.target.value)} style={inp}>
-                  <option value="none">Keine</option>
+                  <option value="none">Keine Anmeldung</option>
                   <option value="individual">Nur Einzelpersonen</option>
                   <option value="team">Nur Teams</option>
-                  <option value="both">Teams &amp; Einzelpersonen</option>
+                  <option value="both">Teams und Einzelpersonen</option>
                 </select>
               </Field>
               {(form.registration_mode === 'team' || form.registration_mode === 'both') && (
-                <Field label="Max. Teamgröße">
-                  <input
-                    type="number" min={2} max={20}
-                    value={form.registration_max_team_size}
-                    onChange={(e) => setForm((p) => p ? { ...p, registration_max_team_size: Number(e.target.value) } : p)}
-                    style={inp}
-                  />
+                <Field label="Maximale Teamgröße" hint="Zwischen 2 und 20 Personen.">
+                  <input type="number" min={2} max={20} value={form.registration_max_team_size} onChange={(e) => setForm((p) => p ? { ...p, registration_max_team_size: Number(e.target.value) } : p)} style={inp} />
                 </Field>
               )}
+            </Grid>
+          </FormSection>
+          <FormSection title="Bild" description="Optional. Erscheint auf der Event-Karte und in der Ankündigung. Ohne Bild zeigt die Karte das Datum.">
+            <div style={{ display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
+              {form.image_url && <img src={form.image_url} alt="" style={{ width: 160, height: 100, objectFit: 'cover', borderRadius: 'var(--radius)', border: '1px solid var(--line-soft)' }} />}
+              <label style={{ ...btnGhost, display: 'inline-flex', alignItems: 'center', cursor: imageUploading ? 'wait' : 'pointer' }}>
+                {imageUploading ? 'Hochladen …' : form.image_url ? 'Bild ersetzen' : 'Bild hochladen'}
+                <input type="file" accept="image/*" style={{ display: 'none' }} disabled={imageUploading} onChange={(e) => { const file = e.target.files?.[0]; if (file) handleEventImageUpload(file); e.target.value = '' }} />
+              </label>
+              {form.image_url && <button type="button" onClick={() => setForm((p) => p ? { ...p, image_url: null } : p)} style={btnDanger}>Bild entfernen</button>}
             </div>
-            {/* Image upload */}
-            <div>
-              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--fg-mute)', marginBottom: 8 }}>Bild</div>
-              <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start', flexWrap: 'wrap' }}>
-                {form.image_url && (
-                  <div style={{ flexShrink: 0, position: 'relative' }}>
-                    <img src={form.image_url} alt="" style={{ width: 140, height: 84, objectFit: 'cover', borderRadius: 8, display: 'block', border: '1px solid var(--line-soft)' }} />
-                    <button
-                      onClick={() => setForm((p) => p ? { ...p, image_url: null } : p)}
-                      style={{ position: 'absolute', top: -8, right: -8, width: 22, height: 22, borderRadius: '50%', background: 'var(--bg-3)', border: '1px solid var(--line)', color: 'var(--fg-mute)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, lineHeight: 1 }}
-                    >✕</button>
-                  </div>
-                )}
-                <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 16px', borderRadius: 8, border: '1px solid var(--line)', cursor: imageUploading ? 'wait' : 'pointer', fontFamily: 'var(--font-mono)', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--fg-dim)' }}>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12" /></svg>
-                  {imageUploading ? 'Hochladen …' : 'Bild hochladen'}
-                  <input type="file" accept="image/*" style={{ display: 'none' }} disabled={imageUploading} onChange={(e) => { const file = e.target.files?.[0]; if (file) handleEventImageUpload(file); e.target.value = '' }} />
-                </label>
-                {form.image_url && <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--fg-mute)', alignSelf: 'center', letterSpacing: '0.04em' }}>Wird in Ankündigung angezeigt</div>}
-              </div>
-            </div>
-          </div>
-          <div style={{ display: 'flex', gap: 10, marginTop: 20 }}>
-            <button onClick={() => setForm(null)} style={btnGhost}>Abbrechen</button>
-            <button onClick={save} disabled={saving} style={btnPrimary}>{saving ? '…' : 'Speichern'}</button>
-          </div>
-        </div>
+          </FormSection>
+        </FormShell>
       )}
 
       {!form && <div style={card}>
@@ -339,8 +300,8 @@ export default function AdminEventsPage() {
                     onClick={() => expandRegistrations(ev.id)}
                     style={{
                       ...btnGhost,
-                      color: isExpanded ? 'var(--accent-2)' : count > 0 ? 'var(--fg-dim)' : 'var(--fg-mute)',
-                      borderColor: isExpanded ? 'var(--accent-2)' : 'var(--line)',
+                      color: isExpanded ? 'var(--accent)' : count > 0 ? 'var(--fg-dim)' : 'var(--fg-mute)',
+                      borderColor: isExpanded ? 'var(--accent)' : 'var(--line)',
                       display: 'inline-flex', alignItems: 'center', gap: 6,
                     }}
                   >
@@ -380,11 +341,9 @@ export default function AdminEventsPage() {
         </div>
 
         {recurringForm && (
-          <div style={{ ...card, marginBottom: 20, padding: 24 }}>
-            <h3 style={cardTitle}>{recurringIsNew ? 'Neues wiederkehrendes Event' : 'Bearbeiten'}</h3>
-            {recurringError && <div style={errorBox}>{recurringError}</div>}
-            <div style={{ display: 'grid', gap: 18, marginTop: 16 }}>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 12, alignItems: 'end' }}>
+          <FormShell title={recurringIsNew ? 'Neues wiederkehrendes Event' : 'Wiederkehrendes Event bearbeiten'} error={recurringError} onCancel={() => setRecurringForm(null)} onSave={saveRecurring} saving={recurringSaving}>
+            <FormSection title="Rhythmus" description="Zum Beispiel: jeden ersten Donnerstag im Monat nach dem Training.">
+              <Grid cols={3}>
                 <Field label="Kategorie">
                   <select value={recurringForm.category} onChange={(e) => rf('category', e.target.value as EventCategory)} style={inp}>
                     {CATEGORIES.map((c) => <option key={c} value={c}>{CAT_LABELS[c]}</option>)}
@@ -392,7 +351,7 @@ export default function AdminEventsPage() {
                 </Field>
                 <Field label="Wochentag">
                   <select value={recurringForm.day_of_week} onChange={(e) => rf('day_of_week', Number(e.target.value))} style={inp}>
-                    {[0,1,2,3,4,5,6].map(d => <option key={d} value={d}>{dayLabel(d, 'de')} ({['Mo','Di','Mi','Do','Fr','Sa','So'][d]})</option>)}
+                    {[0,1,2,3,4,5,6].map(d => <option key={d} value={d}>{dayLabel(d, 'de')}</option>)}
                   </select>
                 </Field>
                 <Field label="Woche im Monat">
@@ -400,22 +359,22 @@ export default function AdminEventsPage() {
                     {[1,2,3,4,5].map(w => <option key={w} value={w}>{WEEK_LABELS[w]}</option>)}
                   </select>
                 </Field>
-                <Field label="Uhrzeit">
+              </Grid>
+              <Grid>
+                <Field label="Uhrzeit" hint="Freitext, z. B. „nach dem Training“ oder „19:00“.">
                   <input type="text" value={recurringForm.time_label} onChange={(e) => rf('time_label', e.target.value)} placeholder="nach dem Training" style={inp} />
                 </Field>
-                <Field label="Reihenfolge">
+                <Field label="Reihenfolge" hint="Kleinere Zahl steht weiter oben.">
                   <input type="number" value={recurringForm.sort_order} onChange={(e) => rf('sort_order', Number(e.target.value))} style={inp} />
                 </Field>
-              </div>
-              <LangPair label="Titel" deValue={recurringForm.title_de} enValue={recurringForm.title_en} onDe={(v) => rf('title_de', v)} onEn={(v) => rf('title_en', v)} />
+              </Grid>
+            </FormSection>
+            <FormSection title="Inhalt">
+              <LangPair label="Titel" deValue={recurringForm.title_de} enValue={recurringForm.title_en} onDe={(v) => rf('title_de', v)} onEn={(v) => rf('title_en', v)} placeholder={{ de: 'Stammtisch', en: 'Club night' }} />
               <LangPair label="Ort" deValue={recurringForm.place_de} enValue={recurringForm.place_en} onDe={(v) => rf('place_de', v)} onEn={(v) => rf('place_en', v)} />
-              <LangPair label="Beschreibung" deValue={recurringForm.desc_de} enValue={recurringForm.desc_en} onDe={(v) => rf('desc_de', v)} onEn={(v) => rf('desc_en', v)} textarea />
-            </div>
-            <div style={{ display: 'flex', gap: 10, marginTop: 20 }}>
-              <button onClick={() => setRecurringForm(null)} style={btnGhost}>Abbrechen</button>
-              <button onClick={saveRecurring} disabled={recurringSaving} style={btnPrimary}>{recurringSaving ? '…' : 'Speichern'}</button>
-            </div>
-          </div>
+              <LangPair label="Beschreibung" optional textarea deValue={recurringForm.desc_de} enValue={recurringForm.desc_en} onDe={(v) => rf('desc_de', v)} onEn={(v) => rf('desc_en', v)} />
+            </FormSection>
+          </FormShell>
         )}
 
         <div style={card}>
@@ -449,38 +408,6 @@ export default function AdminEventsPage() {
   )
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-      <label style={fieldLabel}>{label}</label>
-      {children}
-    </div>
-  )
-}
-
-function LangPair({ label, deValue, enValue, onDe, onEn, textarea = false }: { label: string; deValue: string; enValue: string; onDe: (v: string) => void; onEn: (v: string) => void; textarea?: boolean }) {
-  const Tag = textarea ? 'textarea' : 'input'
-  return (
-    <div>
-      <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--fg-mute)', marginBottom: 8 }}>{label}</div>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }} className="admin-lang-pair">
-        {[{ val: deValue, cb: onDe, tag: 'DE' }, { val: enValue, cb: onEn, tag: 'EN' }].map(({ val, cb, tag }) => (
-          <div key={tag} style={{ position: 'relative' }}>
-            <Tag
-              value={val}
-              onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => cb(e.target.value)}
-              style={{ ...inp, paddingRight: 44, ...(textarea ? { minHeight: 76, resize: 'vertical' as const, lineHeight: 1.5 } : {}) }}
-              rows={textarea ? 3 : undefined}
-            />
-            <span style={{ position: 'absolute', top: 8, right: 10, fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.1em', color: 'var(--fg-mute)', background: 'var(--bg)', padding: '2px 7px', borderRadius: 999, border: '1px solid var(--line-soft)', pointerEvents: 'none' }}>{tag}</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-}
-
-const cardTitle: React.CSSProperties = { fontFamily: 'var(--font-mono)', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.1em', margin: 0, color: 'var(--fg)', fontWeight: 600 }
 
 function RegistrationPanel({
   loading, registrations, error, onDelete,
@@ -525,12 +452,12 @@ function RegistrationPanel({
       <div style={{ padding: '10px 24px', borderBottom: '1px solid var(--line-soft)', display: 'flex', gap: 20 }}>
         {teams.length > 0 && (
           <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--fg-mute)', letterSpacing: '0.06em' }}>
-            <span style={{ color: '#D97757', fontWeight: 600 }}>{teams.length}</span> {teams.length === 1 ? 'Team' : 'Teams'}
+            <span style={{ color: 'var(--cat-comp)', fontWeight: 600 }}>{teams.length}</span> {teams.length === 1 ? 'Team' : 'Teams'}
           </span>
         )}
         {individuals.length > 0 && (
           <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--fg-mute)', letterSpacing: '0.06em' }}>
-            <span style={{ color: '#D97757', fontWeight: 600 }}>{individuals.length}</span> Einzeln
+            <span style={{ color: 'var(--cat-comp)', fontWeight: 600 }}>{individuals.length}</span> Einzeln
           </span>
         )}
         <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--fg-mute)', letterSpacing: '0.06em', marginLeft: 'auto' }}>
@@ -571,7 +498,7 @@ function RegistrationPanel({
                       .sort((a, b) => a.sort_order - b.sort_order)
                       .map((m, i) => (
                         <div key={m.id} style={{ display: 'flex', alignItems: 'baseline', gap: 8, padding: '4px 0', borderBottom: i < team.event_registration_members.length - 1 ? '1px solid var(--line-soft)' : 'none' }}>
-                          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: '#D97757', minWidth: 14, fontWeight: 600 }}>{i + 1}</span>
+                          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--cat-comp)', minWidth: 14, fontWeight: 600 }}>{i + 1}</span>
                           <span style={{ fontSize: 13, color: 'var(--fg)', flex: 1 }}>{m.name}</span>
                           {m.email && <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--fg-mute)' }}>{m.email}</span>}
                         </div>
@@ -592,7 +519,7 @@ function RegistrationPanel({
             <div style={{ background: 'var(--bg-2)', border: '1px solid var(--line-soft)', borderRadius: 10, overflow: 'hidden' }}>
               {individuals.map((ind, i) => (
                 <div key={ind.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', borderBottom: i < individuals.length - 1 ? '1px solid var(--line-soft)' : 'none' }}>
-                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: '#D97757', fontWeight: 600, minWidth: 16 }}>{i + 1}</span>
+                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--cat-comp)', fontWeight: 600, minWidth: 16 }}>{i + 1}</span>
                   <span style={{ fontSize: 13, color: 'var(--fg)', flex: 1 }}>{ind.name}</span>
                   {ind.email && <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--fg-mute)' }}>{ind.email}</span>}
                   <button

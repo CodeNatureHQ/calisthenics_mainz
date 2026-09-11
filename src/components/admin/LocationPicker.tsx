@@ -161,7 +161,7 @@ export default function LocationPicker({ lat, lng, onChange }: Props) {
         {!hasPin && (
           <div style={{
             position: 'absolute', bottom: 10, left: '50%', transform: 'translateX(-50%)',
-            background: 'rgba(26,26,30,0.85)', backdropFilter: 'blur(8px)',
+            background: 'color-mix(in srgb, var(--bg) 85%, transparent)', backdropFilter: 'blur(8px)',
             border: '1px solid var(--line-soft)', borderRadius: 8,
             padding: '6px 14px', zIndex: 500,
             fontFamily: 'var(--font-mono)', fontSize: 10,

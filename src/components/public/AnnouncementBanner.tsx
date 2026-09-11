@@ -15,7 +15,7 @@ function getRegConfig(event: Event): RegistrationConfig | undefined {
 type Phase = "modal" | "banner" | "hidden";
 
 const CAT_COLORS: Record<string, string> = {
-  comp: '#D97757', jam: '#D8FF3D', workshop: '#8EC5FF', social: '#FFB48E',
+  comp: '#E4511B', jam: '#2E6B4F', workshop: '#3B5BA5', social: '#B8781F',
 }
 const CAT_LABELS: Record<string, Record<string, string>> = {
   comp: { de: 'Wettkampf', en: 'Competition' },
@@ -85,7 +85,7 @@ export default function AnnouncementBanner({
 
   if (phase === "hidden") return null;
 
-  const catColor = isEventMode ? (CAT_COLORS[event.category] ?? "#D8FF3D") : null;
+  const catColor = isEventMode ? (CAT_COLORS[event.category] ?? "#386346") : null;
   const catLabel = isEventMode ? (CAT_LABELS[event.category]?.[lang] ?? event.category) : null;
   const eventDate = isEventMode
     ? new Date(event.starts_at).toLocaleDateString(lang === "de" ? "de-DE" : "en-GB", {
@@ -104,7 +104,7 @@ export default function AnnouncementBanner({
         style={{
           position: "fixed", top: 0, left: 0, right: 0, height: 40, zIndex: 60,
           display: "flex", alignItems: "center",
-          background: isEventMode ? "#1A1A1E" : "#7A5F00",
+          background: isEventMode ? "var(--ink)" : "#7A5F00",
           borderBottom: isEventMode ? "1px solid var(--line)" : "1px solid #5C4700",
         }}
       >
@@ -122,7 +122,7 @@ export default function AnnouncementBanner({
                 background: catColor ?? "transparent",
                 fontFamily: "var(--font-mono)", fontSize: 10,
                 letterSpacing: "0.1em", textTransform: "uppercase",
-                color: "#0B0B0D", fontWeight: 600,
+                color: "#FFFFFF", fontWeight: 600,
               }}>
                 {catLabel}
               </span>
@@ -135,7 +135,7 @@ export default function AnnouncementBanner({
             )}
             <span style={{
               fontFamily: "var(--font-mono)", fontSize: 12, fontWeight: 600,
-              color: isEventMode ? "var(--fg)" : "#FFF8E1",
+              color: isEventMode ? "var(--ink-fg)" : "#FFF8E1",
               letterSpacing: "0.02em", overflow: "hidden",
               textOverflow: "ellipsis", whiteSpace: "nowrap",
             }}>
@@ -147,7 +147,7 @@ export default function AnnouncementBanner({
             aria-label={lang === "de" ? "Meldung schließen" : "Close notice"}
             style={{
               flexShrink: 0, background: "none", border: "none",
-              color: isEventMode ? "var(--fg-mute)" : "rgba(255,248,225,0.6)",
+              color: isEventMode ? "var(--ink-dim)" : "rgba(255,248,225,0.6)",
               cursor: "pointer", padding: "4px 6px", lineHeight: 1, transition: "color 0.2s",
             }}
             onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = isEventMode ? "var(--fg)" : "#FFF8E1")}
@@ -235,7 +235,7 @@ export default function AnnouncementBanner({
                     onClick={handleEventCta}
                     style={{
                       display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-                      width: "100%", background: "#D97757", color: "#FFF8F0",
+                      width: "100%", background: "var(--accent)", color: "var(--accent-ink)",
                       fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: 13,
                       letterSpacing: "0.06em", textTransform: "uppercase",
                       padding: "12px 20px", borderRadius: 999, border: "none",
@@ -297,7 +297,7 @@ export default function AnnouncementBanner({
                       letterSpacing: "0.02em", padding: "12px 20px", borderRadius: 999,
                       border: "none", cursor: "pointer", transition: "background 0.2s",
                     }}
-                    onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.background = "#E8FF66")}
+                    onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.background = "var(--accent)")}
                     onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.background = "var(--fg)")}
                   >
                     {lang === "de" ? "Verstanden" : "Got it"}

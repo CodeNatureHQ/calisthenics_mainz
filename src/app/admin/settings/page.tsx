@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import type { SiteSettings } from '@/lib/types'
 import { createClient } from '@/lib/supabase/client'
-import { pageHead, crumbStyle, h1Style, card, cardHead, cardMeta, inp, errorBox, successBox, btnPrimary } from '../shared'
+import { pageHead, crumbStyle, h1Style, card, cardHead, cardMeta, inp, errorBox, successBox, btnPrimary, fieldLabel } from '../shared'
 
 export default function AdminSettingsPage() {
   const [form, setForm] = useState<Partial<SiteSettings>>({})
@@ -68,12 +68,10 @@ export default function AdminSettingsPage() {
               { key: 'hero_fee' as const,      label: 'Monatsbeitrag',       placeholder: '€ 0 / Monat' },
             ].map(({ key, label, placeholder }) => (
               <div key={key} style={statBox}>
-                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9.5, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--fg-mute)', marginBottom: 10 }}>{label}</div>
+                <label style={fieldLabel}>{label}</label>
                 <input
                   value={form[key] ?? ''} onChange={(e) => f(key, e.target.value)}
                   placeholder={placeholder} style={inp}
-                  onFocus={(e) => (e.currentTarget.style.borderColor = 'var(--fg)')}
-                  onBlur={(e) => (e.currentTarget.style.borderColor = 'var(--line)')}
                 />
               </div>
             ))}
@@ -96,12 +94,10 @@ export default function AdminSettingsPage() {
               { key: 'about_sessions' as const, label: 'Einheiten / Woche',    placeholder: '2' },
             ].map(({ key, label, placeholder }) => (
               <div key={key} style={statBox}>
-                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9.5, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--fg-mute)', marginBottom: 10 }}>{label}</div>
+                <label style={fieldLabel}>{label}</label>
                 <input
                   value={form[key] ?? ''} onChange={(e) => f(key, e.target.value)}
                   placeholder={placeholder} style={inp}
-                  onFocus={(e) => (e.currentTarget.style.borderColor = 'var(--fg)')}
-                  onBlur={(e) => (e.currentTarget.style.borderColor = 'var(--line)')}
                 />
               </div>
             ))}
@@ -125,10 +121,8 @@ export default function AdminSettingsPage() {
             { key: 'imprint_email' as const,   label: 'E-Mail',            placeholder: 'kontakt@calisthenics-mainz.de' },
           ].map(({ key, label, placeholder }) => (
             <div key={key} style={statBox}>
-              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9.5, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--fg-mute)', marginBottom: 10 }}>{label}</div>
-              <input value={form[key] ?? ''} onChange={(e) => setForm(p => ({ ...p, [key]: e.target.value }))} placeholder={placeholder} style={inp}
-                onFocus={(e) => (e.currentTarget.style.borderColor = 'var(--fg)')}
-                onBlur={(e) => (e.currentTarget.style.borderColor = 'var(--line)')} />
+              <label style={fieldLabel}>{label}</label>
+              <input value={form[key] ?? ''} onChange={(e) => setForm(p => ({ ...p, [key]: e.target.value }))} placeholder={placeholder} style={inp} />
             </div>
           ))}
         </div>
@@ -153,7 +147,7 @@ export default function AdminSettingsPage() {
                 Ausrüstungs-Seite {form.show_ausruestung ? '● aktiv' : '○ inaktiv'}
               </div>
               <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--fg-mute)', marginTop: 3, letterSpacing: '0.04em' }}>
-                /de/ausruestung — Affiliate-Links zu Amazon
+                /de/ausruestung — Amazon-Links (ohne Affiliate)
               </div>
             </div>
           </label>

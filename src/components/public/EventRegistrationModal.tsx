@@ -18,13 +18,13 @@ type TeamMember = { name: string; email: string }
 type Step = 'select' | 'team' | 'individual' | 'submitting' | 'success'
 
 const CAT_COLORS: Record<string, string> = {
-  comp: '#D97757', jam: '#D8FF3D', workshop: '#8EC5FF', social: '#FFB48E',
+  comp: '#E4511B', jam: '#2E6B4F', workshop: '#3B5BA5', social: '#B8781F',
 }
 const CAT_INK: Record<string, string> = {
-  comp: '#FFF8F0', jam: '#1A1A00', workshop: '#001A3A', social: '#3A1A00',
+  comp: '#FFFFFF', jam: '#FFFFFF', workshop: '#FFFFFF', social: '#FFFFFF',
 }
 
-const ORANGE = '#D97757'
+const ORANGE = '#E4511B'
 const ORANGE_INK = '#FFF8F0'
 
 const copy = {
@@ -97,7 +97,7 @@ export default function EventRegistrationModal({
   useEffect(() => { setMounted(true) }, [])
 
   const c = copy[lang]
-  const catColor = CAT_COLORS[event.category] ?? '#D8FF3D'
+  const catColor = CAT_COLORS[event.category] ?? '#386346'
   const catInk = CAT_INK[event.category] ?? '#0B0B0D'
   const maxSize = config.maxTeamSize ?? 4
   const hasChoice = config.mode === 'team' && !!config.allowIndividual
@@ -202,7 +202,7 @@ export default function EventRegistrationModal({
       style={{
         position: 'fixed', inset: 0, zIndex: 300,
         background: 'rgba(10,10,12,0.92)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        display: 'flex', alignItems: 'flex-start', justifyContent: 'center',
         overflowY: 'auto', padding: '40px 20px',
       }}
     >
@@ -210,7 +210,7 @@ export default function EventRegistrationModal({
         onClick={(e) => e.stopPropagation()}
         style={{
           background: 'var(--bg-2)', border: '1px solid var(--line)',
-          borderRadius: 20, maxWidth: 560, width: '100%',
+          borderRadius: 4, margin: 'auto', flexShrink: 0, maxWidth: 560, width: '100%',
           position: 'relative', overflow: 'hidden',
           boxShadow: '0 32px 80px rgba(0,0,0,0.6)',
         }}

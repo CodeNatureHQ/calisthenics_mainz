@@ -106,16 +106,7 @@ export default async function BlogPostPage({
       />
 
       {/* Nav */}
-      <header
-        style={{
-          position: 'sticky',
-          top: 'var(--banner-h, 0px)',
-          zIndex: 100,
-          background: 'rgba(10,10,11,0.9)',
-          backdropFilter: 'blur(12px)',
-          borderBottom: '1px solid var(--border)',
-        }}
-      >
+      <header className="club-subheader">
         <div
           className="container"
           style={{
@@ -125,10 +116,7 @@ export default async function BlogPostPage({
             gap: '1rem',
           }}
         >
-          <Link
-            href={`/${lang}`}
-            style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}
-          >
+          <Link href={`/${lang}`} className="club-back">
             <img src="/logo.png" alt="Calisthenics Mainz" style={{ width: 32, height: 32, objectFit: 'contain' }} />
             <div style={{ display: 'flex', flexDirection: 'column' }}>
               <span style={{ fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 12, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--fg)', lineHeight: 1.1 }}>

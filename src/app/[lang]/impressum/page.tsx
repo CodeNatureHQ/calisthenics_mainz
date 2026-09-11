@@ -78,9 +78,9 @@ export default async function ImpressumPage({ params }: { params: Promise<{ lang
 
   return (
     <>
-      <header style={{ position: 'sticky', top: 0, zIndex: 100, background: 'rgba(10,10,11,0.92)', backdropFilter: 'blur(12px)', borderBottom: '1px solid var(--line-soft)' }}>
+      <header className="club-subheader">
         <div className="container" style={{ height: 64, display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <Link href={`/${lang}`} style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--fg-dim)', textDecoration: 'none', transition: 'color 0.15s' }}>
+          <Link href={`/${lang}`} className="club-back">
             {c.back}
           </Link>
         </div>

@@ -152,15 +152,15 @@ export default async function HomePage({
         />
       ))}
       <Nav lang={lang} showAusruestung={settings?.show_ausruestung ?? false} />
-      <main style={{ paddingTop: 'calc(68px + var(--banner-h, 0px))' }}>
-        <Hero lang={lang} settings={settings} />
+      <main style={{ paddingTop: 'calc(76px + var(--banner-h, 0px))' }}>
+        <Hero lang={lang} settings={settings} sessions={sessions ?? []} />
         <TrainingSection lang={lang} sessions={sessions ?? []} overrides={overrides ?? []} spots={spots ?? []} events={events ?? []} recurringEvents={recurringEvents} />
         <EventsSection lang={lang} events={events ?? []} />
         <SpotsSection lang={lang} spots={spots ?? []} />
         <AboutSection lang={lang} settings={settings} />
         <BlogGrid lang={lang} posts={posts ?? []} />
         <FaqSection lang={lang} items={faqItems ?? []} />
-        <JoinForm lang={lang} />
+        <JoinForm lang={lang} contactEmail={settings?.imprint_email ?? null} />
       </main>
       <Footer lang={lang} />
     </>

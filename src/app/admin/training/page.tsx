@@ -3,8 +3,10 @@
 import { useEffect, useState } from 'react'
 import type { TrainingSession, CalendarOverride, SessionLevel, Spot } from '@/lib/types'
 import { createClient } from '@/lib/supabase/client'
-import { fullDayLabel, levelLabel, t } from '@/lib/utils'
-import { pageHead, crumbStyle, h1Style, sectionHead, sectionTitle, card, formCard, listRow as sharedListRow, empty, inp, fieldLabel, errorBox, btnPrimary, btnGhost, btnDanger } from '../shared'
+import { fullDayLabel, levelLabel } from '@/lib/utils'
+import { pageHead, crumbStyle, h1Style, sectionHead, sectionTitle, card, listRow as sharedListRow, empty, inp, btnPrimary, btnGhost, btnDanger } from '../shared'
+import { FormShell, FormSection, Field, Grid, LangColumns } from '@/components/admin/Form'
+import LangPair from '@/components/admin/LangPair'
 import dynamic from 'next/dynamic'
 const RichText = dynamic(() => import('@/components/admin/RichText'), { ssr: false })
 
@@ -115,8 +117,8 @@ export default function AdminTrainingPage() {
                   <span style={{
                     fontFamily: 'var(--font-mono)', fontSize: 10, fontWeight: 700, borderRadius: 4, padding: '2px 7px',
                     textTransform: 'uppercase', letterSpacing: '0.08em',
-                    background: o.type === 'cancel' ? 'rgba(255,122,122,0.12)' : 'rgba(216,255,61,0.1)',
-                    color: o.type === 'cancel' ? 'var(--danger)' : 'var(--accent-spark)',
+                    background: o.type === 'cancel' ? 'color-mix(in srgb, var(--danger) 12%, transparent)' : 'var(--accent-soft)',
+                    color: o.type === 'cancel' ? 'var(--danger)' : 'var(--accent)',
                   }}>
                     {o.type === 'cancel' ? 'Ausfall' : 'Extra'}
                   </span>
@@ -175,66 +177,44 @@ function SessionForm({ session, spots, onSave, onCancel }: { session: TrainingSe
   }
 
   return (
-    <div style={formCard}>
-      {/* Row 1: Zeit & Level */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr auto', gap: 12, marginBottom: 16 }} className="admin-form-grid">
-        <Field label="Wochentag">
-          <select value={dow} onChange={(e) => setDow(Number(e.target.value))} className="admin-input" style={inputStyle}>
-            {[0,1,2,3,4,5,6].map((d) => <option key={d} value={d}>{fullDayLabel(d, 'de')}</option>)}
+    <FormShell title={session ? 'Einheit bearbeiten' : 'Neue Trainingseinheit'} onCancel={onCancel} onSave={save} saving={saving} disabled={!time.trim()}>
+      <FormSection title="Termin" description="Wöchentlich wiederkehrend. Für einzelne Ausfälle oder Extra-Termine gibt es den Bereich darunter.">
+        <Grid cols={3}>
+          <Field label="Wochentag">
+            <select value={dow} onChange={(e) => setDow(Number(e.target.value))} style={inp}>
+              {[0,1,2,3,4,5,6].map((d) => <option key={d} value={d}>{fullDayLabel(d, 'de')}</option>)}
+            </select>
+          </Field>
+          <Field label="Uhrzeit" hint="So, wie es auf der Seite stehen soll.">
+            <input value={time} onChange={(e) => setTime(e.target.value)} placeholder="19:15 – 21:30" style={inp} />
+          </Field>
+          <Field label="Level">
+            <select value={level} onChange={(e) => setLevel(e.target.value as SessionLevel)} style={inp}>
+              {LEVELS.map((l) => <option key={l} value={l}>{levelLabel(l, 'de')}</option>)}
+            </select>
+          </Field>
+        </Grid>
+      </FormSection>
+      <FormSection title="Ort" description="Ein verknüpfter Spot übernimmt seinen Namen und verlinkt die Anfahrt. Der Ortsname lässt sich danach noch anpassen.">
+        <Field label="Spot">
+          <select value={spotId} onChange={(e) => handleSpotChange(e.target.value)} style={inp}>
+            <option value="">Kein Spot verknüpft</option>
+            {spots.map(s => <option key={s.id} value={s.id}>{s.name.de} · {s.address}</option>)}
           </select>
         </Field>
-        <Field label="Uhrzeit">
-          <input value={time} onChange={(e) => setTime(e.target.value)} placeholder="19:15 – 21:30" className="admin-input" style={inputStyle} />
-        </Field>
-        <Field label="Level">
-          <select value={level} onChange={(e) => setLevel(e.target.value as SessionLevel)} className="admin-input" style={inputStyle}>
-            {LEVELS.map((l) => <option key={l} value={l}>{levelLabel(l, 'de')}</option>)}
-          </select>
-        </Field>
-        <Field label="Reihenfolge">
-          <input type="number" value={sortOrder} onChange={(e) => setSortOrder(Number(e.target.value))} className="admin-input" style={{ ...inputStyle, width: 72 }} />
-        </Field>
-      </div>
-
-      <div style={{ borderTop: '1px solid var(--line-soft)', paddingTop: 16, marginBottom: 16 }}>
-        <Field label="Spot (für Kartenlink)">
-          <select value={spotId} onChange={(e) => handleSpotChange(e.target.value)} className="admin-input" style={inputStyle}>
-            <option value="">— Kein Spot verknüpft —</option>
-            {spots.map(s => (
-              <option key={s.id} value={s.id}>{s.name.de} · {s.address}</option>
-            ))}
-          </select>
-        </Field>
-      </div>
-
-      <div style={{ marginBottom: 16 }}>
-        <LangPair
-          label="Ort / Location"
-          deValue={placeDe} enValue={placeEn}
-          onDe={setPlaceDe} onEn={setPlaceEn}
-          placeholder={{ de: 'JGU Campus · Halle', en: 'JGU Campus · Gym' }}
-        />
-      </div>
-
-      <div>
-        <div style={fieldLabel}>Beschreibung (optional)</div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }} className="admin-lang-pair">
-          {[{ val: descDe, set: setDescDe, ph: 'Worauf liegt der Fokus?', tag: 'DE' }, { val: descEn, set: setDescEn, ph: "What's the focus?", tag: 'EN' }].map(({ val, set, ph, tag }) => (
-            <div key={tag} style={{ position: 'relative' }}>
-              <div style={{ position: 'absolute', top: 8, right: 10, zIndex: 10, fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.1em', color: 'var(--fg-mute)', background: 'var(--bg)', padding: '2px 7px', borderRadius: 999, border: '1px solid var(--line-soft)', pointerEvents: 'none' }}>
-                {tag}
-              </div>
-              <RichText value={val} onChange={set} placeholder={ph} minHeight={80} />
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div style={{ display: 'flex', gap: 8, marginTop: 20, paddingTop: 16, borderTop: '1px solid var(--line-soft)' }}>
-        <button onClick={onCancel} style={btnGhost}>Abbrechen</button>
-        <button onClick={save} disabled={saving} style={btnPrimary}>{saving ? '…' : 'Speichern'}</button>
-      </div>
-    </div>
+        <LangPair label="Ortsname" deValue={placeDe} enValue={placeEn} onDe={setPlaceDe} onEn={setPlaceEn} placeholder={{ de: 'JGU Campus · Halle', en: 'JGU Campus · Gym' }} />
+      </FormSection>
+      <FormSection title="Beschreibung" description="Erscheint im Dialog, wenn jemand die Einheit anklickt: Fokus, Ablauf, was man mitbringen sollte.">
+        <LangColumns label="Beschreibung" optional de={<RichText value={descDe} onChange={setDescDe} placeholder="Worauf liegt der Fokus?" minHeight={120} />} en={<RichText value={descEn} onChange={setDescEn} placeholder="What's the focus?" minHeight={120} />} />
+      </FormSection>
+      <FormSection title="Anzeige">
+        <Grid cols={3}>
+          <Field label="Reihenfolge" hint="Bei mehreren Einheiten am selben Tag.">
+            <input type="number" value={sortOrder} onChange={(e) => setSortOrder(Number(e.target.value))} style={inp} />
+          </Field>
+        </Grid>
+      </FormSection>
+    </FormShell>
   )
 }
 
@@ -272,94 +252,38 @@ function OverrideForm({ override, onSave, onCancel }: { override: CalendarOverri
   }
 
   return (
-    <div style={formCard}>
-      {/* Typ & Datum */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }} className="admin-form-grid">
-        <Field label="Typ">
-          <select value={type} onChange={(e) => setType(e.target.value as 'training' | 'cancel')} className="admin-input" style={inputStyle}>
-            <option value="cancel">Ausfall</option>
-            <option value="training">Extra-Training</option>
-          </select>
-        </Field>
-        <Field label="Datum">
-          <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="admin-input" style={inputStyle} />
-        </Field>
-      </div>
-
-      {/* Extra-Training Felder */}
+    <FormShell title={override ? 'Termin bearbeiten' : 'Ausfall oder Extra-Termin'} onCancel={onCancel} onSave={save} saving={saving} disabled={!date}>
+      <FormSection title="Was passiert?" description="Ein Ausfall blendet an diesem Tag alle regulären Einheiten aus. Ein Extra-Termin kommt zusätzlich in den Plan.">
+        <Grid>
+          <Field label="Art">
+            <select value={type} onChange={(e) => setType(e.target.value as 'training' | 'cancel')} style={inp}>
+              <option value="cancel">Training fällt aus</option>
+              <option value="training">Extra-Training</option>
+            </select>
+          </Field>
+          <Field label="Datum">
+            <input type="date" value={date} onChange={(e) => setDate(e.target.value)} style={inp} />
+          </Field>
+        </Grid>
+      </FormSection>
       {type === 'training' && (
-        <div style={{ borderTop: '1px solid var(--line-soft)', paddingTop: 16, marginBottom: 16 }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
+        <FormSection title="Extra-Training" description="Uhrzeit, Level und Ort für diesen einen Termin.">
+          <Grid>
             <Field label="Uhrzeit">
-              <input value={time} onChange={(e) => setTime(e.target.value)} placeholder="11:00 – 13:00" className="admin-input" style={inputStyle} />
+              <input value={time} onChange={(e) => setTime(e.target.value)} placeholder="11:00 – 13:00" style={inp} />
             </Field>
             <Field label="Level">
-              <select value={level} onChange={(e) => setLevel(e.target.value as SessionLevel)} className="admin-input" style={inputStyle}>
+              <select value={level} onChange={(e) => setLevel(e.target.value as SessionLevel)} style={inp}>
                 {LEVELS.map((l) => <option key={l} value={l}>{levelLabel(l, 'de')}</option>)}
               </select>
             </Field>
-          </div>
-          <LangPair
-            label="Ort / Location"
-            deValue={placeDe} enValue={placeEn}
-            onDe={setPlaceDe} onEn={setPlaceEn}
-            placeholder={{ de: 'Volkspark Mainz', en: 'Volkspark Mainz' }}
-          />
-        </div>
+          </Grid>
+          <LangPair label="Ort" deValue={placeDe} enValue={placeEn} onDe={setPlaceDe} onEn={setPlaceEn} placeholder={{ de: 'Volkspark Mainz', en: 'Volkspark Mainz' }} />
+        </FormSection>
       )}
-
-      {/* Notiz */}
-      <div style={{ borderTop: type === 'training' ? 'none' : '1px solid var(--line-soft)', paddingTop: type === 'training' ? 0 : 16 }}>
-        <LangPair
-          label="Notiz (optional)"
-          deValue={noteDe} enValue={noteEn}
-          onDe={setNoteDe} onEn={setNoteEn}
-          placeholder={{ de: 'z.B. Feiertag — kein Training', en: 'e.g. Public holiday — no session' }}
-        />
-      </div>
-
-      <div style={{ display: 'flex', gap: 8, marginTop: 20, paddingTop: 16, borderTop: '1px solid var(--line-soft)' }}>
-        <button onClick={onCancel} style={btnGhost}>Abbrechen</button>
-        <button onClick={save} disabled={saving} style={btnPrimary}>{saving ? '…' : 'Speichern'}</button>
-      </div>
-    </div>
+      <FormSection title="Hinweis" description="Steht im Wochenplan direkt beim Termin. Bei einem Ausfall zum Beispiel der Grund.">
+        <LangPair label="Hinweis" optional deValue={noteDe} enValue={noteEn} onDe={setNoteDe} onEn={setNoteEn} placeholder={{ de: 'Feiertag – kein Training', en: 'Public holiday – no session' }} />
+      </FormSection>
+    </FormShell>
   )
 }
-
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div>
-      <label style={fieldLabel}>{label}</label>
-      {children}
-    </div>
-  )
-}
-
-function LangPair({ label, deValue, enValue, onDe, onEn, textarea = false, rows = 3, placeholder }: {
-  label: string; deValue: string; enValue: string
-  onDe: (v: string) => void; onEn: (v: string) => void
-  textarea?: boolean; rows?: number; placeholder?: { de?: string; en?: string }
-}) {
-  const Tag = textarea ? 'textarea' : 'input'
-  return (
-    <div>
-      <div style={fieldLabel}>{label}</div>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }} className="admin-lang-pair">
-        {[{ val: deValue, cb: onDe, tag: 'DE', ph: placeholder?.de }, { val: enValue, cb: onEn, tag: 'EN', ph: placeholder?.en }].map(({ val, cb, tag, ph }) => (
-          <div key={tag} style={{ position: 'relative' }}>
-            <Tag
-              value={val}
-              onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => cb(e.target.value)}
-              placeholder={ph}
-              style={{ ...inputStyle, paddingRight: 44, ...(textarea ? { minHeight: 76, resize: 'vertical' as const, lineHeight: 1.5 } : {}) }}
-              rows={textarea ? rows : undefined}
-            />
-            <span style={{ position: 'absolute', top: 8, right: 10, fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.1em', color: 'var(--fg-mute)', background: 'var(--bg)', padding: '2px 7px', borderRadius: 999, border: '1px solid var(--line-soft)', pointerEvents: 'none' }}>{tag}</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-}
-
-const inputStyle: React.CSSProperties = inp

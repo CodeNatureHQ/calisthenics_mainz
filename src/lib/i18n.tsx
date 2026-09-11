@@ -25,6 +25,7 @@ export function LangProvider({
   useEffect(() => {
     if (typeof window !== 'undefined') {
       localStorage.setItem('cm-lang', lang)
+      document.documentElement.lang = lang
     }
   }, [lang])
 

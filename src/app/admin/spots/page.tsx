@@ -5,7 +5,9 @@ import type { Spot } from '@/lib/types'
 import { createClient } from '@/lib/supabase/client'
 import { slugify } from '@/lib/slugify'
 import dynamic from 'next/dynamic'
-import { pageHead, crumbStyle, h1Style, card, formCard, listRow as sharedListRow, empty, inp, fieldLabel, errorBox, btnPrimary, btnGhost, btnDanger } from '../shared'
+import { pageHead, crumbStyle, h1Style, card, listRow as sharedListRow, empty, inp, btnPrimary, btnGhost, btnDanger } from '../shared'
+import { FormShell, FormSection, Field, Grid, Toggle } from '@/components/admin/Form'
+import LangPair from '@/components/admin/LangPair'
 
 const LocationPicker = dynamic(() => import('@/components/admin/LocationPicker'), { ssr: false })
 
@@ -124,67 +126,40 @@ export default function AdminSpotsPage() {
       </div>
 
       {editing !== null && (
-        <div style={{ ...formCard, marginBottom: 16 }}>
-          <h2 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--fg)', margin: '0 0 1.5rem' }}>
-            {isNew ? 'Neuer Spot' : 'Spot bearbeiten'}
-          </h2>
-          {error && <div style={errorBox}>{error}</div>}
-
-
-          <div style={{ display: 'grid', gap: '1rem' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: '0.75rem' }}>
-              {!isNew && <Field label="ID"><input value={form.id} disabled style={{ ...inputStyle, opacity: 0.5, fontFamily: 'var(--font-mono)', fontSize: 12 }} /></Field>}
-              <Field label="Glyph"><input value={form.glyph} onChange={(e) => f('glyph', e.target.value)} placeholder="JGU" style={{ ...inputStyle, fontFamily: 'var(--font-mono)' }} /></Field>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }} className="admin-lang-pair">
-              <Field label="Name (DE)">
-                <input value={form.name_de} onChange={(e) => {
-                  f('name_de', e.target.value)
-                  if (isNew) f('id', slugify(e.target.value))
-                }} style={inputStyle} />
-                {isNew && form.id && (
-                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--accent-2)', letterSpacing: '0.06em', marginTop: 4 }}>
-                    ID: {form.id}
-                  </div>
-                )}
+        <FormShell title={isNew ? 'Neuer Spot' : 'Spot bearbeiten'} error={error} onCancel={cancelEdit} onSave={handleSave} saving={saving} disabled={!form.name_de.trim()}>
+          <FormSection title="Name" description="So heißt der Ort auf der Webseite. Die Kurzbeschreibung steht in der Liste direkt unter dem Namen.">
+            <LangPair label="Name" deValue={form.name_de} enValue={form.name_en} onDe={(v) => { f('name_de', v); if (isNew) f('id', slugify(v)) }} onEn={(v) => f('name_en', v)} placeholder={{ de: 'JGU Campus', en: 'JGU Campus' }} hint={form.id ? `Kennung: ${form.id}` : undefined} />
+            <LangPair label="Kurzbeschreibung" optional deValue={form.subtitle_de} enValue={form.subtitle_en} onDe={(v) => f('subtitle_de', v)} onEn={(v) => f('subtitle_en', v)} placeholder={{ de: 'Outdoor-Anlage in der Neustadt', en: 'Outdoor park in Neustadt' }} />
+            <LangPair label="Zugang" textarea rows={2} deValue={form.access_de} enValue={form.access_en} onDe={(v) => f('access_de', v)} onEn={(v) => f('access_en', v)} hint="Wer darf hin, wann ist geöffnet, gibt es Besonderheiten?" />
+          </FormSection>
+          <FormSection title="Ort" description="Adresse und Position auf der Karte. Der Anfahrtslink öffnet sich beim Klick auf den Pfeil neben dem Spot.">
+            <Field label="Adresse">
+              <input value={form.address} onChange={(e) => f('address', e.target.value)} placeholder="Saarstraße 21, 55122 Mainz" style={inp} />
+            </Field>
+            <Field label="Position auf der Karte" hint="Auf die Karte klicken, um den Marker zu setzen.">
+              <LocationPicker lat={form.lat} lng={form.lng} onChange={(lat, lng) => setForm(prev => ({ ...prev, lat, lng }))} />
+            </Field>
+            <Field label="Anfahrtslink" optional hint="Ein Google-Maps-Link. Leer lassen, dann wird automatisch nach Name und Adresse gesucht.">
+              <input value={form.maps_url} onChange={(e) => f('maps_url', e.target.value)} type="url" placeholder="https://maps.app.goo.gl/…" style={inp} />
+            </Field>
+          </FormSection>
+          <FormSection title="Ausstattung" description="Erscheint als Schlagwörter unter „Ausstattung & Zugang“.">
+            <Field label="Geräte" hint="Mit Komma trennen.">
+              <input value={form.gear} onChange={(e) => f('gear', e.target.value)} placeholder="Klimmzugstange, Dip-Barren, Parallettes" style={inp} />
+            </Field>
+          </FormSection>
+          <FormSection title="Anzeige">
+            <Grid>
+              <Field label="Kürzel" hint="Zwei bis vier Buchstaben für Listen, z. B. JGU.">
+                <input value={form.glyph} onChange={(e) => f('glyph', e.target.value.toUpperCase())} maxLength={4} placeholder="JGU" style={inp} />
               </Field>
-              <Field label="Name (EN)"><input value={form.name_en} onChange={(e) => f('name_en', e.target.value)} style={inputStyle} /></Field>
-              <Field label="Subtitle (DE)"><input value={form.subtitle_de} onChange={(e) => f('subtitle_de', e.target.value)} style={inputStyle} /></Field>
-              <Field label="Subtitle (EN)"><input value={form.subtitle_en} onChange={(e) => f('subtitle_en', e.target.value)} style={inputStyle} /></Field>
-              <Field label="Zugang (DE)"><input value={form.access_de} onChange={(e) => f('access_de', e.target.value)} style={inputStyle} /></Field>
-              <Field label="Access (EN)"><input value={form.access_en} onChange={(e) => f('access_en', e.target.value)} style={inputStyle} /></Field>
-            </div>
-
-            <Field label="Adresse"><input value={form.address} onChange={(e) => f('address', e.target.value)} style={inputStyle} /></Field>
-            <Field label="Equipment (kommagetrennt)"><input value={form.gear} onChange={(e) => f('gear', e.target.value)} placeholder="Pull-up, Dips, Parallettes" style={inputStyle} /></Field>
-            <Field label="Standort auf Karte wählen">
-              <LocationPicker
-                lat={form.lat}
-                lng={form.lng}
-                onChange={(lat, lng) => setForm(prev => ({ ...prev, lat, lng }))}
-              />
-            </Field>
-            <Field label="Google Maps URL"><input value={form.maps_url} onChange={(e) => f('maps_url', e.target.value)} type="url" style={inputStyle} /></Field>
-            <Field label="Sichtbarkeit">
-              <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', padding: '10px 12px', background: 'var(--bg)', border: '1px solid var(--line)', borderRadius: 8 }}>
-                <input
-                  type="checkbox" checked={form.visible}
-                  onChange={(e) => setForm(prev => ({ ...prev, visible: e.target.checked }))}
-                  style={{ width: 16, height: 16, accentColor: 'var(--ok)', flexShrink: 0 }}
-                />
-                <span style={{ fontFamily: 'var(--font-sans)', fontSize: 13.5, color: form.visible ? 'var(--ok)' : 'var(--fg-mute)' }}>
-                  {form.visible ? 'Auf der Karte sichtbar' : 'Versteckt (nicht auf Karte)'}
-                </span>
-              </label>
-            </Field>
-          </div>
-
-          <div style={{ display: 'flex', gap: 8, marginTop: 20 }}>
-            <button onClick={cancelEdit} style={btnGhost}>Abbrechen</button>
-            <button onClick={handleSave} disabled={saving} style={btnPrimary}>{saving ? 'Speichern …' : 'Speichern'}</button>
-          </div>
-        </div>
+              <Field label="Reihenfolge" hint="Kleinere Zahl steht weiter oben.">
+                <input type="number" value={form.sort_order} onChange={(e) => f('sort_order', e.target.value)} style={inp} />
+              </Field>
+            </Grid>
+            <Toggle checked={form.visible} onChange={(v) => setForm(prev => ({ ...prev, visible: v }))} label={form.visible ? 'Auf der Webseite sichtbar' : 'Versteckt'} description="Versteckte Spots erscheinen weder in der Liste noch auf der Karte." />
+          </FormSection>
+        </FormShell>
       )}
 
       {!editing && <div style={card}>
@@ -197,12 +172,12 @@ export default function AdminSpotsPage() {
               <div style={{
                 width: 8, height: 8, borderRadius: '50%', flexShrink: 0,
                 background: s.visible ? 'var(--ok)' : 'var(--fg-mute)',
-                boxShadow: s.visible ? '0 0 8px rgba(142,232,142,0.6)' : 'none',
+                boxShadow: s.visible ? '0 0 8px color-mix(in srgb, var(--ok) 60%, transparent)' : 'none',
                 transition: 'background 0.2s, box-shadow 0.2s',
               }} />
               <div style={{
                 fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 11,
-                color: 'var(--accent-spark)', background: 'rgba(216,255,61,0.1)',
+                color: 'var(--accent)', background: 'var(--accent-soft)',
                 borderRadius: 6, padding: '3px 8px', flexShrink: 0,
               }}>{s.glyph}</div>
               <div style={{ minWidth: 0 }}>
@@ -217,7 +192,7 @@ export default function AdminSpotsPage() {
                 style={{
                   ...btnGhost,
                   color: s.visible ? 'var(--ok)' : 'var(--fg-mute)',
-                  borderColor: s.visible ? 'rgba(142,232,142,0.3)' : 'var(--line)',
+                  borderColor: s.visible ? 'color-mix(in srgb, var(--ok) 35%, transparent)' : 'var(--line)',
                 }}
               >
                 {s.visible ? '● Sichtbar' : '○ Versteckt'}
@@ -231,14 +206,3 @@ export default function AdminSpotsPage() {
     </div>
   )
 }
-
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div>
-      <label style={fieldLabel}>{label}</label>
-      {children}
-    </div>
-  )
-}
-
-const inputStyle: React.CSSProperties = inp

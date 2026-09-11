@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import AdminSidebar from '@/components/admin/Sidebar'
+import AdminShell from '@/components/admin/Shell'
 
 export const metadata = { title: 'Admin | Calisthenics Mainz' }
 
@@ -10,11 +11,11 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   if (!user) return <>{children}</>
 
   return (
-    <div style={{ display: 'flex', minHeight: '100svh', background: 'var(--bg)' }}>
+    <AdminShell>
       <AdminSidebar user={user} />
       <main className="admin-main" style={{ flex: 1, padding: '32px 40px 80px', paddingLeft: 280, overflowY: 'auto', minWidth: 0 }}>
         {children}
       </main>
-    </div>
+    </AdminShell>
   )
 }

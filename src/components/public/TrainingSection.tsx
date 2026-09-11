@@ -1,15 +1,11 @@
 'use client'
 
-import { useState, useMemo, useEffect, useCallback } from 'react'
+import { useState, useMemo, useEffect, useCallback, useRef } from 'react'
 import { createPortal } from 'react-dom'
+import { MapPin } from 'lucide-react'
+import SectionHeading from './SectionHeading'
 import type { Lang, TrainingSession, CalendarOverride, Spot, Event, RecurringEvent } from '@/lib/types'
-import { t, levelLabel, dayLabel, fullDayLabel, nthWeekdayOfMonth } from '@/lib/utils'
-
-type SessionEntry = {
-  type: 'fixed' | 'extra'
-  session?: TrainingSession
-  override?: CalendarOverride
-}
+import { t, levelLabel, fullDayLabel, nthWeekdayOfMonth } from '@/lib/utils'
 
 type Props = {
   lang: Lang
@@ -26,7 +22,7 @@ const copy = {
   de: {
     label: '01',
     title: 'Training',
-    weekTab: 'Wochenplan',
+    weekTab: 'Diese Woche',
     calTab: 'Monatskalender',
     noTraining: 'Kein Training',
     cancelled: 'Fällt aus',
@@ -38,7 +34,7 @@ const copy = {
   en: {
     label: '01',
     title: 'Schedule',
-    weekTab: 'Weekly plan',
+    weekTab: 'This week',
     calTab: 'Monthly calendar',
     noTraining: 'No training',
     cancelled: 'Cancelled',
@@ -47,14 +43,6 @@ const copy = {
     prevMonth: 'Previous month',
     nextMonth: 'Next month',
   },
-}
-
-const levelColors: Record<string, string> = {
-  beginner: '#22c55e',
-  advanced: '#d4ff3f',
-  open: '#38bdf8',
-  comp: '#ef4444',
-  training: '#a78bfa',
 }
 
 export default function TrainingSection({ lang, sessions, overrides, spots, events, recurringEvents }: Props) {
@@ -76,46 +64,21 @@ export default function TrainingSection({ lang, sessions, overrides, spots, even
   return (
     <section id="training" className="section">
       <div className="container">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 40, marginBottom: 64, paddingBottom: 20, borderBottom: '1px solid var(--line-soft)', flexWrap: 'wrap' }}>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-              <div style={{ width: 20, height: 3, background: 'var(--accent-2)', borderRadius: 2, flexShrink: 0 }} />
-              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--accent-2)', letterSpacing: '0.08em' }}>{c.label}</div>
-            </div>
-            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(36px, 5.5vw, 72px)', lineHeight: 0.95, letterSpacing: '-0.01em', textTransform: 'uppercase', color: 'var(--fg)', margin: 0 }}>{c.title}</h2>
-          </div>
-        </div>
+        <div className="training-layout">
+        <div className="training-welcome">
+        <SectionHeading eyebrow={lang === 'de' ? 'Die nächsten Sessions' : 'The next sessions'} title={lang === 'de' ? 'Zusammen trainieren.' : 'Train together.'} description={lang === 'de' ? 'Hier findest du deine nächste Session. Wähle einen Termin für Treffpunkt und Infos zur Teilnahme.' : 'Find your next session. Select a date for the meeting point and how to take part.'} />
 
+        <aside className="training-intro"><p className="eyebrow">{lang === 'de' ? 'Zum ersten Mal dabei?' : 'Your first session?'}</p><h3>{lang === 'de' ? 'So startest du mit uns.' : 'Your first session with us.'}</h3><p>{lang === 'de' ? 'Schau vor deinem ersten Besuch in die Teilnahmeinfos. Noch unsicher? Schreib uns – wir helfen dir, das passende Training zu finden.' : 'Check the participation details before your first visit. Unsure about anything? Get in touch – we’ll help you find the right session.'}</p><a href="#faq" className="club-text-link">{lang === 'de' ? 'Infos zur Teilnahme ↗' : 'How to join ↗'}</a></aside>
+        </div>
+        <div className="training-schedule">
         {/* Tabs */}
-        <div
-          style={{
-            display: 'inline-flex',
-            gap: 4,
-            marginBottom: 24,
-            padding: 4,
-            border: '1px solid var(--line-soft)',
-            borderRadius: 12,
-            background: 'var(--bg-2)',
-          }}
-        >
+        <div className="schedule-tabs">
           {(['week', 'cal'] as const).map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
-              style={{
-                background: tab === t ? 'var(--fg)' : 'transparent',
-                border: 'none',
-                borderRadius: 8,
-                color: tab === t ? 'var(--accent-ink)' : 'var(--fg-mute)',
-                fontFamily: 'var(--font-mono)',
-                fontSize: 11,
-                fontWeight: tab === t ? 600 : 400,
-                letterSpacing: '0.1em',
-                textTransform: 'uppercase',
-                padding: '10px 20px',
-                cursor: 'pointer',
-                transition: 'background 0.2s, color 0.2s',
-              }}
+              aria-pressed={tab === t}
+
             >
               {t === 'week' ? c.weekTab : c.calTab}
             </button>
@@ -137,11 +100,12 @@ export default function TrainingSection({ lang, sessions, overrides, spots, even
             onSelect={setActiveEntry}
           />
         )}
+        </div></div>
       </div>
 
       {/* Detail Modal */}
       {activeEntry && (
-        <TrainingModal entry={activeEntry} lang={lang} spots={spots} onClose={closeModal} c={c} />
+        <TrainingModal entry={activeEntry} lang={lang} spots={spots} onClose={closeModal} />
       )}
     </section>
   )
@@ -151,17 +115,28 @@ export default function TrainingSection({ lang, sessions, overrides, spots, even
 /* Training detail modal                                                */
 /* ------------------------------------------------------------------ */
 function TrainingModal({
-  entry, lang, spots, onClose, c,
+  entry, lang, spots, onClose,
 }: {
   entry: { session?: TrainingSession; override?: CalendarOverride; recurringEvent?: RecurringEvent; dateStr?: string }
   lang: Lang
   spots: Spot[]
   onClose: () => void
-  c: (typeof copy)['de']
 }) {
-  const [mounted, setMounted] = useState(false)
-  useEffect(() => setMounted(true), [])
-  if (!mounted) return null
+  const panel = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const previousFocus = document.activeElement as HTMLElement | null
+    const element = panel.current
+    element?.querySelector<HTMLButtonElement>('button')?.focus()
+    const trapFocus = (event: KeyboardEvent) => {
+      if (event.key !== 'Tab' || !element) return
+      const controls = Array.from(element.querySelectorAll<HTMLElement>('button, a[href]'))
+      const first = controls[0], last = controls[controls.length - 1]
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus() }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus() }
+    }
+    window.addEventListener('keydown', trapFocus)
+    return () => { window.removeEventListener('keydown', trapFocus); previousFocus?.focus() }
+  }, [])
 
   const re = entry.recurringEvent
   const s = entry.session
@@ -179,16 +154,17 @@ function TrainingModal({
       onClick={onClose}
       style={{
         position: 'fixed', inset: 0, zIndex: 200,
-        background: 'rgba(26,26,30,0.85)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        padding: '40px 20px', overflowY: 'auto',
+        background: '#17181Acc',
+        display: 'flex', alignItems: 'flex-start', justifyContent: 'center',
+        padding: '24px 20px', overflowY: 'auto',
       }}
     >
       <div
+        ref={panel} role="dialog" aria-modal="true" aria-label={lang === 'de' ? 'Trainingsdetails' : 'Training details'}
         onClick={(e) => e.stopPropagation()}
         style={{
           background: 'var(--bg-2)', border: '1px solid var(--line)',
-          borderRadius: 20, maxWidth: 480, width: '100%',
+          borderRadius: 3, maxWidth: 540, width: '100%', margin: 'auto', flexShrink: 0,
           position: 'relative', overflow: 'hidden',
         }}
       >
@@ -197,6 +173,7 @@ function TrainingModal({
 
         {/* Close */}
         <button
+          aria-label={lang === 'de' ? 'Schließen' : 'Close'}
           onClick={onClose}
           style={{
             position: 'absolute', top: 16, right: 16,
@@ -233,7 +210,7 @@ function TrainingModal({
               letterSpacing: '0.1em', textTransform: 'uppercase',
               padding: '4px 10px', borderRadius: 999,
               border: '1px solid var(--line)',
-              background: level === 'open' || level === 'training' ? 'var(--accent-2)' : 'transparent',
+              background: level === 'open' || level === 'training' ? 'var(--action-bg)' : 'transparent',
               color: level === 'open' || level === 'training' ? '#fff' : 'var(--fg)',
             }}>
               {levelLabel(level, lang)}
@@ -363,301 +340,53 @@ function WeekView({
   }, [overrides])
 
   return (
-    <>
-    <style>{`
-      @media (min-width: 641px) { .week-mobile { display: none !important; } }
-      @media (max-width: 640px) { .week-desktop { display: none !important; } }
-    `}</style>
-    <div className="week-mobile">
-      <MobileWeekView lang={lang} byDay={byDay} overridesByDate={overridesByDate} recurringEvents={recurringEvents} today={today} c={c} onSelect={onSelect} />
-    </div>
-    <div className="week-desktop" style={{ overflowX: 'auto', borderRadius: 18 }}>
-    <div
-      style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(7, 1fr)',
-        border: '1px solid var(--line-soft)',
-        borderRadius: 18,
-        overflow: 'hidden',
-        background: 'var(--bg-2)',
-        minWidth: 560,
-      }}
-      className="schedule-grid"
-    >
+    <div className="week-grid">
       {DAYS.map((dow) => {
         const dateStr = currentWeekDate(dow)
         const isToday = dateStr === today
         const dayOverrides = overridesByDate[dateStr] ?? []
-        const hasCancelOverride = dayOverrides.some((o) => o.type === 'cancel')
+        const cancel = dayOverrides.find((o) => o.type === 'cancel')
         const extraSessions = dayOverrides.filter((o) => o.type === 'training')
-        const fixedSessions = hasCancelOverride ? [] : (byDay[dow] ?? [])
+        const fixedSessions = cancel ? [] : (byDay[dow] ?? [])
         const d = new Date(dateStr + 'T12:00:00')
         const nth = nthWeekdayOfMonth(d)
         const dayRecurring = recurringEvents.filter(re => re.day_of_week === dow && re.week_of_month === nth)
-        const hasAnything = fixedSessions.length > 0 || extraSessions.length > 0 || hasCancelOverride || dayRecurring.length > 0
-
-        // Human-readable date for the column header
-        const dateNum = d.getDate()
-        const monthShort = d.toLocaleDateString(lang === 'de' ? 'de-DE' : 'en-GB', { month: 'short' })
+        const hasAnything = fixedSessions.length > 0 || extraSessions.length > 0 || !!cancel || dayRecurring.length > 0
+        if (!hasAnything) return null
+        const dateLabel = d.toLocaleDateString(lang === 'de' ? 'de-DE' : 'en-GB', { day: 'numeric', month: 'short' })
 
         return (
-          <div
-            key={dow}
-            style={{
-              borderRight: '1px solid var(--line-soft)',
-              minHeight: 340,
-              display: 'flex',
-              flexDirection: 'column',
-              background: isToday ? 'rgba(74,127,212,0.06)' : undefined,
-            }}
-          >
-            {/* Day head */}
-            <div style={{
-              padding: '16px 14px 12px',
-              borderBottom: `1px solid ${isToday ? 'var(--accent-2)' : 'var(--line-soft)'}`,
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'baseline',
-            }}>
-              <span style={{
-                fontFamily: 'var(--font-display)',
-                fontSize: 13,
-                letterSpacing: '0.06em',
-                textTransform: 'uppercase',
-                color: isToday ? 'var(--accent-2)' : hasAnything ? 'var(--fg)' : 'var(--fg-mute)',
-              }}>
-                {dayLabel(dow, lang)}
-              </span>
-              <span style={{
-                fontFamily: 'var(--font-mono)',
-                fontSize: 11,
-                color: isToday ? 'var(--accent-2)' : 'var(--fg-mute)',
-              }}>
-                {dateNum}. {monthShort}
-              </span>
+          <div key={dow} className="week-day" data-today={isToday}>
+            <div className="week-day-head">
+              <span className="week-day-name">{fullDayLabel(dow, lang)}</span>
+              <span className="week-day-date">{isToday ? `${c.today} · ` : ''}{dateLabel}</span>
             </div>
-
-            {/* Day body */}
-            <div style={{ flex: 1, padding: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {/* Cancellation badge */}
-              {hasCancelOverride && (
-                <div style={{
-                  background: 'rgba(255,122,122,0.1)',
-                  border: '1px solid rgba(255,122,122,0.3)',
-                  borderLeft: '3px solid var(--danger)',
-                  borderRadius: 8,
-                  padding: '8px 10px',
-                }}>
-                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, fontWeight: 600, color: 'var(--danger)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-                    {c.cancelled}
-                  </div>
-                  {dayOverrides.find(o => o.type === 'cancel')?.note && (
-                    <div style={{ fontSize: 11, color: 'var(--fg-dim)', marginTop: 3 }}>
-                      {t(dayOverrides.find(o => o.type === 'cancel')!.note!, lang)}
-                    </div>
-                  )}
+            <div className="week-day-body">
+              {cancel && (
+                <div className="week-note week-note--cancel">
+                  <span className="week-note-label">{c.cancelled}</span>
+                  {cancel.note && <span className="week-note-meta">{t(cancel.note, lang)}</span>}
                 </div>
               )}
-
-              {/* Fixed sessions */}
               {fixedSessions.map((s) => (
-                <SessionCard
-                  key={s.id}
-                  levelLabel_={levelLabel(s.level, lang)}
-                  time={s.time_label} place={t(s.place, lang)} level={s.level}
-                  hasSpot={!!s.spot_id}
-                  onClick={() => onSelect({ session: s, dateStr })}
-                />
+                <SessionCard key={s.id} levelLabel_={levelLabel(s.level, lang)} time={s.time_label} place={t(s.place, lang)} level={s.level} onClick={() => onSelect({ session: s, dateStr })} />
               ))}
-
-              {/* Extra sessions from overrides */}
               {extraSessions.map((o) => (
-                <div key={o.id} onClick={() => onSelect({ override: o, dateStr })} style={{
-                  background: 'rgba(216,255,61,0.06)',
-                  border: '1px solid rgba(216,255,61,0.25)',
-                  borderLeft: '3px solid var(--accent-spark)',
-                  borderRadius: 8,
-                  padding: '8px 10px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: 4,
-                  cursor: 'pointer',
-                }}>
-                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, fontWeight: 600, color: 'var(--accent-spark)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-                    {c.extra}
-                  </div>
-                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--fg)', fontWeight: 500 }}>
-                    {o.time_label}
-                  </div>
-                  {o.place && (
-                    <div style={{ fontSize: 11, color: 'var(--fg-dim)' }}>{t(o.place, lang)}</div>
-                  )}
-                  {o.note && (
-                    <div style={{ fontSize: 11, color: 'var(--fg-dim)', fontStyle: 'italic' }}>{t(o.note, lang)}</div>
-                  )}
-                </div>
+                <button type="button" key={o.id} className="week-note week-note--extra" onClick={() => onSelect({ override: o, dateStr })}>
+                  <span className="week-note-label">{c.extra}</span>
+                  <span className="week-note-time">{o.time_label}</span>
+                  {o.place && <span className="week-note-meta">{t(o.place, lang)}</span>}
+                  {o.note && <span className="week-note-meta">{t(o.note, lang)}</span>}
+                </button>
               ))}
-
-              {/* Recurring events (e.g. Stammtisch) */}
               {dayRecurring.map((re) => (
-                <div key={re.id} onClick={() => onSelect({ recurringEvent: re, dateStr })} style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: 4,
-                  background: 'transparent',
-                  border: '1px solid var(--line-soft)',
-                  borderLeft: `3px solid ${CAT_COLORS_EVENT[re.category] ?? 'var(--fg-dim)'}`,
-                  borderRadius: 8,
-                  padding: '8px 10px',
-                  cursor: 'pointer',
-                }}>
-                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, fontWeight: 600, color: 'var(--fg-mute)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-                    {t(re.title, lang)}
-                  </div>
-                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--fg)', fontWeight: 500 }}>
-                    {re.time_label}
-                  </div>
-                  <div style={{ fontSize: 11, color: 'var(--fg-dim)' }}>{t(re.place, lang)}</div>
-                </div>
+                <button type="button" key={re.id} className="week-note week-note--recurring" style={{ borderLeftColor: CAT_COLORS_EVENT[re.category] ?? 'var(--fg-dim)' }} onClick={() => onSelect({ recurringEvent: re, dateStr })}>
+                  <span className="week-note-label">{t(re.title, lang)}</span>
+                  <span className="week-note-time">{re.time_label}</span>
+                  <span className="week-note-meta">{t(re.place, lang)}</span>
+                </button>
               ))}
-
-              {!hasAnything && (
-                <div style={{ fontSize: 12, color: 'var(--fg-mute)' }}>{c.noTraining}</div>
-              )}
             </div>
-          </div>
-        )
-      })}
-    </div>
-    </div>
-    </>
-  )
-}
-
-function MobileWeekView({
-  lang, byDay, overridesByDate, recurringEvents, today, c, onSelect,
-}: {
-  lang: Lang
-  byDay: Record<number, TrainingSession[]>
-  overridesByDate: Record<string, CalendarOverride[]>
-  recurringEvents: RecurringEvent[]
-  today: string
-  c: (typeof copy)['de']
-  onSelect: (entry: { session?: TrainingSession; override?: CalendarOverride; recurringEvent?: RecurringEvent; dateStr?: string }) => void
-}) {
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-      {DAYS.map((dow) => {
-        const dateStr = currentWeekDate(dow)
-        const isToday = dateStr === today
-        const dayOverrides = overridesByDate[dateStr] ?? []
-        const hasCancelOverride = dayOverrides.some((o) => o.type === 'cancel')
-        const extraSessions = dayOverrides.filter((o) => o.type === 'training')
-        const fixedSessions = hasCancelOverride ? [] : (byDay[dow] ?? [])
-        const d = new Date(dateStr + 'T12:00:00')
-        const nth = nthWeekdayOfMonth(d)
-        const dayRecurring = recurringEvents.filter(re => re.day_of_week === dow && re.week_of_month === nth)
-        const hasAnything = fixedSessions.length > 0 || extraSessions.length > 0 || hasCancelOverride || dayRecurring.length > 0
-        const dateNum = d.getDate()
-        const monthShort = d.toLocaleDateString(lang === 'de' ? 'de-DE' : 'en-GB', { month: 'short' })
-
-        return (
-          <div
-            key={dow}
-            style={{
-              border: `1px solid ${isToday ? 'var(--accent-2)' : 'var(--line-soft)'}`,
-              borderRadius: 12,
-              overflow: 'hidden',
-              background: isToday ? 'rgba(74,127,212,0.05)' : 'var(--bg-2)',
-            }}
-          >
-            {/* Day header row */}
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              padding: '10px 14px',
-              borderBottom: hasAnything ? '1px solid var(--line-soft)' : undefined,
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                {isToday && (
-                  <span style={{
-                    fontFamily: 'var(--font-mono)', fontSize: 9, fontWeight: 700,
-                    letterSpacing: '0.1em', textTransform: 'uppercase',
-                    background: 'var(--accent-2)', color: '#fff',
-                    padding: '2px 7px', borderRadius: 999,
-                  }}>{c.today}</span>
-                )}
-                <span style={{
-                  fontFamily: 'var(--font-display)', fontSize: 14,
-                  letterSpacing: '0.06em', textTransform: 'uppercase',
-                  color: isToday ? 'var(--accent-2)' : hasAnything ? 'var(--fg)' : 'var(--fg-mute)',
-                  fontWeight: hasAnything ? 600 : 400,
-                }}>
-                  {fullDayLabel(dow, lang)}
-                </span>
-              </div>
-              <span style={{
-                fontFamily: 'var(--font-mono)', fontSize: 11,
-                color: isToday ? 'var(--accent-2)' : 'var(--fg-mute)',
-              }}>
-                {dateNum}. {monthShort}
-              </span>
-            </div>
-
-            {/* Sessions */}
-            {hasAnything && (
-              <div style={{ padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {hasCancelOverride && (
-                  <div style={{
-                    background: 'rgba(255,122,122,0.1)', border: '1px solid rgba(255,122,122,0.3)',
-                    borderLeft: '3px solid var(--danger)', borderRadius: 8, padding: '8px 10px',
-                  }}>
-                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, fontWeight: 600, color: 'var(--danger)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-                      {c.cancelled}
-                    </div>
-                    {dayOverrides.find(o => o.type === 'cancel')?.note && (
-                      <div style={{ fontSize: 11, color: 'var(--fg-dim)', marginTop: 3 }}>
-                        {t(dayOverrides.find(o => o.type === 'cancel')!.note!, lang)}
-                      </div>
-                    )}
-                  </div>
-                )}
-                {fixedSessions.map((s) => (
-                  <SessionCard
-                    key={s.id}
-                    levelLabel_={levelLabel(s.level, lang)}
-                    time={s.time_label} place={t(s.place, lang)} level={s.level}
-                    hasSpot={!!s.spot_id}
-                    onClick={() => onSelect({ session: s, dateStr })}
-                  />
-                ))}
-                {extraSessions.map((o) => (
-                  <div key={o.id} onClick={() => onSelect({ override: o, dateStr })} style={{
-                    background: 'rgba(216,255,61,0.06)', border: '1px solid rgba(216,255,61,0.25)',
-                    borderLeft: '3px solid var(--accent-spark)', borderRadius: 8,
-                    padding: '8px 10px', display: 'flex', flexDirection: 'column', gap: 4, cursor: 'pointer',
-                  }}>
-                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, fontWeight: 600, color: 'var(--accent-spark)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{c.extra}</div>
-                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--fg)', fontWeight: 500 }}>{o.time_label}</div>
-                    {o.place && <div style={{ fontSize: 11, color: 'var(--fg-dim)' }}>{t(o.place, lang)}</div>}
-                    {o.note && <div style={{ fontSize: 11, color: 'var(--fg-dim)', fontStyle: 'italic' }}>{t(o.note, lang)}</div>}
-                  </div>
-                ))}
-                {dayRecurring.map((re) => (
-                  <div key={re.id} onClick={() => onSelect({ recurringEvent: re, dateStr })} style={{
-                    display: 'flex', flexDirection: 'column', gap: 4,
-                    background: 'transparent', border: '1px solid var(--line-soft)',
-                    borderLeft: `3px solid ${CAT_COLORS_EVENT[re.category] ?? 'var(--fg-dim)'}`,
-                    borderRadius: 8, padding: '8px 10px', cursor: 'pointer',
-                  }}>
-                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, fontWeight: 600, color: 'var(--fg-mute)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{t(re.title, lang)}</div>
-                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--fg)', fontWeight: 500 }}>{re.time_label}</div>
-                    <div style={{ fontSize: 11, color: 'var(--fg-dim)' }}>{t(re.place, lang)}</div>
-                  </div>
-                ))}
-              </div>
-            )}
           </div>
         )
       })}
@@ -665,62 +394,21 @@ function MobileWeekView({
   )
 }
 
-function SessionCard({ time, place, level, levelLabel_, hasSpot, onClick }: {
-  time: string; place: string; level: string; levelLabel_: string
-  hasSpot?: boolean; onClick?: () => void
+function SessionCard({ time, place, level, levelLabel_, onClick }: {
+  time: string; place: string; level: string; levelLabel_: string; onClick?: () => void
 }) {
+  const highlight = level === 'open' || level === 'training'
   return (
-    <div
-      onClick={onClick}
-      style={{
-        background: 'var(--bg)',
-        border: '1px solid var(--line-soft)',
-        borderRadius: 12,
-        padding: '10px 12px',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 6,
-        transition: 'border-color 0.2s, transform 0.2s',
-        cursor: 'pointer',
-      }}
-      onMouseEnter={(e) => {
-        const el = e.currentTarget as HTMLElement
-        el.style.borderColor = 'var(--fg)'
-        el.style.transform = 'translateY(-2px)'
-      }}
-      onMouseLeave={(e) => {
-        const el = e.currentTarget as HTMLElement
-        el.style.borderColor = 'var(--line-soft)'
-        el.style.transform = 'translateY(0)'
-      }}
-    >
-      <div style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--fg)', fontWeight: 500, letterSpacing: '0.02em' }}>
-        {time}
-      </div>
-      <div style={{ fontSize: 12, color: 'var(--fg-dim)', lineHeight: 1.35 }}>
-        {place}
-      </div>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 4 }}>
-        <div style={{
-          fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase',
-          padding: '3px 8px', borderRadius: 999, border: '1px solid var(--line)',
-          background: level === 'open' || level === 'training' ? 'var(--accent-2)' : 'transparent',
-          color: level === 'open' || level === 'training' ? '#fff' : level === 'comp' ? 'var(--accent-spark)' : 'var(--fg)',
-        }}>
-          {levelLabel_}
-        </div>
-        {hasSpot && (
-          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--accent-spark)" strokeWidth="2.5">
-            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/>
-          </svg>
-        )}
-      </div>
-    </div>
+    <button type="button" className="session-card" onClick={onClick}>
+      <span className="session-time">{time}</span>
+      <span className="session-place"><MapPin size={14} />{place}</span>
+      <span className={`club-tag${highlight ? ' club-tag--accent' : level === 'comp' ? '' : ' club-tag--outline'}`}>{levelLabel_}</span>
+    </button>
   )
 }
 
 const CAT_COLORS_EVENT: Record<string, string> = {
-  comp: '#D97757', jam: '#D8FF3D', workshop: '#8EC5FF', social: '#FFB48E',
+  comp: 'var(--cat-comp)', jam: 'var(--cat-jam)', workshop: 'var(--cat-workshop)', social: 'var(--cat-social)',
 }
 
 function CalendarView({
@@ -954,7 +642,7 @@ function CalendarView({
                       fontSize: '0.625rem',
                       fontWeight: 600,
                       color: 'var(--danger)',
-                      background: 'rgba(239,68,68,0.12)',
+                      background: 'color-mix(in srgb, var(--danger) 12%, transparent)',
                       borderRadius: 3,
                       padding: '1px 4px',
                       marginBottom: 2,
@@ -1258,9 +946,9 @@ function MobileCalendarView({
                     ? `2px solid ${primaryColor}`
                     : '1px solid var(--line-soft)',
                   background: isSelected
-                    ? 'rgba(74,127,212,0.1)'
+                    ? 'var(--accent-soft)'
                     : hasContent
-                    ? 'rgba(74,127,212,0.03)'
+                    ? 'color-mix(in srgb, var(--accent) 5%, transparent)'
                     : 'transparent',
                   transition: 'background 0.15s',
                 }}
@@ -1270,7 +958,7 @@ function MobileCalendarView({
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   fontSize: 13, fontFamily: 'var(--font-mono)',
                   fontWeight: isToday || isSelected || hasContent ? 600 : 400,
-                  background: isSelected ? 'var(--fg)' : isToday ? 'var(--accent-2)' : 'transparent',
+                  background: isSelected ? 'var(--fg)' : isToday ? 'var(--action-bg)' : 'transparent',
                   color: isSelected
                     ? 'var(--accent-ink)'
                     : isToday
@@ -1285,7 +973,7 @@ function MobileCalendarView({
                 {/* Event dots */}
                 <div style={{ display: 'flex', gap: 3, justifyContent: 'center', minHeight: 8 }}>
                   {hasSessions && !hasCancel && (
-                    <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--accent-2)', display: 'inline-block' }} />
+                    <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--action-bg)', display: 'inline-block' }} />
                   )}
                   {hasCancel && (
                     <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--danger)', display: 'inline-block' }} />
@@ -1309,7 +997,7 @@ function MobileCalendarView({
           <div style={{ color: 'var(--fg-mute)', fontSize: 14, padding: '12px 0' }}>{c.noTraining}</div>
         )}
         {selHasCancel && (
-          <div style={{ background: 'rgba(255,122,122,0.1)', border: '1px solid rgba(255,122,122,0.3)', borderLeft: '3px solid var(--danger)', borderRadius: 10, padding: '10px 14px', marginBottom: 8 }}>
+          <div style={{ background: 'color-mix(in srgb, var(--danger) 10%, transparent)', border: '1px solid color-mix(in srgb, var(--danger) 30%, transparent)', borderLeft: '3px solid var(--danger)', borderRadius: 10, padding: '10px 14px', marginBottom: 8 }}>
             <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--danger)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{c.cancelled}</div>
           </div>
         )}
@@ -1325,7 +1013,7 @@ function MobileCalendarView({
         ))}
         {selExtra.map(o => (
           <div key={o.id} onClick={() => onSelect({ override: o, dateStr: selectedDate })}
-            style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', background: 'rgba(216,255,61,0.06)', border: '1px solid rgba(216,255,61,0.25)', borderLeft: '3px solid var(--accent-spark)', borderRadius: 10, marginBottom: 8, cursor: 'pointer' }}>
+            style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', background: 'var(--accent-soft)', border: '1px solid var(--accent-ring)', borderLeft: '3px solid var(--accent-spark)', borderRadius: 10, marginBottom: 8, cursor: 'pointer' }}>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--accent-spark)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{c.extra}</div>
               <div style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--fg)', fontWeight: 600, marginTop: 2 }}>{o.time_label}</div>

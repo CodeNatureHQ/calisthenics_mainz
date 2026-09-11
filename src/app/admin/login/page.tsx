@@ -35,7 +35,7 @@ export default function LoginPage() {
       <div style={{
         width: '100%', maxWidth: 400,
         border: '1px solid var(--line)',
-        borderRadius: 18,
+        borderRadius: 'var(--radius-lg)',
         background: 'var(--bg-2)',
         padding: '40px 36px',
       }}>
@@ -84,10 +84,10 @@ export default function LoginPage() {
           <button
             type="submit" disabled={loading}
             style={{
-              width: '100%', background: 'var(--fg)', color: 'var(--accent-ink)',
-              border: 0, borderRadius: 10, padding: 14,
-              fontFamily: 'var(--font-mono)', fontSize: 12, textTransform: 'uppercase',
-              letterSpacing: '0.1em', fontWeight: 500, cursor: loading ? 'not-allowed' : 'pointer',
+              width: '100%', background: 'var(--accent)', color: 'var(--accent-ink)',
+              border: 0, borderRadius: 'var(--radius)', padding: 14,
+              fontFamily: 'var(--font-display)', fontSize: 16, textTransform: 'uppercase',
+              letterSpacing: '0.06em', fontWeight: 700, cursor: loading ? 'not-allowed' : 'pointer',
               opacity: loading ? 0.7 : 1,
               transition: 'transform 0.1s',
             }}

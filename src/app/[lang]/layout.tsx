@@ -54,8 +54,7 @@ export default async function LangLayout({
   }
 
   return (
-    <html lang={safeLang} suppressHydrationWarning>
-      <body>
+    <div lang={safeLang} className="public-site">
         <LangProvider initialLang={safeLang}>
           {showAnnouncement && (
             <AnnouncementBanner
@@ -70,7 +69,6 @@ export default async function LangLayout({
           )}
           {children}
         </LangProvider>
-      </body>
-    </html>
+    </div>
   )
 }

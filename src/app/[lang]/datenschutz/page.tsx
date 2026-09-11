@@ -112,9 +112,9 @@ To exercise these rights, please contact: kontakt@calisthenics-mainz.de`,
 
   return (
     <>
-      <header style={{ position: 'sticky', top: 0, zIndex: 100, background: 'rgba(10,10,11,0.92)', backdropFilter: 'blur(12px)', borderBottom: '1px solid var(--line-soft)' }}>
+      <header className="club-subheader">
         <div className="container" style={{ height: 64, display: 'flex', alignItems: 'center' }}>
-          <Link href={`/${lang}`} style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--fg-dim)', textDecoration: 'none' }}>
+          <Link href={`/${lang}`} className="club-back">
             {isDE ? '← Zurück' : '← Back'}
           </Link>
         </div>

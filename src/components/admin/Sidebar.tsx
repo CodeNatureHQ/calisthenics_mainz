@@ -4,25 +4,45 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import type { User } from '@supabase/supabase-js'
+import { CalendarDays, Dumbbell, FileText, HelpCircle, LayoutDashboard, Mail, MapPin, Megaphone, Moon, Settings, ShoppingBag, Sun, Users } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import { useAdminTheme } from './Shell'
 
-const navItems = [
-  { href: '/admin/ankuendigung', label: 'Meldung',      icon: '⚠' },
-  { href: '/admin/nachrichten',  label: 'Nachrichten',  icon: '✉' },
-  { href: '/admin/blog',         label: 'Blogposts',    icon: 'B' },
-  { href: '/admin/events',       label: 'Events',       icon: 'E' },
-  { href: '/admin/training',     label: 'Training',     icon: 'T' },
-  { href: '/admin/spots',        label: 'Spots',        icon: 'SP' },
-  { href: '/admin/team',         label: 'Team',         icon: 'TM' },
-  { href: '/admin/faq',          label: 'FAQ',          icon: 'F' },
-  { href: '/admin/ausruestung',  label: 'Ausrüstung',   icon: 'A' },
-  { href: '/admin/settings',     label: 'Settings',     icon: 'S' },
+/**
+ * Zehn Einträge in einer flachen Liste mit Buchstaben-Zeichen waren Suchen statt Finden.
+ * Jetzt: Gruppen nach dem, was man tun will, und dieselben Lucide-Zeichen wie auf der
+ * öffentlichen Seite. Die Übersicht steht zuoberst — sie ist der Einstieg.
+ */
+const navGroups: { title: string | null; items: { href: string; label: string; icon: React.ReactNode; exact?: boolean }[] }[] = [
+  { title: null, items: [
+    { href: '/admin', label: 'Übersicht', icon: <LayoutDashboard size={14} />, exact: true },
+  ] },
+  { title: 'Kommunikation', items: [
+    { href: '/admin/nachrichten', label: 'Nachrichten', icon: <Mail size={14} /> },
+    { href: '/admin/ankuendigung', label: 'Meldung', icon: <Megaphone size={14} /> },
+  ] },
+  { title: 'Inhalte', items: [
+    { href: '/admin/blog', label: 'Blogposts', icon: <FileText size={14} /> },
+    { href: '/admin/events', label: 'Events', icon: <CalendarDays size={14} /> },
+    { href: '/admin/training', label: 'Training', icon: <Dumbbell size={14} /> },
+    { href: '/admin/spots', label: 'Spots', icon: <MapPin size={14} /> },
+    { href: '/admin/team', label: 'Team', icon: <Users size={14} /> },
+    { href: '/admin/faq', label: 'FAQ', icon: <HelpCircle size={14} /> },
+    { href: '/admin/ausruestung', label: 'Ausrüstung', icon: <ShoppingBag size={14} /> },
+  ] },
+  { title: 'System', items: [
+    { href: '/admin/settings', label: 'Einstellungen', icon: <Settings size={14} /> },
+  ] },
 ]
+const navItems = navGroups.flatMap(g => g.items)
+const isActivePath = (pathname: string, item: { href: string; exact?: boolean }) =>
+  item.exact ? pathname === item.href : pathname.startsWith(item.href)
 
 export default function AdminSidebar({ user }: { user: User }) {
   const pathname = usePathname()
   const router = useRouter()
   const [mobileOpen, setMobileOpen] = useState(false)
+  const { light, toggle } = useAdminTheme()
 
   async function handleLogout() {
     const supabase = createClient()
@@ -84,12 +104,12 @@ export default function AdminSidebar({ user }: { user: User }) {
         {/* Dropdown menu — slides down like public Nav */}
         <div style={{
           overflow: 'hidden',
-          maxHeight: mobileOpen ? '480px' : '0',
+          maxHeight: mobileOpen ? '640px' : '0',
           transition: 'max-height 0.35s cubic-bezier(0.4,0,0.2,1)',
         }}>
           <div style={{ padding: '4px 16px 20px', borderTop: '1px solid var(--line-soft)' }}>
             {navItems.map((item) => {
-              const isActive = pathname.startsWith(item.href)
+              const isActive = isActivePath(pathname, item)
               return (
                 <Link
                   key={item.href}
@@ -101,9 +121,8 @@ export default function AdminSidebar({ user }: { user: User }) {
                     borderBottom: '1px solid var(--line-soft)',
                     textDecoration: 'none',
                     color: isActive ? 'var(--fg)' : 'var(--fg-dim)',
-                    fontFamily: 'var(--font-mono)', fontSize: 13,
-                    textTransform: 'uppercase', letterSpacing: '0.06em',
-                    fontWeight: isActive ? 600 : 400,
+                    font: `${isActive ? 600 : 500} 14px/1 var(--font-sans)`,
+                    letterSpacing: '0.01em',
                   }}
                 >
                   <span style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -113,16 +132,27 @@ export default function AdminSidebar({ user }: { user: User }) {
                     {item.label}
                   </span>
                   {isActive && (
-                    <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--accent-spark)', display: 'inline-block' }} />
+                    <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--accent)', display: 'inline-block' }} />
                   )}
                 </Link>
               )
             })}
 
-            <div style={{ marginTop: 16, paddingTop: 12, borderTop: '1px solid var(--line-soft)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--fg-mute)', letterSpacing: '0.04em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '60%' }}>
+            <div style={{ marginTop: 16, paddingTop: 12, borderTop: '1px solid var(--line-soft)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--fg-mute)', letterSpacing: '0.04em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '48%' }}>
                 {user.email}
               </span>
+              <button
+                onClick={toggle}
+                aria-label={light ? 'Dunkles Thema' : 'Helles Thema'}
+                style={{
+                  width: 34, height: 34, display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                  borderRadius: 8, border: '1px solid var(--line)', background: 'transparent',
+                  color: 'var(--fg-dim)', cursor: 'pointer', marginLeft: 'auto',
+                }}
+              >
+                {light ? <Moon size={14} /> : <Sun size={14} />}
+              </button>
               <button
                 onClick={handleLogout}
                 style={{
@@ -130,7 +160,7 @@ export default function AdminSidebar({ user }: { user: User }) {
                   fontFamily: 'var(--font-mono)', fontSize: 10,
                   textTransform: 'uppercase', letterSpacing: '0.08em',
                   color: 'var(--danger)', background: 'transparent',
-                  border: '1px solid rgba(255,122,122,0.3)', cursor: 'pointer',
+                  border: '1px solid color-mix(in srgb, var(--danger) 35%, transparent)', cursor: 'pointer',
                 }}
               >
                 Ausloggen
@@ -174,9 +204,16 @@ export default function AdminSidebar({ user }: { user: User }) {
           </div>
         </div>
 
-        {/* Nav */}
-        {navItems.map((item) => {
-          const isActive = pathname.startsWith(item.href)
+        {/* Nav, gruppiert */}
+        {navGroups.map((group, gi) => (
+          <div key={gi} style={{ marginTop: gi === 0 ? 0 : 14 }}>
+            {group.title && (
+              <div style={{ font: '700 10px/1.4 var(--font-sans)', textTransform: 'uppercase', letterSpacing: '0.14em', color: 'var(--fg-mute)', padding: '0 12px', marginBottom: 4 }}>
+                {group.title}
+              </div>
+            )}
+            {group.items.map((item) => {
+          const isActive = isActivePath(pathname, item)
           return (
             <Link
               key={item.href}
@@ -185,10 +222,11 @@ export default function AdminSidebar({ user }: { user: User }) {
                 display: 'flex', alignItems: 'center', gap: 12,
                 padding: '10px 12px', borderRadius: 8,
                 textDecoration: 'none',
-                background: isActive ? 'var(--bg-3)' : 'transparent',
+                background: isActive ? 'var(--accent-soft)' : 'transparent',
+                boxShadow: isActive ? 'inset 3px 0 0 var(--accent)' : 'none',
                 color: isActive ? 'var(--fg)' : 'var(--fg-dim)',
-                fontFamily: 'var(--font-mono)', fontSize: 11.5,
-                textTransform: 'uppercase', letterSpacing: '0.06em',
+                font: `${isActive ? 600 : 500} 13.5px/1 var(--font-sans)`,
+                letterSpacing: '0.01em',
                 transition: 'background 0.15s, color 0.15s',
                 whiteSpace: 'nowrap',
               }}
@@ -210,18 +248,34 @@ export default function AdminSidebar({ user }: { user: User }) {
               <span style={{
                 width: 18, height: 18,
                 display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                fontFamily: 'var(--font-mono)', fontSize: 10,
-                color: isActive ? 'var(--fg)' : 'var(--fg-mute)', flexShrink: 0,
+                color: isActive ? 'var(--accent)' : 'var(--fg-mute)', flexShrink: 0,
               }}>
                 {item.icon}
               </span>
               {item.label}
             </Link>
           )
-        })}
+            })}
+          </div>
+        ))}
 
         {/* Footer */}
         <div style={{ marginTop: 'auto', paddingTop: 16, borderTop: '1px solid var(--line-soft)' }}>
+          <button
+            onClick={toggle}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 10, width: '100%', textAlign: 'left',
+              padding: '8px 12px', borderRadius: 6, marginBottom: 4,
+              font: '500 12.5px/1 var(--font-sans)',
+              color: 'var(--fg-dim)', background: 'transparent', border: 'none', cursor: 'pointer',
+              transition: 'background 0.15s, color 0.15s',
+            }}
+            onMouseEnter={(e) => { const el = e.currentTarget as HTMLElement; el.style.background = 'var(--bg-3)'; el.style.color = 'var(--fg)' }}
+            onMouseLeave={(e) => { const el = e.currentTarget as HTMLElement; el.style.background = 'transparent'; el.style.color = 'var(--fg-dim)' }}
+          >
+            {light ? <Moon size={14} /> : <Sun size={14} />}
+            {light ? 'Dunkles Thema' : 'Helles Thema'}
+          </button>
           <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--fg-mute)', letterSpacing: '0.06em', padding: '4px 12px', marginBottom: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {user.email}
           </div>
@@ -256,7 +310,7 @@ export default function AdminSidebar({ user }: { user: User }) {
             position: fixed;
             top: 0; left: 0; right: 0;
             z-index: 50;
-            background: rgba(26,26,30,0.95);
+            background: color-mix(in srgb, var(--bg) 95%, transparent);
             backdrop-filter: blur(14px);
             border-bottom: 1px solid var(--line-soft);
           }

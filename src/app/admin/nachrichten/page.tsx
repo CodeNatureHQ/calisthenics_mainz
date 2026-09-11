@@ -108,7 +108,7 @@ function MessageRow({ msg, expanded, setExpanded, onToggle, onDelete }: {
         <div style={{ display: 'flex', gap: 6 }} className="admin-list-row-actions">
           <button
             onClick={(e) => { e.stopPropagation(); onToggle(msg) }}
-            style={{ ...btnGhost, color: msg.handled ? 'var(--fg-mute)' : 'var(--ok)', borderColor: msg.handled ? 'var(--line)' : 'rgba(142,232,142,0.3)' }}
+            style={{ ...btnGhost, color: msg.handled ? 'var(--fg-mute)' : 'var(--ok)', borderColor: msg.handled ? 'var(--line)' : 'color-mix(in srgb, var(--ok) 35%, transparent)' }}
           >
             {msg.handled ? '○ Offen' : '● Erledigt'}
           </button>
@@ -122,7 +122,7 @@ function MessageRow({ msg, expanded, setExpanded, onToggle, onDelete }: {
           <p style={{ margin: 0, color: 'var(--fg-dim)', fontSize: 14, lineHeight: 1.65, whiteSpace: 'pre-wrap' }}>{msg.message}</p>
           <a
             href={`mailto:${msg.email}`}
-            style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 16, fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--accent-spark)', letterSpacing: '0.06em', textDecoration: 'none' }}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 16, fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--accent)', letterSpacing: '0.06em', textDecoration: 'none' }}
           >
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 01-2.06 0L2 7"/></svg>
             {msg.email} anschreiben

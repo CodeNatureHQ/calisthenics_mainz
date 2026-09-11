@@ -108,8 +108,8 @@ export default function AdminAnkuendigungPage() {
       {saved && <div style={successBox}>✓ Gespeichert</div>}
 
       {/* Status card */}
-      <div style={{ ...card, borderColor: isActive ? 'rgba(255,122,122,0.4)' : 'var(--line-soft)', marginBottom: 20 }}>
-        <div style={{ ...cardHead, borderBottomColor: isActive ? 'rgba(255,122,122,0.2)' : 'var(--line-soft)' }}>
+      <div style={{ ...card, borderColor: isActive ? 'color-mix(in srgb, var(--danger) 40%, transparent)' : 'var(--line-soft)', marginBottom: 20 }}>
+        <div style={{ ...cardHead, borderBottomColor: isActive ? 'color-mix(in srgb, var(--danger) 20%, transparent)' : 'var(--line-soft)' }}>
           <h3 style={{ ...cardTitle, color: isActive ? 'var(--danger)' : 'var(--fg)' }}>
             {isActive ? '● Meldung aktiv' : '○ Meldung inaktiv'}
           </h3>
@@ -121,8 +121,8 @@ export default function AdminAnkuendigungPage() {
           <label style={{
             display: 'flex', alignItems: 'center', gap: 16, cursor: 'pointer',
             padding: '16px 20px',
-            background: isActive ? 'rgba(255,122,122,0.06)' : 'var(--bg)',
-            border: `1px solid ${isActive ? 'rgba(255,122,122,0.25)' : 'var(--line-soft)'}`,
+            background: isActive ? 'color-mix(in srgb, var(--danger) 8%, transparent)' : 'var(--bg)',
+            border: `1px solid ${isActive ? 'color-mix(in srgb, var(--danger) 25%, transparent)' : 'var(--line-soft)'}`,
             borderRadius: 10, transition: 'all 0.2s',
           }}>
             <input
@@ -188,9 +188,7 @@ export default function AdminAnkuendigungPage() {
               type="date"
               value={form.announcement_starts_at ?? ''}
               onChange={(e) => setForm((p) => ({ ...p, announcement_starts_at: e.target.value }))}
-              style={{ ...inp, colorScheme: 'dark' }}
-              onFocus={(e) => (e.currentTarget.style.borderColor = 'var(--fg)')}
-              onBlur={(e) => (e.currentTarget.style.borderColor = 'var(--line)')}
+              style={inp}
             />
           </div>
           <div>
@@ -199,9 +197,7 @@ export default function AdminAnkuendigungPage() {
               type="date"
               value={form.announcement_ends_at ?? ''}
               onChange={(e) => setForm((p) => ({ ...p, announcement_ends_at: e.target.value }))}
-              style={{ ...inp, colorScheme: 'dark' }}
-              onFocus={(e) => (e.currentTarget.style.borderColor = 'var(--fg)')}
-              onBlur={(e) => (e.currentTarget.style.borderColor = 'var(--line)')}
+              style={inp}
             />
           </div>
         </div>
@@ -290,8 +286,6 @@ export default function AdminAnkuendigungPage() {
                 onChange={(e) => setForm((p) => ({ ...p, announcement_title_de: e.target.value }))}
                 placeholder="z.B. Hallenschließung"
                 style={inp}
-                onFocus={(e) => (e.currentTarget.style.borderColor = 'var(--fg)')}
-                onBlur={(e) => (e.currentTarget.style.borderColor = 'var(--line)')}
               />
             </div>
             <div>
@@ -302,8 +296,6 @@ export default function AdminAnkuendigungPage() {
                 placeholder="Detailtext auf Deutsch…"
                 rows={4}
                 style={{ ...inp, resize: 'vertical' }}
-                onFocus={(e) => (e.currentTarget.style.borderColor = 'var(--fg)')}
-                onBlur={(e) => (e.currentTarget.style.borderColor = 'var(--line)')}
               />
             </div>
           </div>
@@ -325,8 +317,6 @@ export default function AdminAnkuendigungPage() {
                 onChange={(e) => setForm((p) => ({ ...p, announcement_title_en: e.target.value }))}
                 placeholder="e.g. Hall closed"
                 style={inp}
-                onFocus={(e) => (e.currentTarget.style.borderColor = 'var(--fg)')}
-                onBlur={(e) => (e.currentTarget.style.borderColor = 'var(--line)')}
               />
             </div>
             <div>
@@ -337,8 +327,6 @@ export default function AdminAnkuendigungPage() {
                 placeholder="Detail text in English…"
                 rows={4}
                 style={{ ...inp, resize: 'vertical' }}
-                onFocus={(e) => (e.currentTarget.style.borderColor = 'var(--fg)')}
-                onBlur={(e) => (e.currentTarget.style.borderColor = 'var(--line)')}
               />
             </div>
           </div>

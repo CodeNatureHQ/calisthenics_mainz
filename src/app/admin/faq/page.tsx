@@ -3,7 +3,9 @@
 import { useEffect, useState } from 'react'
 import type { FaqItem } from '@/lib/types'
 import { createClient } from '@/lib/supabase/client'
-import { pageHead, crumbStyle, h1Style, card, formCard, listRow, empty, inp, fieldLabel, btnPrimary, btnGhost, btnDanger } from '../shared'
+import { pageHead, crumbStyle, h1Style, card, listRow, empty, inp, btnPrimary, btnGhost, btnDanger } from '../shared'
+import { FormShell, FormSection, Field, Grid, LangColumns, Toggle } from '@/components/admin/Form'
+import LangPair from '@/components/admin/LangPair'
 import dynamic from 'next/dynamic'
 const RichText = dynamic(() => import('@/components/admin/RichText'), { ssr: false })
 
@@ -61,40 +63,22 @@ export default function AdminFaqPage() {
       </div>
 
       {editing !== null && (
-        <div style={{ ...formCard, marginBottom: 16 }}>
-          <h2 style={formTitle}>{editing === 'new' ? 'Neue Frage' : 'Frage bearbeiten'}</h2>
-
-          {/* Fragen */}
-          <div style={{ marginBottom: 16 }}>
-            <label style={fieldLabel}>Frage</label>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }} className="admin-lang-pair">
-              {[{ val: form.question_de, key: 'question_de' as const, tag: 'DE' }, { val: form.question_en, key: 'question_en' as const, tag: 'EN' }].map(({ val, key, tag }) => (
-                <div key={tag} style={{ position: 'relative' }}>
-                  <input value={val} onChange={e => f(key, e.target.value)} style={{ ...inp, paddingRight: 44 }} placeholder={tag === 'DE' ? 'Frage auf Deutsch …' : 'Question in English …'} />
-                  <span style={badge}>{tag}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Antworten */}
-          <div style={{ marginBottom: 16 }}>
-            <label style={fieldLabel}>Antwort</label>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }} className="admin-lang-pair">
-              {[{ val: form.answer_de, key: 'answer_de' as const, tag: 'DE', ph: 'Antwort auf Deutsch …' }, { val: form.answer_en, key: 'answer_en' as const, tag: 'EN', ph: 'Answer in English …' }].map(({ val, key, tag, ph }) => (
-                <div key={tag} style={{ position: 'relative' }}>
-                  <div style={{ ...badge, top: 8, zIndex: 10 }}>{tag}</div>
-                  <RichText value={val} onChange={v => f(key, v)} placeholder={ph} minHeight={100} />
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div style={{ display: 'flex', gap: 8, paddingTop: 16, borderTop: '1px solid var(--line-soft)' }}>
-            <button onClick={() => setEditing(null)} style={btnGhost}>Abbrechen</button>
-            <button onClick={save} disabled={saving} style={btnPrimary}>{saving ? '…' : 'Speichern'}</button>
-          </div>
-        </div>
+        <FormShell title={editing === 'new' ? 'Neue Frage' : 'Frage bearbeiten'} onCancel={() => setEditing(null)} onSave={save} saving={saving} disabled={!form.question_de.trim()}>
+          <FormSection title="Frage" description="Kurz und so formuliert, wie jemand sie wirklich stellen würde.">
+            <LangPair label="Frage" deValue={form.question_de} enValue={form.question_en} onDe={(v) => f('question_de', v)} onEn={(v) => f('question_en', v)} placeholder={{ de: 'Kann ich als Anfänger:in kommen?', en: 'Can I come as a beginner?' }} />
+          </FormSection>
+          <FormSection title="Antwort" description="Darf gern zwei, drei Sätze lang sein. Links sind möglich.">
+            <LangColumns label="Antwort" de={<RichText value={form.answer_de} onChange={(v) => f('answer_de', v)} placeholder="Antwort auf Deutsch …" minHeight={140} />} en={<RichText value={form.answer_en} onChange={(v) => f('answer_en', v)} placeholder="Answer in English …" minHeight={140} />} />
+          </FormSection>
+          <FormSection title="Anzeige">
+            <Grid>
+              <Field label="Reihenfolge" hint="Kleinere Zahl steht weiter oben.">
+                <input type="number" value={form.sort_order} onChange={(e) => f('sort_order', e.target.value)} style={inp} />
+              </Field>
+            </Grid>
+            <Toggle checked={form.visible} onChange={(v) => setForm(p => ({ ...p, visible: v }))} label={form.visible ? 'Auf der Webseite sichtbar' : 'Versteckt'} />
+          </FormSection>
+        </FormShell>
       )}
 
       {!editing && <div style={card}>
@@ -107,7 +91,7 @@ export default function AdminFaqPage() {
               />
             </div>
             <div style={{ display: 'flex', gap: 6 }} className="admin-list-row-actions">
-              <button onClick={() => toggleVisible(item)} style={{ ...btnGhost, color: item.visible ? 'var(--ok)' : 'var(--fg-mute)', borderColor: item.visible ? 'rgba(142,232,142,0.3)' : 'var(--line)' }}>
+              <button onClick={() => toggleVisible(item)} style={{ ...btnGhost, color: item.visible ? 'var(--ok)' : 'var(--fg-mute)', borderColor: item.visible ? 'color-mix(in srgb, var(--ok) 35%, transparent)' : 'var(--line)' }}>
                 {item.visible ? '● Sichtbar' : '○ Versteckt'}
               </button>
               <button onClick={() => startEdit(item)} style={btnGhost}>Bearbeiten</button>
@@ -120,5 +104,3 @@ export default function AdminFaqPage() {
   )
 }
 
-const formTitle: React.CSSProperties = { fontFamily: 'var(--font-mono)', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--fg)', margin: '0 0 16px', fontWeight: 600 }
-const badge: React.CSSProperties = { position: 'absolute', top: 8, right: 10, fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.1em', color: 'var(--fg-mute)', background: 'var(--bg)', padding: '2px 7px', borderRadius: 999, border: '1px solid var(--line-soft)', pointerEvents: 'none' }

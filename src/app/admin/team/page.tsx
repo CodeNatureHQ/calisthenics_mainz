@@ -3,10 +3,11 @@
 import { useEffect, useRef, useState } from 'react'
 import type { TeamMember, TeamMemberRole } from '@/lib/types'
 import { createClient } from '@/lib/supabase/client'
+import { FormShell, FormSection, Field, Grid, Toggle } from '@/components/admin/Form'
 import {
-  pageHead, crumbStyle, h1Style, card, formCard,
-  listRow as sharedListRow, empty, inp, fieldLabel,
-  errorBox, btnPrimary, btnGhost, btnDanger,
+  pageHead, crumbStyle, h1Style, card,
+  listRow as sharedListRow, empty, inp,
+  btnPrimary, btnGhost, btnDanger,
 } from '../shared'
 
 type FormState = {
@@ -134,120 +135,39 @@ export default function AdminTeamPage() {
       </div>
 
       {editing !== null && (
-        <div style={{ ...formCard, marginBottom: 16 }}>
-          <h2 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--fg)', margin: '0 0 1.5rem' }}>
-            {isNew ? 'Neues Mitglied' : 'Mitglied bearbeiten'}
-          </h2>
-          {error && <div style={errorBox}>{error}</div>}
-
-          <div style={{ display: 'grid', gap: '1rem' }}>
-            <Field label="Name">
-              <input
-                value={form.name}
-                onChange={(e) => f('name', e.target.value)}
-                placeholder="Vorname Nachname"
-                style={inp}
-              />
-            </Field>
-
-            <Field label="Rolle">
-              <select
-                value={form.role}
-                onChange={(e) => f('role', e.target.value as TeamMemberRole)}
-                style={{ ...inp, cursor: 'pointer' }}
-              >
-                <option value="trainer">Trainer</option>
-                <option value="vorstand">Vorstand</option>
-              </select>
-            </Field>
-
-            <Field label="Foto">
-              <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-                {/* Preview */}
-                <div style={{
-                  width: 80, height: 80, flexShrink: 0,
-                  background: 'var(--bg-3)', border: '1px solid var(--line-soft)',
-                  borderRadius: 8, overflow: 'hidden',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                }}>
-                  {form.image_url ? (
-                    <img src={form.image_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  ) : (
-                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--fg-mute)', letterSpacing: '0.04em' }}>
-                      Kein Bild
-                    </span>
-                  )}
-                </div>
-                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    style={{ display: 'none' }}
-                    onChange={(e) => {
-                      const file = e.target.files?.[0]
-                      if (file) handleImageUpload(file)
-                    }}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={uploading}
-                    style={btnGhost}
-                  >
-                    {uploading ? 'Hochladen …' : 'Foto hochladen'}
-                  </button>
-                  {form.image_url && (
-                    <button
-                      type="button"
-                      onClick={() => f('image_url', '')}
-                      style={{ ...btnGhost, color: 'var(--danger)', borderColor: 'rgba(255,122,122,0.3)' }}
-                    >
-                      Foto entfernen
-                    </button>
-                  )}
-                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--fg-mute)', letterSpacing: '0.04em' }}>
-                    JPG, PNG, WebP · max. 5 MB
-                  </span>
-                </div>
+        <FormShell title={isNew ? 'Neues Mitglied' : 'Mitglied bearbeiten'} error={error} onCancel={cancelEdit} onSave={handleSave} saving={saving} disabled={uploading || !form.name.trim()}>
+          <FormSection title="Person">
+            <Grid>
+              <Field label="Name">
+                <input value={form.name} onChange={(e) => f('name', e.target.value)} placeholder="Vorname Nachname" style={inp} />
+              </Field>
+              <Field label="Rolle">
+                <select value={form.role} onChange={(e) => f('role', e.target.value as TeamMemberRole)} style={inp}>
+                  <option value="trainer">Trainer</option>
+                  <option value="vorstand">Vorstand</option>
+                </select>
+              </Field>
+            </Grid>
+          </FormSection>
+          <FormSection title="Foto" description="Quadratisch wirkt am besten. JPG, PNG oder WebP, maximal 5 MB.">
+            <div style={{ display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
+              <div style={{ width: 96, height: 96, flexShrink: 0, background: 'var(--bg-3)', border: '1px solid var(--line-soft)', borderRadius: 'var(--radius)', overflow: 'hidden', display: 'grid', placeItems: 'center' }}>
+                {form.image_url ? <img src={form.image_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <span style={{ font: '600 12px var(--font-sans)', color: 'var(--fg-mute)' }}>Kein Foto</span>}
               </div>
-            </Field>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }} className="admin-form-2col">
-              <Field label="Reihenfolge">
-                <input
-                  type="number"
-                  value={form.sort_order}
-                  onChange={(e) => f('sort_order', e.target.value)}
-                  style={inp}
-                />
-              </Field>
-              <Field label="Sichtbarkeit">
-                <label style={{
-                  display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer',
-                  padding: '10px 12px', background: 'var(--bg)', border: '1px solid var(--line)', borderRadius: 8,
-                }}>
-                  <input
-                    type="checkbox"
-                    checked={form.visible}
-                    onChange={(e) => setForm((p) => ({ ...p, visible: e.target.checked }))}
-                    style={{ width: 16, height: 16, accentColor: 'var(--ok)', flexShrink: 0 }}
-                  />
-                  <span style={{ fontFamily: 'var(--font-sans)', fontSize: 13.5, color: form.visible ? 'var(--ok)' : 'var(--fg-mute)' }}>
-                    {form.visible ? 'Sichtbar' : 'Versteckt'}
-                  </span>
-                </label>
-              </Field>
+              <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={(e) => { const file = e.target.files?.[0]; if (file) handleImageUpload(file) }} />
+              <button type="button" onClick={() => fileInputRef.current?.click()} disabled={uploading} style={btnGhost}>{uploading ? 'Hochladen …' : form.image_url ? 'Foto ersetzen' : 'Foto hochladen'}</button>
+              {form.image_url && <button type="button" onClick={() => f('image_url', '')} style={btnDanger}>Foto entfernen</button>}
             </div>
-          </div>
-
-          <div style={{ display: 'flex', gap: 8, marginTop: 20 }}>
-            <button onClick={cancelEdit} style={btnGhost}>Abbrechen</button>
-            <button onClick={handleSave} disabled={saving} style={btnPrimary}>
-              {saving ? 'Speichern …' : 'Speichern'}
-            </button>
-          </div>
-        </div>
+          </FormSection>
+          <FormSection title="Anzeige">
+            <Grid>
+              <Field label="Reihenfolge" hint="Kleinere Zahl steht weiter vorne.">
+                <input type="number" value={form.sort_order} onChange={(e) => f('sort_order', e.target.value)} style={inp} />
+              </Field>
+            </Grid>
+            <Toggle checked={form.visible} onChange={(v) => setForm((p) => ({ ...p, visible: v }))} label={form.visible ? 'Auf der Über-uns-Seite sichtbar' : 'Versteckt'} />
+          </FormSection>
+        </FormShell>
       )}
 
       {!editing && (
@@ -277,7 +197,7 @@ export default function AdminTeamPage() {
                 <div style={{ minWidth: 0 }}>
                   <div style={{ fontWeight: 500, color: 'var(--fg)', fontSize: 14 }}>{m.name}</div>
                   <div style={{
-                    fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--accent-2)',
+                    fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--accent)',
                     letterSpacing: '0.08em', textTransform: 'uppercase', marginTop: 2,
                   }}>
                     {roleLabels[m.role]}
@@ -291,7 +211,7 @@ export default function AdminTeamPage() {
                   style={{
                     ...btnGhost,
                     color: m.visible ? 'var(--ok)' : 'var(--fg-mute)',
-                    borderColor: m.visible ? 'rgba(142,232,142,0.3)' : 'var(--line)',
+                    borderColor: m.visible ? 'color-mix(in srgb, var(--ok) 35%, transparent)' : 'var(--line)',
                   }}
                 >
                   {m.visible ? '● Sichtbar' : '○ Versteckt'}
@@ -303,15 +223,6 @@ export default function AdminTeamPage() {
           ))}
         </div>
       )}
-    </div>
-  )
-}
-
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div>
-      <label style={fieldLabel}>{label}</label>
-      {children}
     </div>
   )
 }
