@@ -1,7 +1,17 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import type { Lang } from '@/lib/types'
-import { createClient } from '@/lib/supabase/server'
+
+// Verantwortlicher für die App — bewusst NICHT aus `site_settings`.
+// Calivision wird von Richard Maasri als Privatperson in den App-Stores
+// veröffentlicht, nicht vom Verein. Die Vereinsdaten dürfen sich hier also
+// nicht auswirken. Ändert sich der Herausgeber, wird es hier geändert.
+const CONTROLLER = {
+  name: 'Richard Maasri',
+  street: 'Schenkendorfstraße 5',
+  city: '65187 Wiesbaden',
+  email: 'richard.maasri@hotmail.de',
+} as const
 
 // Unverlinkte Seite: dient als Datenschutz-URL für die Calivision-App in
 // App Store Connect und Play Console. Bewusst nicht in Footer oder Sitemap.
@@ -15,24 +25,20 @@ export default async function CalivisionDatenschutzPage({ params }: { params: Pr
   const lang = (rawLang === 'en' ? 'en' : 'de') as Lang
   const isDE = lang === 'de'
 
-  const supabase = await createClient()
-  const { data: s } = await supabase.from('site_settings').select('imprint_street,imprint_zip,imprint_city,imprint_email').single()
-
-  const street = s?.imprint_street ?? (isDE ? '[Straße und Hausnummer]' : '[Street and number]')
-  const zip = s?.imprint_zip ?? (isDE ? '55[PLZ]' : '55[ZIP]')
-  const city = s?.imprint_city ?? 'Mainz'
-  const email = s?.imprint_email ?? 'kontakt@calisthenics-mainz.de'
+  const email = CONTROLLER.email
 
   const sections = isDE ? [
     {
       heading: '1. Verantwortlicher',
-      content: `Verantwortlich für die Datenverarbeitung in der App Calivision:\n\nCalisthenics Mainz e.V.\n${street}\n${zip} ${city}\nE-Mail: ${email}`,
+      content: `Verantwortlich für die Datenverarbeitung in der App Calivision im Sinne der DSGVO:\n\n${CONTROLLER.name}\n${CONTROLLER.street}\n${CONTROLLER.city}\nE-Mail: ${CONTROLLER.email}\n\nCalivision ist ein privates Projekt und wird von mir als Privatperson herausgegeben. Der Verein Calisthenics Mainz e.V. ist nicht Herausgeber der App und nicht für die Datenverarbeitung in der App verantwortlich; diese Seite liegt lediglich auf der Website des Vereins.`,
     },
     {
       heading: '2. Grundsatz: Die Verarbeitung findet ausschließlich auf deinem Gerät statt',
       content: `Calivision analysiert Trainingsvideos lokal auf deinem Smartphone. Die App hat keine Serververbindung, keinen Nutzerkonto-Bereich und keine Anmeldung.
 
-Es werden keine Videos, Bilder, Messwerte oder Nutzungsdaten an uns oder an Dritte übertragen. Wir als Anbieter erhalten keinerlei Kenntnis davon, ob, wann oder wie du die App benutzt. Wir können deine Daten technisch nicht einsehen.`,
+Es werden keine Videos, Bilder, Messwerte oder Nutzungsdaten an uns oder an Dritte übertragen. Wir als Anbieter erhalten keinerlei Kenntnis davon, ob, wann oder wie du die App benutzt. Wir können deine Daten technisch nicht einsehen.
+
+Eine Ausnahme im Wortsinn: Die App enthält einen Link auf diese Datenschutzerklärung. Tippst du ihn an, öffnet sich der Browser deines Geräts und ruft unsere Website auf. Dabei wird – wie bei jedem Website-Aufruf – deine IP-Adresse an den Hoster übertragen. Es gilt dann die Datenschutzerklärung der Website. Die App selbst sendet dabei keine Daten über dich mit.`,
     },
     {
       heading: '3. Welche Daten die App verarbeitet',
@@ -94,7 +100,7 @@ Hinweis: Da wir keine Daten von dir erhalten, können wir zu deinen Analysedaten
     },
     {
       heading: '12. Beschwerderecht',
-      content: `Du hast das Recht, dich bei einer Aufsichtsbehörde zu beschweren. In Rheinland-Pfalz ist dies der Landesbeauftragte für den Datenschutz und die Informationsfreiheit Rheinland-Pfalz.`,
+      content: `Du hast das Recht, dich bei einer Datenschutz-Aufsichtsbehörde zu beschweren. Zuständig ist der Hessische Beauftragte für Datenschutz und Informationsfreiheit, Gustav-Stresemann-Ring 1, 65189 Wiesbaden (https://datenschutz.hessen.de).`,
     },
     {
       heading: '13. Stand und Änderungen',
@@ -103,13 +109,15 @@ Hinweis: Da wir keine Daten von dir erhalten, können wir zu deinen Analysedaten
   ] : [
     {
       heading: '1. Controller',
-      content: `Responsible for data processing in the Calivision app:\n\nCalisthenics Mainz e.V.\n${street}\n${zip} ${city}, Germany\nEmail: ${email}`,
+      content: `Controller for data processing in the Calivision app within the meaning of the GDPR:\n\n${CONTROLLER.name}\n${CONTROLLER.street}\n${CONTROLLER.city}, Germany\nEmail: ${CONTROLLER.email}\n\nCalivision is a private project published by me as a private individual. The association Calisthenics Mainz e.V. is not the publisher of the app and is not responsible for the data processing within it; this page is merely hosted on the association's website.`,
     },
     {
       heading: '2. Principle: all processing happens on your device',
       content: `Calivision analyses training videos locally on your phone. The app has no server connection, no user account and no sign-in.
 
-No videos, images, measurements or usage data are transmitted to us or to any third party. As the provider, we have no knowledge of whether, when or how you use the app. We are technically unable to access your data.`,
+No videos, images, measurements or usage data are transmitted to us or to any third party. As the provider, we have no knowledge of whether, when or how you use the app. We are technically unable to access your data.
+
+One literal exception: the app contains a link to this privacy policy. Tapping it opens your device's browser and loads our website. As with any website visit, your IP address is transmitted to the host, and the website's privacy policy then applies. The app itself sends no data about you along with it.`,
     },
     {
       heading: '3. What the app processes',
@@ -171,7 +179,7 @@ Please note: since we receive no data from you, we can neither provide informati
     },
     {
       heading: '12. Right to lodge a complaint',
-      content: `You have the right to lodge a complaint with a supervisory authority. In Rhineland-Palatinate this is the State Commissioner for Data Protection and Freedom of Information Rhineland-Palatinate.`,
+      content: `You have the right to lodge a complaint with a data protection supervisory authority. The competent authority is the Hessian Commissioner for Data Protection and Freedom of Information, Gustav-Stresemann-Ring 1, 65189 Wiesbaden, Germany (https://datenschutz.hessen.de).`,
     },
     {
       heading: '13. Status and changes',
