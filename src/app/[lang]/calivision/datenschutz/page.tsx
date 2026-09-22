@@ -36,7 +36,7 @@ export default async function CalivisionDatenschutzPage({ params }: { params: Pr
       heading: '2. Grundsatz: Die Verarbeitung findet ausschließlich auf deinem Gerät statt',
       content: `Calivision analysiert Trainingsvideos lokal auf deinem Smartphone. Die App hat keine Serververbindung, keinen Nutzerkonto-Bereich und keine Anmeldung.
 
-Es werden keine Videos, Bilder, Messwerte oder Nutzungsdaten an uns oder an Dritte übertragen. Wir als Anbieter erhalten keinerlei Kenntnis davon, ob, wann oder wie du die App benutzt. Wir können deine Daten technisch nicht einsehen.
+Es werden keine Videos, Bilder, Messwerte oder Nutzungsdaten an uns oder an Dritte übertragen. Die einzige Ausnahme sind technische Absturzberichte, die keine Inhalte aus deinen Analysen enthalten (Abschnitt 6). Wir als Anbieter erhalten keinerlei Kenntnis davon, ob, wann oder wie du die App benutzt. Wir können deine Daten technisch nicht einsehen.
 
 Eine Ausnahme im Wortsinn: Die App enthält einen Link auf diese Datenschutzerklärung. Tippst du ihn an, öffnet sich der Browser deines Geräts und ruft unsere Website auf. Dabei wird – wie bei jedem Website-Aufruf – deine IP-Adresse an den Hoster übertragen. Es gilt dann die Datenschutzerklärung der Website. Die App selbst sendet dabei keine Daten über dich mit.`,
     },
@@ -67,8 +67,14 @@ Eine Analyse, die du nicht ausdrücklich speicherst, verschwindet mit dem Beende
 Das Originalvideo in deiner Galerie wird nicht verändert und nicht gelöscht.`,
     },
     {
-      heading: '6. Kein Tracking, keine Werbung, keine Analyse-Dienste',
-      content: `Calivision enthält keine Cookies, keine Werbung, keine Analyse- oder Tracking-Werkzeuge, keine Absturzberichterstattung und keine Bibliotheken von Drittanbietern, die Daten nach außen senden. Es findet kein Profiling und keine automatisierte Entscheidungsfindung im Sinne des Art. 22 DSGVO statt.`,
+      heading: '6. Kein Tracking, keine Werbung — aber Absturzberichte',
+      content: `Calivision enthält keine Cookies, keine Werbung und keine Analyse- oder Tracking-Werkzeuge. Es findet kein Profiling und keine automatisierte Entscheidungsfindung im Sinne des Art. 22 DSGVO statt.
+
+Eine Ausnahme: Stürzt die App ab, wird ein technischer Fehlerbericht an Firebase Crashlytics übermittelt, einen Dienst der Google Ireland Limited. Das geschieht nur im Fehlerfall, nicht im laufenden Betrieb.
+
+Ein solcher Bericht enthält technische Angaben zum Absturz – Fehlermeldung und Aufrufliste im Programmcode, Gerätemodell, Betriebssystemversion, App-Version und eine zufällig erzeugte Installationskennung. Er enthält keine Videos, keine Bilder, keine Messwerte aus deinen Analysen und keinen Namen.
+
+Zweck ist allein, Fehler in der App zu finden und zu beheben. Rechtsgrundlage ist Art. 6 Abs. 1 lit. f DSGVO (berechtigtes Interesse an einer funktionierenden App). Dabei können Daten in die USA übermittelt werden; Google stützt dies auf die EU-Standardvertragsklauseln. Näheres: https://firebase.google.com/support/privacy`,
     },
     {
       heading: '7. Export-Funktion',
@@ -115,7 +121,7 @@ Hinweis: Da wir keine Daten von dir erhalten, können wir zu deinen Analysedaten
       heading: '2. Principle: all processing happens on your device',
       content: `Calivision analyses training videos locally on your phone. The app has no server connection, no user account and no sign-in.
 
-No videos, images, measurements or usage data are transmitted to us or to any third party. As the provider, we have no knowledge of whether, when or how you use the app. We are technically unable to access your data.
+No videos, images, measurements or usage data are transmitted to us or to any third party. The only exception is technical crash reports, which contain no content from your analyses (section 6). As the provider, we have no knowledge of whether, when or how you use the app. We are technically unable to access your data.
 
 One literal exception: the app contains a link to this privacy policy. Tapping it opens your device's browser and loads our website. As with any website visit, your IP address is transmitted to the host, and the website's privacy policy then applies. The app itself sends no data about you along with it.`,
     },
@@ -146,8 +152,14 @@ An analysis you do not explicitly save disappears when the session ends.`,
 The original video in your gallery is neither modified nor deleted.`,
     },
     {
-      heading: '6. No tracking, no advertising, no analytics',
-      content: `Calivision contains no cookies, no advertising, no analytics or tracking tools, no crash reporting and no third-party libraries that send data outward. There is no profiling and no automated decision-making within the meaning of Art. 22 GDPR.`,
+      heading: '6. No tracking, no advertising — but crash reports',
+      content: `Calivision contains no cookies, no advertising and no analytics or tracking tools. There is no profiling and no automated decision-making within the meaning of Art. 22 GDPR.
+
+One exception: if the app crashes, a technical error report is sent to Firebase Crashlytics, a service of Google Ireland Limited. This happens only on a crash, not during normal use.
+
+Such a report contains technical details of the crash – error message and code-level stack trace, device model, operating system version, app version and a randomly generated installation identifier. It contains no videos, no images, no measurements from your analyses and no name.
+
+Its sole purpose is to find and fix faults in the app. The legal basis is Art. 6(1)(f) GDPR (legitimate interest in a working app). Data may be transferred to the USA; Google relies on the EU standard contractual clauses for this. More: https://firebase.google.com/support/privacy`,
     },
     {
       heading: '7. Export function',
