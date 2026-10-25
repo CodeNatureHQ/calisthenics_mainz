@@ -68,7 +68,6 @@ export default function TrainingSection({ lang, sessions, overrides, spots, even
         <div className="training-welcome">
         <SectionHeading eyebrow={lang === 'de' ? 'Die nächsten Sessions' : 'The next sessions'} title={lang === 'de' ? 'Zusammen trainieren.' : 'Train together.'} description={lang === 'de' ? 'Hier findest du deine nächste Session. Wähle einen Termin für Treffpunkt und Infos zur Teilnahme.' : 'Find your next session. Select a date for the meeting point and how to take part.'} />
 
-        <aside className="training-intro"><p className="eyebrow">{lang === 'de' ? 'Zum ersten Mal dabei?' : 'Your first session?'}</p><h3>{lang === 'de' ? 'So startest du mit uns.' : 'Your first session with us.'}</h3><p>{lang === 'de' ? 'Schau vor deinem ersten Besuch in die Teilnahmeinfos. Noch unsicher? Schreib uns – wir helfen dir, das passende Training zu finden.' : 'Check the participation details before your first visit. Unsure about anything? Get in touch – we’ll help you find the right session.'}</p><a href="#faq" className="club-text-link">{lang === 'de' ? 'Infos zur Teilnahme ↗' : 'How to join ↗'}</a></aside>
         </div>
         <div className="training-schedule">
         {/* Tabs */}
@@ -100,7 +99,9 @@ export default function TrainingSection({ lang, sessions, overrides, spots, even
             onSelect={setActiveEntry}
           />
         )}
-        </div></div>
+        </div>
+        <aside id={lang === 'de' ? 'probetraining' : 'trial'} className="training-intro"><div><p className="eyebrow">{lang === 'de' ? 'Zum ersten Mal dabei?' : 'Your first session?'}</p><h3>{lang === 'de' ? 'Probetraining in der Halle.' : 'Trial session in the hall.'}</h3><p>{lang === 'de' ? 'JGU-Studierende kommen einfach vorbei. Alle anderen können eine Einheit als Probetraining besuchen:' : 'JGU students can just come by. Everyone else can join one session as a trial:'}</p></div><div className="training-intro-action"><ol className="training-intro-steps"><li>{lang === 'de' ? 'Spätestens 3 Tage vorher online beim AHS anmelden.' : 'Register online with AHS at least 3 days in advance.'}</li><li>{lang === 'de' ? 'Anmeldung zum Training mitbringen – am Eingang wird kontrolliert.' : 'Bring your registration – there are entrance checks.'}</li></ol><div className="training-intro-links"><a href="https://www.ahs.uni-mainz.de/foerderverein/" target="_blank" rel="noopener noreferrer" className="club-text-link">{lang === 'de' ? 'Zur Anmeldung ↗' : 'Register ↗'}</a><a href="#faq" className="club-text-link">{lang === 'de' ? 'Alle Infos ↗' : 'All details ↗'}</a></div></div></aside>
+        </div>
       </div>
 
       {/* Detail Modal */}

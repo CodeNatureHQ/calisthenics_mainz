@@ -456,11 +456,15 @@ html:has(.public-site), .public-site { background: var(--bg); color: var(--fg); 
 .training-layout { display: grid; grid-template-columns: .8fr 1.2fr; gap: 56px; align-items: start; }
 .training-welcome .section-heading { display: block; margin-bottom: 28px; }
 .training-welcome .section-description { margin-top: 18px; }
-.training-intro { margin-top: 44px; padding: 24px; border-left: 4px solid var(--accent); background: var(--bg-2); }
+.training-intro { grid-column: 1 / -1; display: grid; grid-template-columns: .8fr 1.2fr; gap: 20px 56px; align-items: center; margin-top: -16px; padding: 32px; border-left: 4px solid var(--accent); background: var(--bg-2); scroll-margin-top: calc(100px + var(--banner-h, 0px)); }
 .training-intro .eyebrow { margin-bottom: 10px; }
 .training-intro h3 { font-size: 30px; margin-bottom: 10px; }
-.training-intro > p:not(.eyebrow) { font-size: 14px; line-height: 1.65; color: var(--fg-dim); margin: 0 0 16px; }
-.training-schedule { min-width: 0; border: 2px solid var(--fg); border-radius: var(--radius-lg); background: var(--bg-2); overflow: hidden; }
+.training-intro p:not(.eyebrow) { font-size: 14px; line-height: 1.65; color: var(--fg-dim); margin: 0; }
+.training-intro-steps { margin: 0; padding-left: 20px; list-style: decimal; font-size: 15px; line-height: 1.6; color: var(--fg); display: grid; gap: 8px; }
+.training-intro-steps li::marker { color: var(--accent); font-weight: 700; }
+.training-intro-action { display: grid; gap: 22px; }
+.training-intro-links { display: flex; flex-wrap: wrap; gap: 12px 24px; }
+.training-schedule { margin-top: 14px; min-width: 0; border: 2px solid var(--fg); border-radius: var(--radius-lg); background: var(--bg-2); overflow: hidden; }
 .schedule-tabs { display: flex; border-bottom: 2px solid var(--fg); background: var(--fg); gap: 0; padding: 0; }
 .schedule-tabs button { flex: 0 0 auto; padding: 14px 20px; background: transparent; border: 0; color: var(--ink-dim); font: 700 16px/1 var(--font-display); text-transform: uppercase; letter-spacing: .06em; cursor: pointer; transition: color .15s, background .15s; }
 .schedule-tabs button[aria-pressed='true'] { background: var(--bg-2); color: var(--fg); }
@@ -728,7 +732,8 @@ html:has(.public-site), .public-site { background: var(--bg); color: var(--fg); 
   .club-desktop-nav { display: none; } .club-menu-toggle { display: flex; }
   .hero-grid { gap: 32px; }
   .training-layout { grid-template-columns: 1fr; gap: 36px; }
-  .training-intro { margin-top: 28px; }
+  .training-intro { grid-template-columns: 1fr; margin-top: 0; padding: 24px; }
+  .training-schedule { margin-top: 0; }
   .events-layout, .faq-layout { gap: 36px; grid-template-columns: .7fr 1.3fr; }
   .events-intro, .faq-layout .section-heading { position: static; }
   .spots-layout { grid-template-columns: 1fr; }

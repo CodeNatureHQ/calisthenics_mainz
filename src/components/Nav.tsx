@@ -26,7 +26,7 @@ export default function Nav({ lang, showAusruestung = false }: { lang: Lang; sho
   const de = lang === 'de'
   const home = `/${lang}`
   const base = pathname === home || pathname === `${home}/` ? '' : home
-  const join = `${base}#${de ? 'mitmachen' : 'join'}`
+  const join = `${base}#${de ? 'probetraining' : 'trial'}`
   const items = [
     { href: `${base}#training`, label: 'Training' },
     { href: `${base}#events`, label: 'Events' },
@@ -60,14 +60,14 @@ export default function Nav({ lang, showAusruestung = false }: { lang: Lang; sho
             <div className="club-languages" aria-label={de ? 'Sprache' : 'Language'}>
               {(['de', 'en'] as Lang[]).map(l => <button key={l} onClick={() => { setLang(l); setMenuOpen(false) }} aria-pressed={l === lang}>{l.toUpperCase()}</button>)}
             </div>
-            <a href={join} className="club-button nav-join">{de ? 'Mitmachen' : 'Join us'}<ArrowUpRight size={16} /></a>
+            <a href={join} className="club-button nav-join">{de ? 'Probetraining' : 'Trial session'}<ArrowUpRight size={16} /></a>
             <button className="club-menu-toggle" onClick={() => setMenuOpen(!menuOpen)} aria-label={de ? (menuOpen ? 'Menü schließen' : 'Menü öffnen') : (menuOpen ? 'Close menu' : 'Open menu')} aria-expanded={menuOpen} aria-controls="club-mobile-nav">{menuOpen ? <X size={23} /> : <Menu size={23} />}</button>
           </div>
         </div>
         <nav id="club-mobile-nav" className="club-mobile-nav" hidden={!menuOpen} aria-label={de ? 'Mobile Navigation' : 'Mobile navigation'}>
           {items.map(item => <a key={item.href} href={item.href} onClick={() => setMenuOpen(false)}>{item.label}<ArrowUpRight size={17} /></a>)}
           <a href={`${base}#blog`} onClick={() => setMenuOpen(false)}>Blog<ArrowUpRight size={17} /></a>
-          <a href={join} className="club-button" onClick={() => setMenuOpen(false)}>{de ? 'Komm mittrainieren' : 'Come train with us'}<ArrowUpRight size={17} /></a>
+          <a href={join} className="club-button" onClick={() => setMenuOpen(false)}>{de ? 'Probetraining' : 'Trial session'}<ArrowUpRight size={17} /></a>
           <div className="club-mobile-languages">{(['de', 'en'] as Lang[]).map(l => <button key={l} type="button" onClick={() => { setLang(l); setMenuOpen(false) }} aria-pressed={l === lang}>{l === 'de' ? 'Deutsch' : 'English'}</button>)}</div>
         </nav>
       </header>
