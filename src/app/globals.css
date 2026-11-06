@@ -464,6 +464,20 @@ html:has(.public-site), .public-site { background: var(--bg); color: var(--fg); 
 .training-intro-steps li::marker { color: var(--accent); font-weight: 700; }
 .training-intro-action { display: grid; gap: 22px; }
 .training-intro-links { display: flex; flex-wrap: wrap; gap: 12px 24px; }
+.hall-rules { --hall-red: #D7261E; grid-column: 1 / -1; display: grid; justify-items: center; gap: 18px; padding: 24px 20px; text-align: center; border: 2px solid var(--hall-red); border-radius: var(--radius-lg); background: color-mix(in srgb, var(--hall-red) 7%, var(--bg-2)); }
+.hall-rules p.hall-rules-title { margin: 0; font: 700 22px/1.05 var(--font-display); text-transform: uppercase; letter-spacing: .01em; color: var(--fg); }
+.hall-rules-signs { margin: 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; justify-content: center; gap: 18px 40px; }
+.hall-rules-signs li { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.hall-rules-sign { width: 76px; height: 76px; flex-shrink: 0; }
+.hall-rules-signs span { display: grid; justify-items: center; font-size: 13px; line-height: 1.35; color: var(--fg-dim); }
+.hall-rules-signs strong { font: 700 19px/1.1 var(--font-display); text-transform: uppercase; color: var(--fg); }
+.hall-rules p.hall-rules-footer { margin: 0; max-width: 46ch; font-size: 14px; font-weight: 600; color: var(--fg); }
+.hall-rules-compact { margin: 0 0 20px; padding: 14px 16px; gap: 10px; }
+.hall-rules-compact p.hall-rules-title { font-size: 18px; }
+.hall-rules-compact .hall-rules-sign { width: 52px; height: 52px; }
+.hall-rules-compact .hall-rules-signs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; width: 100%; }
+.hall-rules-compact .hall-rules-signs span { font-size: 12px; }
+.hall-rules-compact .hall-rules-signs strong { font-size: 14px; }
 .training-schedule { margin-top: 14px; min-width: 0; border: 2px solid var(--fg); border-radius: var(--radius-lg); background: var(--bg-2); overflow: hidden; }
 .schedule-tabs { display: flex; border-bottom: 2px solid var(--fg); background: var(--fg); gap: 0; padding: 0; }
 .schedule-tabs button { flex: 0 0 auto; padding: 14px 20px; background: transparent; border: 0; color: var(--ink-dim); font: 700 16px/1 var(--font-display); text-transform: uppercase; letter-spacing: .06em; cursor: pointer; transition: color .15s, background .15s; }

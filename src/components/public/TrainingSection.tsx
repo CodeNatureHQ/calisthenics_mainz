@@ -4,6 +4,7 @@ import { useState, useMemo, useEffect, useCallback, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { MapPin } from 'lucide-react'
 import SectionHeading from './SectionHeading'
+import HallRules, { isHallPlace } from './HallRules'
 import type { Lang, TrainingSession, CalendarOverride, Spot, Event, RecurringEvent } from '@/lib/types'
 import { t, levelLabel, fullDayLabel, nthWeekdayOfMonth } from '@/lib/utils'
 
@@ -100,7 +101,7 @@ export default function TrainingSection({ lang, sessions, overrides, spots, even
           />
         )}
         </div>
-        <aside id={lang === 'de' ? 'probetraining' : 'trial'} className="training-intro"><div><p className="eyebrow">{lang === 'de' ? 'Zum ersten Mal dabei?' : 'Your first session?'}</p><h3>{lang === 'de' ? 'Probetraining in der Halle.' : 'Trial session in the hall.'}</h3><p>{lang === 'de' ? 'JGU-Studierende kommen einfach vorbei. Alle anderen können eine Einheit als Probetraining besuchen:' : 'JGU students can just come by. Everyone else can join one session as a trial:'}</p></div><div className="training-intro-action"><ol className="training-intro-steps"><li>{lang === 'de' ? 'Spätestens 3 Tage vorher online beim AHS anmelden.' : 'Register online with AHS at least 3 days in advance.'}</li><li>{lang === 'de' ? 'Anmeldung zum Training mitbringen – am Eingang wird kontrolliert.' : 'Bring your registration – there are entrance checks.'}</li></ol><div className="training-intro-links"><a href="https://www.ahs.uni-mainz.de/foerderverein/" target="_blank" rel="noopener noreferrer" className="club-text-link">{lang === 'de' ? 'Zur Anmeldung ↗' : 'Register ↗'}</a><a href="#faq" className="club-text-link">{lang === 'de' ? 'Alle Infos ↗' : 'All details ↗'}</a></div></div></aside>
+        <aside id={lang === 'de' ? 'probetraining' : 'trial'} className="training-intro"><div><p className="eyebrow">{lang === 'de' ? 'Zum ersten Mal dabei?' : 'Your first session?'}</p><h3>{lang === 'de' ? 'Probetraining in der Halle.' : 'Trial session in the hall.'}</h3><p>{lang === 'de' ? 'JGU-Studierende kommen einfach vorbei. Alle anderen können eine Einheit als Probetraining besuchen:' : 'JGU students can just come by. Everyone else can join one session as a trial:'}</p></div><div className="training-intro-action"><ol className="training-intro-steps"><li>{lang === 'de' ? 'Spätestens 3 Tage vorher online beim AHS anmelden.' : 'Register online with AHS at least 3 days in advance.'}</li><li>{lang === 'de' ? 'Anmeldung zum Training mitbringen – am Eingang wird kontrolliert.' : 'Bring your registration – there are entrance checks.'}</li></ol><div className="training-intro-links"><a href="https://www.ahs.uni-mainz.de/foerderverein/" target="_blank" rel="noopener noreferrer" className="club-text-link">{lang === 'de' ? 'Zur Anmeldung ↗' : 'Register ↗'}</a><a href="#faq" className="club-text-link">{lang === 'de' ? 'Alle Infos ↗' : 'All details ↗'}</a></div></div><HallRules lang={lang} /></aside>
         </div>
       </div>
 
@@ -257,6 +258,8 @@ function TrainingModal({
               style={{ fontSize: 14, lineHeight: 1.65, margin: '0 0 20px' }}
             />
           )}
+
+          {isHallPlace(place?.de) && <HallRules lang={lang} compact />}
 
           {/* Spot link */}
           {spot && (
