@@ -2,19 +2,16 @@
 
 import { useEffect, useRef, useState } from 'react'
 import type { TeamMember, TeamMemberRole } from '@/lib/types'
-import { createClient } from '@/lib/supabase/client'
+import { createClient } from '@/lib/supabase/admin'
 import { FormShell, FormSection, Field, Grid, Toggle } from '@/components/admin/Form'
-import {
-  pageHead, crumbStyle, h1Style, card,
-  listRow as sharedListRow, empty, inp,
-  btnPrimary, btnGhost, btnDanger,
-} from '../shared'
+import { useDeepLink, moveItem, nextSortOrder, MoveButtons, ListItem, Thumb, Switch } from '@/components/admin/list'
+import { PageHeader, Badge } from '@/components/admin/sections'
+import { card, empty, inp, btnPrimary, btnGhost, btnDanger } from '../shared'
 
 type FormState = {
   name: string
   role: TeamMemberRole
   image_url: string
-  sort_order: string
   visible: boolean
 }
 
@@ -22,7 +19,6 @@ const emptyForm = (): FormState => ({
   name: '',
   role: 'trainer',
   image_url: '',
-  sort_order: '0',
   visible: true,
 })
 
@@ -30,7 +26,6 @@ const memberToForm = (m: TeamMember): FormState => ({
   name: m.name,
   role: m.role,
   image_url: m.image_url ?? '',
-  sort_order: String(m.sort_order),
   visible: m.visible,
 })
 
@@ -46,6 +41,7 @@ export default function AdminTeamPage() {
   const [saving, setSaving] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState('')
+  const [ready, setReady] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const isNew = editing === 'new'
 
@@ -56,6 +52,7 @@ export default function AdminTeamPage() {
       .select('*')
       .order('sort_order')
     setMembers(data ?? [])
+    setReady(true)
   }
 
   useEffect(() => { load() }, [])
@@ -63,6 +60,8 @@ export default function AdminTeamPage() {
   function startNew() { setForm(emptyForm()); setEditing('new'); setError('') }
   function startEdit(m: TeamMember) { setForm(memberToForm(m)); setEditing(m); setError('') }
   function cancelEdit() { setEditing(null) }
+  useDeepLink('edit', members, ready, (t) => (t === 'new' ? startNew() : startEdit(t)))
+  async function move(index: number, dir: -1 | 1) { setMembers(await moveItem('team_members', members, index, dir)) }
 
   const f = (key: keyof FormState, value: string | boolean) =>
     setForm((prev) => ({ ...prev, [key]: value }))
@@ -91,11 +90,10 @@ export default function AdminTeamPage() {
         name: form.name.trim(),
         role: form.role,
         image_url: form.image_url || null,
-        sort_order: parseInt(form.sort_order) || 0,
         visible: form.visible,
       }
       if (isNew) {
-        const { error } = await supabase.from('team_members').insert(data)
+        const { error } = await supabase.from('team_members').insert({ ...data, sort_order: nextSortOrder(members) })
         if (error) throw error
       } else {
         const { error } = await supabase
@@ -114,9 +112,10 @@ export default function AdminTeamPage() {
   }
 
   async function deleteMember(id: string) {
-    if (!confirm('Mitglied löschen?')) return
+    if (!confirm('Dieses Mitglied löschen?')) return false
     await createClient().from('team_members').delete().eq('id', id)
     load()
+    return true
   }
 
   async function toggleVisible(m: TeamMember) {
@@ -126,16 +125,10 @@ export default function AdminTeamPage() {
 
   return (
     <div>
-      <div style={pageHead}>
-        <div>
-          <span style={crumbStyle}>Content</span>
-          <h1 style={h1Style}>Team</h1>
-        </div>
-        {!editing && <button onClick={startNew} style={btnPrimary}>+ Neues Mitglied</button>}
-      </div>
+      {!editing && <PageHeader section="team" count={members.length} action={<button onClick={startNew} style={btnPrimary}>+ Neues Mitglied</button>} />}
 
       {editing !== null && (
-        <FormShell title={isNew ? 'Neues Mitglied' : 'Mitglied bearbeiten'} error={error} onCancel={cancelEdit} onSave={handleSave} saving={saving} disabled={uploading || !form.name.trim()}>
+        <FormShell section="team" onDelete={editing === 'new' ? undefined : async () => { if (await deleteMember(String((editing as { id: string | number }).id))) setEditing(null) }} title={isNew ? 'Neues Mitglied' : 'Mitglied bearbeiten'} error={error} onCancel={cancelEdit} onSave={handleSave} saving={saving} disabled={uploading || !form.name.trim()}>
           <FormSection title="Person">
             <Grid>
               <Field label="Name">
@@ -159,12 +152,7 @@ export default function AdminTeamPage() {
               {form.image_url && <button type="button" onClick={() => f('image_url', '')} style={btnDanger}>Foto entfernen</button>}
             </div>
           </FormSection>
-          <FormSection title="Anzeige">
-            <Grid>
-              <Field label="Reihenfolge" hint="Kleinere Zahl steht weiter vorne.">
-                <input type="number" value={form.sort_order} onChange={(e) => f('sort_order', e.target.value)} style={inp} />
-              </Field>
-            </Grid>
+          <FormSection title="Anzeige" description="Die Reihenfolge änderst du mit den Pfeilen in der Liste.">
             <Toggle checked={form.visible} onChange={(v) => setForm((p) => ({ ...p, visible: v }))} label={form.visible ? 'Auf der Über-uns-Seite sichtbar' : 'Versteckt'} />
           </FormSection>
         </FormShell>
@@ -172,54 +160,20 @@ export default function AdminTeamPage() {
 
       {!editing && (
         <div style={card}>
-          {members.length === 0 ? (
-            <div style={empty}>Noch keine Mitglieder</div>
-          ) : members.map((m) => (
-            <div
+          {members.length === 0 ? <div style={empty}>Noch keine Mitglieder</div> : members.map((m, i) => (
+            <ListItem
               key={m.id}
-              style={{ ...sharedListRow, opacity: m.visible ? 1 : 0.5, transition: 'opacity 0.2s' }}
-              className="admin-list-row"
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 14, minWidth: 0 }}>
-                <div style={{
-                  width: 40, height: 40, flexShrink: 0, borderRadius: 6, overflow: 'hidden',
-                  background: 'var(--bg-3)', border: '1px solid var(--line-soft)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                }}>
-                  {m.image_url ? (
-                    <img src={m.image_url} alt={m.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  ) : (
-                    <span style={{ fontFamily: 'var(--font-display)', fontSize: 13, color: 'var(--fg-mute)' }}>
-                      {m.name.split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase()}
-                    </span>
-                  )}
-                </div>
-                <div style={{ minWidth: 0 }}>
-                  <div style={{ fontWeight: 500, color: 'var(--fg)', fontSize: 14 }}>{m.name}</div>
-                  <div style={{
-                    fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--accent)',
-                    letterSpacing: '0.08em', textTransform: 'uppercase', marginTop: 2,
-                  }}>
-                    {roleLabels[m.role]}
-                  </div>
-                </div>
-              </div>
-              <div style={{ display: 'flex', gap: 6, alignItems: 'center' }} className="admin-list-row-actions">
-                <button
-                  onClick={() => toggleVisible(m)}
-                  title={m.visible ? 'Sichtbar — klicken zum Ausblenden' : 'Versteckt — klicken zum Einblenden'}
-                  style={{
-                    ...btnGhost,
-                    color: m.visible ? 'var(--ok)' : 'var(--fg-mute)',
-                    borderColor: m.visible ? 'color-mix(in srgb, var(--ok) 35%, transparent)' : 'var(--line)',
-                  }}
-                >
-                  {m.visible ? '● Sichtbar' : '○ Versteckt'}
-                </button>
-                <button onClick={() => startEdit(m)} style={btnGhost}>Bearbeiten</button>
-                <button onClick={() => deleteMember(m.id)} style={btnDanger}>Löschen</button>
-              </div>
-            </div>
+              onOpen={() => startEdit(m)}
+              dim={!m.visible}
+              leading={<Thumb src={m.image_url} fallback={m.name.split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase()} />}
+              title={m.name}
+              sub={roleLabels[m.role]}
+              trailing={<>
+              {!m.visible && <Badge tone="mute">Versteckt</Badge>}
+              <Switch checked={m.visible} onChange={() => toggleVisible(m)} label={m.visible ? 'Auf der Seite sichtbar: ausblenden' : 'Versteckt: einblenden'} />
+                <MoveButtons index={i} count={members.length} onMove={(d) => move(i, d)} />
+              </>}
+            />
           ))}
         </div>
       )}

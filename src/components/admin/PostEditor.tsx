@@ -19,11 +19,12 @@ const TabHandler = Extension.create({
   },
 })
 import type { Post } from '@/lib/types'
-import { createClient } from '@/lib/supabase/client'
+import { createClient } from '@/lib/supabase/admin'
 import { slugify } from '@/lib/slugify'
 import { inp, fieldLabel, errorBox, btnPrimary, btnGhost } from '@/app/admin/shared'
+import { BackTo } from './sections'
 
-type Props = { post: Partial<Post> | null; onSave: () => void; onCancel: () => void }
+type Props = { post: Partial<Post> | null; onSave: () => void; onCancel: () => void; onDelete?: () => void }
 
 function autoReadTime(html: string): string {
   const words = html.replace(/<[^>]+>/g, ' ').split(/\s+/).filter(Boolean).length
@@ -35,7 +36,7 @@ function autoDate(): string {
   return new Date().toLocaleDateString('de-DE', { day: 'numeric', month: 'long', year: 'numeric' })
 }
 
-export default function PostEditor({ post, onSave, onCancel }: Props) {
+export default function PostEditor({ post, onSave, onCancel, onDelete }: Props) {
   const isNew = !post?.id
   const [id, setId] = useState(post?.id ?? '')
   const [title, setTitle] = useState(post?.title?.de ?? '')
@@ -93,7 +94,6 @@ export default function PostEditor({ post, onSave, onCancel }: Props) {
         const { error: e } = await supabase.from('posts').update(data).eq('id', post!.id!)
         if (e) throw e
       }
-      await fetch('/api/revalidate', { method: 'POST' })
       onSave()
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Fehler beim Speichern')
@@ -101,13 +101,16 @@ export default function PostEditor({ post, onSave, onCancel }: Props) {
   }
 
   return (
-    <div style={{ background: 'var(--bg-2)', border: '1px solid var(--line-soft)', borderRadius: 14, padding: 24 }}>
+    <div>
+    <BackTo section="blog" onClick={onCancel} current={isNew ? 'Neuer Blogpost' : 'Post bearbeiten'} />
+    <div style={{ background: 'var(--bg-2)', border: '1px solid var(--line-soft)', borderRadius: 'var(--radius-lg)', padding: 24 }}>
       {/* Header */}
       <div style={{ display: 'flex', gap: 12, justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', alignItems: 'center' }}>
-        <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 20, textTransform: 'uppercase', color: 'var(--fg)', margin: 0 }}>
+        <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 24, textTransform: 'uppercase', color: 'var(--fg)', margin: 0, display: 'flex', alignItems: 'center', gap: 12 }}>
           {isNew ? 'Neuer Blogpost' : 'Post bearbeiten'}
         </h2>
-        <div style={{ display: 'flex', gap: 8 }}>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          {onDelete && <button type="button" onClick={onDelete} className="admin-text-danger" style={{ marginRight: 8 }}>Löschen</button>}
           <button onClick={onCancel} style={btnGhost}>Abbrechen</button>
           <button onClick={handleSave} disabled={saving} style={btnPrimary}>{saving ? 'Speichern …' : 'Speichern'}</button>
         </div>
@@ -122,8 +125,8 @@ export default function PostEditor({ post, onSave, onCancel }: Props) {
             <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', height: 42, padding: '0 14px', background: 'var(--bg)', border: '1px solid var(--line)', borderRadius: 8 }}>
               <input type="checkbox" checked={published} onChange={e => setPublished(e.target.checked)}
                 style={{ width: 14, height: 14, accentColor: 'var(--ok)' }} />
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: published ? 'var(--ok)' : 'var(--fg-mute)', whiteSpace: 'nowrap' }}>
-                {published ? 'Aktiv' : 'Entwurf'}
+              <span style={{ font: '600 13px/1 var(--font-sans)', color: published ? 'var(--fg)' : 'var(--fg-mute)', whiteSpace: 'nowrap' }}>
+                {published ? 'Veröffentlicht' : 'Entwurf'}
               </span>
             </label>
           </Field>
@@ -187,6 +190,7 @@ export default function PostEditor({ post, onSave, onCancel }: Props) {
         </div>
 
       </div>
+    </div>
     </div>
   )
 }

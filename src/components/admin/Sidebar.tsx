@@ -4,35 +4,24 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import type { User } from '@supabase/supabase-js'
-import { CalendarDays, Dumbbell, FileText, HelpCircle, LayoutDashboard, Mail, MapPin, Megaphone, Moon, Settings, ShoppingBag, Sun, Users } from 'lucide-react'
-import { createClient } from '@/lib/supabase/client'
+import { Moon, Sun } from 'lucide-react'
+import { createClient } from '@/lib/supabase/admin'
 import { useAdminTheme } from './Shell'
+import SearchPalette, { SearchTrigger } from './Search'
+import { SECTIONS, SectionIcon, secVar, type SectionKey } from './sections'
 
 /**
  * Zehn Einträge in einer flachen Liste mit Buchstaben-Zeichen waren Suchen statt Finden.
  * Jetzt: Gruppen nach dem, was man tun will, und dieselben Lucide-Zeichen wie auf der
  * öffentlichen Seite. Die Übersicht steht zuoberst — sie ist der Einstieg.
  */
-const navGroups: { title: string | null; items: { href: string; label: string; icon: React.ReactNode; exact?: boolean }[] }[] = [
-  { title: null, items: [
-    { href: '/admin', label: 'Übersicht', icon: <LayoutDashboard size={14} />, exact: true },
-  ] },
-  { title: 'Kommunikation', items: [
-    { href: '/admin/nachrichten', label: 'Nachrichten', icon: <Mail size={14} /> },
-    { href: '/admin/ankuendigung', label: 'Meldung', icon: <Megaphone size={14} /> },
-  ] },
-  { title: 'Inhalte', items: [
-    { href: '/admin/blog', label: 'Blogposts', icon: <FileText size={14} /> },
-    { href: '/admin/events', label: 'Events', icon: <CalendarDays size={14} /> },
-    { href: '/admin/training', label: 'Training', icon: <Dumbbell size={14} /> },
-    { href: '/admin/spots', label: 'Spots', icon: <MapPin size={14} /> },
-    { href: '/admin/team', label: 'Team', icon: <Users size={14} /> },
-    { href: '/admin/faq', label: 'FAQ', icon: <HelpCircle size={14} /> },
-    { href: '/admin/ausruestung', label: 'Ausrüstung', icon: <ShoppingBag size={14} /> },
-  ] },
-  { title: 'System', items: [
-    { href: '/admin/settings', label: 'Einstellungen', icon: <Settings size={14} /> },
-  ] },
+type NavItem = { key: SectionKey; href: string; label: string; exact?: boolean }
+const item = (key: SectionKey): NavItem => ({ key, href: SECTIONS[key].href, label: SECTIONS[key].label, exact: key === 'dashboard' })
+const navGroups: { title: string | null; items: NavItem[] }[] = [
+  { title: null, items: [item('dashboard')] },
+  { title: 'Kommunikation', items: [item('nachrichten'), item('meldung')] },
+  { title: 'Inhalte', items: [item('training'), item('events'), item('blog'), item('spots'), item('team'), item('faq'), item('ausruestung')] },
+  { title: 'System', items: [item('settings')] },
 ]
 const navItems = navGroups.flatMap(g => g.items)
 const isActivePath = (pathname: string, item: { href: string; exact?: boolean }) =>
@@ -72,11 +61,13 @@ export default function AdminSidebar({ user }: { user: User }) {
           <Link href="/admin" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 10 }}>
             <img src="/logo.png" alt="Calisthenics Mainz" style={{ width: 28, height: 28, objectFit: 'contain', flexShrink: 0 }} />
             <div>
-              <div style={{ fontFamily: 'var(--font-display)', fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--fg)', lineHeight: 1.1 }}>Admin</div>
-              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.12em', color: 'var(--fg-mute)' }}>CALISTHENICS MAINZ</div>
+              <div style={{ font: '700 14px/1.2 var(--font-sans)', color: 'var(--fg)' }}>Calisthenics Mainz</div>
+            <div style={{ font: '400 12.5px/1.3 var(--font-sans)', color: 'var(--fg-mute)' }}>Admin</div>
             </div>
           </Link>
 
+          <div style={{ display: 'flex', gap: 8 }}>
+          <SearchTrigger compact />
           <button
             onClick={() => setMobileOpen(v => !v)}
             aria-label={mobileOpen ? 'Menü schließen' : 'Menü öffnen'}
@@ -99,6 +90,7 @@ export default function AdminSidebar({ user }: { user: User }) {
               </svg>
             )}
           </button>
+          </div>
         </div>
 
         {/* Dropdown menu — slides down like public Nav */}
@@ -126,9 +118,7 @@ export default function AdminSidebar({ user }: { user: User }) {
                   }}
                 >
                   <span style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: isActive ? 'var(--fg)' : 'var(--fg-mute)', width: 16 }}>
-                      {item.icon}
-                    </span>
+                    <SectionIcon section={item.key} size={16} />
                     {item.label}
                   </span>
                   {isActive && (
@@ -157,8 +147,7 @@ export default function AdminSidebar({ user }: { user: User }) {
                 onClick={handleLogout}
                 style={{
                   padding: '8px 14px', borderRadius: 8,
-                  fontFamily: 'var(--font-mono)', fontSize: 10,
-                  textTransform: 'uppercase', letterSpacing: '0.08em',
+                  font: '600 13px/1 var(--font-sans)',
                   color: 'var(--danger)', background: 'transparent',
                   border: '1px solid color-mix(in srgb, var(--danger) 35%, transparent)', cursor: 'pointer',
                 }}
@@ -199,16 +188,18 @@ export default function AdminSidebar({ user }: { user: User }) {
         }}>
           <img src="/logo.png" alt="Calisthenics Mainz" style={{ width: 32, height: 32, objectFit: 'contain', flexShrink: 0 }} />
           <div>
-            <div style={{ fontFamily: 'var(--font-display)', fontSize: 13, textTransform: 'uppercase', letterSpacing: '0.02em', color: 'var(--fg)' }}>Admin</div>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.12em', color: 'var(--fg-mute)', marginTop: 2 }}>CALISTHENICS MAINZ</div>
+            <div style={{ font: '700 14px/1.2 var(--font-sans)', color: 'var(--fg)' }}>Calisthenics Mainz</div>
+            <div style={{ font: '400 12.5px/1.3 var(--font-sans)', color: 'var(--fg-mute)' }}>Admin</div>
           </div>
         </div>
 
+        <div style={{ marginBottom: 8 }}><SearchTrigger /></div>
+
         {/* Nav, gruppiert */}
         {navGroups.map((group, gi) => (
-          <div key={gi} style={{ marginTop: gi === 0 ? 0 : 14 }}>
+          <div key={gi} style={{ marginTop: gi === 0 ? 0 : 16, paddingTop: gi === 0 ? 0 : 12, borderTop: gi === 0 ? 0 : '1px solid var(--line-soft)' }}>
             {group.title && (
-              <div style={{ font: '700 10px/1.4 var(--font-sans)', textTransform: 'uppercase', letterSpacing: '0.14em', color: 'var(--fg-mute)', padding: '0 12px', marginBottom: 4 }}>
+              <div style={{ font: '600 12.5px/1.4 var(--font-sans)', color: 'var(--fg-mute)', padding: '0 10px', margin: '4px 0 6px' }}>
                 {group.title}
               </div>
             )}
@@ -218,40 +209,12 @@ export default function AdminSidebar({ user }: { user: User }) {
             <Link
               key={item.href}
               href={item.href}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 12,
-                padding: '10px 12px', borderRadius: 8,
-                textDecoration: 'none',
-                background: isActive ? 'var(--accent-soft)' : 'transparent',
-                boxShadow: isActive ? 'inset 3px 0 0 var(--accent)' : 'none',
-                color: isActive ? 'var(--fg)' : 'var(--fg-dim)',
-                font: `${isActive ? 600 : 500} 13.5px/1 var(--font-sans)`,
-                letterSpacing: '0.01em',
-                transition: 'background 0.15s, color 0.15s',
-                whiteSpace: 'nowrap',
-              }}
-              onMouseEnter={(e) => {
-                if (!isActive) {
-                  const el = e.currentTarget as HTMLElement
-                  el.style.background = 'var(--bg-3)'
-                  el.style.color = 'var(--fg)'
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (!isActive) {
-                  const el = e.currentTarget as HTMLElement
-                  el.style.background = 'transparent'
-                  el.style.color = 'var(--fg-dim)'
-                }
-              }}
+              className="admin-nav-link"
+              data-active={isActive ? 'true' : undefined}
+              aria-current={isActive ? 'page' : undefined}
+              style={secVar(item.key)}
             >
-              <span style={{
-                width: 18, height: 18,
-                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                color: isActive ? 'var(--accent)' : 'var(--fg-mute)', flexShrink: 0,
-              }}>
-                {item.icon}
-              </span>
+              <SectionIcon section={item.key} size={16} />
               {item.label}
             </Link>
           )
@@ -284,7 +247,7 @@ export default function AdminSidebar({ user }: { user: User }) {
             style={{
               display: 'block', width: '100%', textAlign: 'left',
               padding: '8px 12px', borderRadius: 6,
-              fontFamily: 'var(--font-mono)', fontSize: 10.5, textTransform: 'uppercase', letterSpacing: '0.08em',
+              font: '500 13px/1 var(--font-sans)',
               color: 'var(--fg-dim)', background: 'transparent', border: 'none', cursor: 'pointer',
               transition: 'background 0.15s, color 0.15s',
             }}
@@ -295,6 +258,8 @@ export default function AdminSidebar({ user }: { user: User }) {
           </button>
         </div>
       </aside>
+
+      <SearchPalette />
 
       <style>{`
         /* Desktop: hide mobile header, show sidebar */

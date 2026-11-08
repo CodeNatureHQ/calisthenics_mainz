@@ -2,13 +2,18 @@
 
 import { useEffect, useState } from 'react'
 import type { TrainingSession, CalendarOverride, SessionLevel, Spot } from '@/lib/types'
-import { createClient } from '@/lib/supabase/client'
+import { createClient } from '@/lib/supabase/admin'
 import { fullDayLabel, levelLabel } from '@/lib/utils'
-import { pageHead, crumbStyle, h1Style, sectionHead, sectionTitle, card, listRow as sharedListRow, empty, inp, btnPrimary, btnGhost, btnDanger } from '../shared'
+import { card, empty, inp, btnPrimary, btnGhost } from '../shared'
 import { FormShell, FormSection, Field, Grid, LangColumns } from '@/components/admin/Form'
 import LangPair from '@/components/admin/LangPair'
 import dynamic from 'next/dynamic'
+import { useDeepLink, ListItem, DateCol } from '@/components/admin/list'
+import { PageHeader } from '@/components/admin/sections'
 const RichText = dynamic(() => import('@/components/admin/RichText'), { ssr: false })
+
+/** yyyy-mm-dd in local time — the format of calendar_overrides.on_date. */
+const localDate = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 
 const LEVELS: SessionLevel[] = ['beginner', 'advanced', 'open', 'comp', 'training']
 
@@ -17,129 +22,107 @@ export default function AdminTrainingPage() {
   const [overrides, setOverrides] = useState<CalendarOverride[]>([])
   const [spots, setSpots] = useState<Spot[]>([])
   const [editingSession, setEditingSession] = useState<TrainingSession | null | 'new'>(null)
-  const [editingOverride, setEditingOverride] = useState<CalendarOverride | null | 'new'>(null)
-  const [saving, setSaving] = useState(false)
-  const [error, setError] = useState('')
+  const [editingOverride, setEditingOverride] = useState<CalendarOverride | null | 'new' | 'new-extra'>(null)
+  const [ready, setReady] = useState(false)
+  const [showPast, setShowPast] = useState(false)
 
   async function load() {
     const supabase = createClient()
     const [{ data: s }, { data: o }, { data: sp }] = await Promise.all([
-      supabase.from('training_sessions').select('*').order('sort_order'),
+      supabase.from('training_sessions').select('*').order('day_of_week').order('sort_order'),
       supabase.from('calendar_overrides').select('*').order('on_date'),
       supabase.from('spots').select('*').order('sort_order'),
     ])
     setSessions(s ?? [])
     setOverrides(o ?? [])
     setSpots(sp ?? [])
+    setReady(true)
   }
 
   useEffect(() => { load() }, [])
+  useDeepLink('session', sessions, ready, (s) => { setEditingOverride(null); setEditingSession(s) })
+  useDeepLink('override', overrides, ready, (o) => { setEditingSession(null); setEditingOverride(o) })
+  useDeepLink('extra', overrides, ready, () => { setEditingSession(null); setEditingOverride('new-extra') })
+
+  const today = localDate(new Date())
+  const upcoming = overrides.filter((o) => o.on_date >= today)
+  const past = overrides.filter((o) => o.on_date < today).reverse()
+  const shownOverrides = showPast ? [...upcoming, ...past] : upcoming
 
   async function deleteSession(id: string) {
-    if (!confirm('Löschen?')) return
+    if (!confirm('Diese Einheit aus dem Wochenplan löschen?')) return
+    setEditingSession(null)
     const supabase = createClient()
     await supabase.from('training_sessions').delete().eq('id', id)
     load()
   }
 
   async function deleteOverride(id: string) {
-    if (!confirm('Löschen?')) return
+    if (!confirm('Diesen Termin löschen?')) return
+    setEditingOverride(null)
     const supabase = createClient()
     await supabase.from('calendar_overrides').delete().eq('id', id)
     load()
   }
 
+  if (editingSession !== null) {
+    return <SessionForm session={editingSession === 'new' ? null : editingSession} spots={spots} onSave={() => { setEditingSession(null); load() }} onCancel={() => setEditingSession(null)} onDelete={editingSession === 'new' ? undefined : () => deleteSession(editingSession.id)} />
+  }
+  if (editingOverride !== null) {
+    const existing = editingOverride === 'new' || editingOverride === 'new-extra' ? null : editingOverride
+    return <OverrideForm override={existing} initialType={editingOverride === 'new-extra' ? 'training' : 'cancel'} onSave={() => { setEditingOverride(null); load() }} onCancel={() => setEditingOverride(null)} onDelete={existing ? () => deleteOverride(existing.id) : undefined} />
+  }
+
   return (
     <div>
-      <div style={pageHead}>
-        <div>
-          <span style={crumbStyle}>03 / Content</span>
-          <h1 style={h1Style}>Training</h1>
+      <PageHeader section="training" action={
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <button onClick={() => setEditingOverride('new')} style={btnGhost}>Training absagen</button>
+          <button onClick={() => setEditingOverride('new-extra')} style={btnPrimary}>+ Extra-Training</button>
         </div>
+      } />
+
+      <h2 className="admin-group-title">
+        <span>Ausfälle & Extra-Termine<small>gehen dem Wochenplan vor</small></span>
+      </h2>
+      <div style={{ ...card, marginBottom: 44 }}>
+        {shownOverrides.length === 0 ? <div style={empty}>Nichts geplant: Es gilt der Wochenplan</div> : shownOverrides.map((o) => (
+          <ListItem
+            key={o.id}
+            onOpen={() => setEditingOverride(o)}
+            dim={o.on_date < today}
+            leading={<DateCol date={new Date(o.on_date + 'T12:00')} tone={o.type === 'cancel' ? 'danger' : undefined} />}
+            title={o.type === 'cancel' ? <span style={{ color: 'var(--danger)' }}>Training fällt aus</span> : `Extra-Training ${o.time_label ?? ''}`}
+            sub={[o.type === 'training' ? o.place?.de : null, o.note?.de].filter(Boolean).join(' · ') || (o.type === 'cancel' ? 'Ohne Angabe von Gründen' : undefined)}
+          />
+        ))}
+        {past.length > 0 && (
+          <button type="button" onClick={() => setShowPast((v) => !v)} style={{ ...btnGhost, border: 0, width: '100%', borderRadius: 0, padding: '14px 20px' }}>
+            {showPast ? 'Vergangene ausblenden' : `Vergangene anzeigen (${past.length})`}
+          </button>
+        )}
       </div>
 
-      {/* ---- Sessions ---- */}
-      {editingOverride === null && <section style={{ marginBottom: '2.5rem' }}>
-        <div style={sectionHead}>
-          <h2 style={sectionTitle}>Wochenplan</h2>
-          {editingSession === null && <button onClick={() => setEditingSession('new')} style={btnPrimary}>+ Hinzufügen</button>}
-        </div>
-
-        {editingSession !== null ? (
-          <SessionForm
-            session={editingSession === 'new' ? null : editingSession}
-            spots={spots}
-            onSave={() => { setEditingSession(null); load() }}
-            onCancel={() => setEditingSession(null)}
+      <h2 className="admin-group-title">
+        <span>Wochenplan<small>{sessions.length} Einheiten</small></span>
+        <button onClick={() => setEditingSession('new')} style={btnGhost}>+ Einheit</button>
+      </h2>
+      <div style={card}>
+        {sessions.length === 0 ? <div style={empty}>Keine Einheiten</div> : sessions.map((s) => (
+          <ListItem
+            key={s.id}
+            onOpen={() => setEditingSession(s)}
+            leading={<span className="admin-date"><b>{fullDayLabel(s.day_of_week, 'de').slice(0, 2)}</b><span>wöchentlich</span></span>}
+            title={s.time_label}
+            sub={`${s.place.de} · ${levelLabel(s.level, 'de')}`}
           />
-        ) : (
-        <div style={card}>
-          {sessions.length === 0 ? <div style={empty}>Keine Einheiten</div> : sessions.map((s) => (
-            <div key={s.id} style={sharedListRow} className="admin-list-row">
-              <div style={{ minWidth: 0 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4, flexWrap: 'wrap' }}>
-                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, fontWeight: 700, color: 'var(--fg-mute)', background: 'var(--bg-3)', borderRadius: 4, padding: '2px 7px', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{fullDayLabel(s.day_of_week, 'de')}</span>
-                  <span style={{ fontWeight: 600, color: 'var(--fg)', fontSize: 14 }}>{s.time_label}</span>
-                </div>
-                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10.5, color: 'var(--fg-mute)', letterSpacing: '0.04em' }}>
-                  {s.place.de} · {levelLabel(s.level, 'de')}
-                </div>
-              </div>
-              <div style={{ display: 'flex', gap: 6 }} className="admin-list-row-actions">
-                <button onClick={() => setEditingSession(s)} style={btnGhost}>Bearbeiten</button>
-                <button onClick={() => deleteSession(s.id)} style={btnDanger}>Löschen</button>
-              </div>
-            </div>
-          ))}
-        </div>
-        )}
-      </section>}
-
-      {/* ---- Overrides ---- */}
-      {editingSession === null && <section>
-        <div style={sectionHead}>
-          <h2 style={sectionTitle}>Einmaltermine & Ausfälle</h2>
-          {editingOverride === null && <button onClick={() => setEditingOverride('new')} style={btnPrimary}>+ Hinzufügen</button>}
-        </div>
-
-        {editingOverride !== null ? (
-          <OverrideForm
-            override={editingOverride === 'new' ? null : editingOverride}
-            onSave={() => { setEditingOverride(null); load() }}
-            onCancel={() => setEditingOverride(null)}
-          />
-        ) : (
-        <div style={card}>
-          {overrides.length === 0 ? <div style={empty}>Keine Einträge</div> : overrides.map((o) => (
-            <div key={o.id} style={sharedListRow} className="admin-list-row">
-              <div style={{ minWidth: 0 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4, flexWrap: 'wrap' }}>
-                  <span style={{
-                    fontFamily: 'var(--font-mono)', fontSize: 10, fontWeight: 700, borderRadius: 4, padding: '2px 7px',
-                    textTransform: 'uppercase', letterSpacing: '0.08em',
-                    background: o.type === 'cancel' ? 'color-mix(in srgb, var(--danger) 12%, transparent)' : 'var(--accent-soft)',
-                    color: o.type === 'cancel' ? 'var(--danger)' : 'var(--accent)',
-                  }}>
-                    {o.type === 'cancel' ? 'Ausfall' : 'Extra'}
-                  </span>
-                  <span style={{ fontWeight: 600, color: 'var(--fg)', fontSize: 14 }}>{o.on_date}</span>
-                </div>
-                {o.note && <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10.5, color: 'var(--fg-mute)' }}>{o.note.de}</div>}
-              </div>
-              <div style={{ display: 'flex', gap: 6 }} className="admin-list-row-actions">
-                <button onClick={() => setEditingOverride(o)} style={btnGhost}>Bearbeiten</button>
-                <button onClick={() => deleteOverride(o.id)} style={btnDanger}>Löschen</button>
-              </div>
-            </div>
-          ))}
-        </div>
-        )}
-      </section>}
+        ))}
+      </div>
     </div>
   )
 }
 
-function SessionForm({ session, spots, onSave, onCancel }: { session: TrainingSession | null; spots: Spot[]; onSave: () => void; onCancel: () => void }) {
+function SessionForm({ session, spots, onSave, onCancel, onDelete }: { session: TrainingSession | null; spots: Spot[]; onSave: () => void; onCancel: () => void; onDelete?: () => void }) {
   const [dow, setDow] = useState(session?.day_of_week ?? 0)
   const [time, setTime] = useState(session?.time_label ?? '')
   const [placeDe, setPlaceDe] = useState(session?.place?.de ?? '')
@@ -177,7 +160,7 @@ function SessionForm({ session, spots, onSave, onCancel }: { session: TrainingSe
   }
 
   return (
-    <FormShell title={session ? 'Einheit bearbeiten' : 'Neue Trainingseinheit'} onCancel={onCancel} onSave={save} saving={saving} disabled={!time.trim()}>
+    <FormShell section="training" onDelete={onDelete} title={session ? 'Einheit bearbeiten' : 'Neue Trainingseinheit'} onCancel={onCancel} onSave={save} saving={saving} disabled={!time.trim()}>
       <FormSection title="Termin" description="Wöchentlich wiederkehrend. Für einzelne Ausfälle oder Extra-Termine gibt es den Bereich darunter.">
         <Grid cols={3}>
           <Field label="Wochentag">
@@ -205,7 +188,7 @@ function SessionForm({ session, spots, onSave, onCancel }: { session: TrainingSe
         <LangPair label="Ortsname" deValue={placeDe} enValue={placeEn} onDe={setPlaceDe} onEn={setPlaceEn} placeholder={{ de: 'JGU Campus · Halle', en: 'JGU Campus · Gym' }} />
       </FormSection>
       <FormSection title="Beschreibung" description="Erscheint im Dialog, wenn jemand die Einheit anklickt: Fokus, Ablauf, was man mitbringen sollte.">
-        <LangColumns label="Beschreibung" optional de={<RichText value={descDe} onChange={setDescDe} placeholder="Worauf liegt der Fokus?" minHeight={120} />} en={<RichText value={descEn} onChange={setDescEn} placeholder="What's the focus?" minHeight={120} />} />
+        <LangColumns label="Beschreibung" optional de={<RichText value={descDe} onChange={setDescDe} placeholder="Worauf liegt der Fokus?" minHeight={120} />} en={<RichText value={descEn} onChange={setDescEn} placeholder="What's the focus?" minHeight={120} />} enValue={descEn} />
       </FormSection>
       <FormSection title="Anzeige">
         <Grid cols={3}>
@@ -218,8 +201,8 @@ function SessionForm({ session, spots, onSave, onCancel }: { session: TrainingSe
   )
 }
 
-function OverrideForm({ override, onSave, onCancel }: { override: CalendarOverride | null; onSave: () => void; onCancel: () => void }) {
-  const [type, setType] = useState<'training' | 'cancel'>(override?.type ?? 'cancel')
+function OverrideForm({ override, initialType, onSave, onCancel, onDelete }: { override: CalendarOverride | null; initialType: 'training' | 'cancel'; onSave: () => void; onCancel: () => void; onDelete?: () => void }) {
+  const [type, setType] = useState<'training' | 'cancel'>(override?.type ?? initialType)
   const [date, setDate] = useState(override?.on_date ?? '')
   const [time, setTime] = useState(override?.time_label ?? '')
   const [placeDe, setPlaceDe] = useState(override?.place?.de ?? '')
@@ -252,7 +235,7 @@ function OverrideForm({ override, onSave, onCancel }: { override: CalendarOverri
   }
 
   return (
-    <FormShell title={override ? 'Termin bearbeiten' : 'Ausfall oder Extra-Termin'} onCancel={onCancel} onSave={save} saving={saving} disabled={!date}>
+    <FormShell section="training" onDelete={onDelete} title={override ? 'Termin bearbeiten' : type === 'cancel' ? 'Training absagen' : 'Extra-Training'} onCancel={onCancel} onSave={save} saving={saving} disabled={!date}>
       <FormSection title="Was passiert?" description="Ein Ausfall blendet an diesem Tag alle regulären Einheiten aus. Ein Extra-Termin kommt zusätzlich in den Plan.">
         <Grid>
           <Field label="Art">

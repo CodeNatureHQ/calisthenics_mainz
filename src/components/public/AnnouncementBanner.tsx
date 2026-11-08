@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { Lang, Event } from "@/lib/types";
+import { pick, t } from "@/lib/utils";
 import EventRegistrationModal, { type RegistrationConfig } from "@/components/public/EventRegistrationModal";
 
 function getRegConfig(event: Event): RegistrationConfig | undefined {
@@ -32,12 +33,8 @@ export default function AnnouncementBanner({
 }) {
   const isEventMode = !!event;
   const regConfig = isEventMode ? getRegConfig(event) : undefined;
-  const title = isEventMode
-    ? (lang === "de" ? event.title.de : event.title.en)
-    : (lang === "de" ? titleDe : titleEn);
-  const body = isEventMode
-    ? (lang === "de" ? event.description.de : event.description.en)
-    : (lang === "de" ? bodyDe : bodyEn);
+  const title = isEventMode ? t(event.title, lang) : pick(titleDe, titleEn, lang);
+  const body = isEventMode ? t(event.description, lang) : pick(bodyDe, bodyEn, lang);
   const [phase, setPhase] = useState<Phase>("hidden");
   const [showRegistration, setShowRegistration] = useState(false);
 
@@ -222,7 +219,7 @@ export default function AnnouncementBanner({
                     fontFamily: "var(--font-mono)", fontSize: 12, color: "var(--fg-mute)",
                     letterSpacing: "0.04em", marginBottom: 16,
                   }}>
-                    {lang === "de" ? event.place.de : event.place.en}
+                    {t(event.place, lang)}
                   </div>
                   {body && (
                     <div

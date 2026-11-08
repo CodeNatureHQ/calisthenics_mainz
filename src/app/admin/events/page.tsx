@@ -2,12 +2,14 @@
 
 import { useEffect, useState } from 'react'
 import type { Event, EventCategory, RecurringEvent } from '@/lib/types'
-import { createClient } from '@/lib/supabase/client'
-import { formatDate, dayLabel } from '@/lib/utils'
-import { pageHead, crumbStyle, h1Style, card, listRow, empty, inp, btnPrimary, btnGhost, btnDanger, metaItem, chipStyle } from '../shared'
+import { createClient } from '@/lib/supabase/admin'
+import { dayLabel } from '@/lib/utils'
+import { card, empty, inp, btnPrimary, btnGhost, btnDanger } from '../shared'
 import { FormShell, FormSection, Field, Grid, LangColumns } from '@/components/admin/Form'
 import LangPair from '@/components/admin/LangPair'
 import dynamic from 'next/dynamic'
+import { useDeepLink, ListItem, DateCol } from '@/components/admin/list'
+import { PageHeader, Badge } from '@/components/admin/sections'
 const RichText = dynamic(() => import('@/components/admin/RichText'), { ssr: false })
 
 function autoEventId(category: string, dateStr: string): string {
@@ -95,11 +97,14 @@ export default function AdminEventsPage() {
   const [regsLoading, setRegsLoading] = useState(false)
   const [regsError, setRegsError] = useState<string | null>(null)
   const [imageUploading, setImageUploading] = useState(false)
+  const [ready, setReady] = useState(false)
+  const [recurringReady, setRecurringReady] = useState(false)
 
   async function load() {
     const supabase = createClient()
     const { data } = await supabase.from('events').select('*').order('starts_at', { ascending: false })
     setEvents(data ?? [])
+    setReady(true)
   }
 
   async function loadRegCounts() {
@@ -151,9 +156,23 @@ export default function AdminEventsPage() {
     const supabase = createClient()
     const { data } = await supabase.from('recurring_events').select('*').order('sort_order')
     setRecurringEvents(data ?? [])
+    setRecurringReady(true)
   }
 
   useEffect(() => { load(); loadRecurring(); loadRegCounts() }, [])
+
+  function openEvent(ev: Event | 'new') {
+    setRecurringForm(null); setError('')
+    if (ev === 'new') { setForm(emptyForm()); setIsNew(true) } else { setForm(eventToForm(ev)); setIsNew(false) }
+    window.scrollTo({ top: 0 })
+  }
+  function openRecurring(re: RecurringEvent | 'new') {
+    setForm(null); setRecurringError('')
+    if (re === 'new') { setRecurringForm(emptyRecurringForm()); setRecurringIsNew(true) } else { setRecurringForm(recurringToForm(re)); setRecurringIsNew(false) }
+    window.scrollTo({ top: 0 })
+  }
+  useDeepLink('edit', events, ready, openEvent)
+  useDeepLink('recurring', recurringEvents, recurringReady, openRecurring)
 
   const f = (key: keyof FormState, value: string) => setForm((p) => p ? { ...p, [key]: value } : p)
   const rf = <K extends keyof RecurringFormState>(key: K, value: RecurringFormState[K]) =>
@@ -178,8 +197,9 @@ export default function AdminEventsPage() {
   }
 
   async function del(id: string) {
-    if (!confirm('Löschen?')) return
+    if (!confirm('Dieses Event löschen? Anmeldungen gehen mit verloren.')) return
     await createClient().from('events').delete().eq('id', id)
+    setForm(null)
     load()
   }
 
@@ -209,25 +229,48 @@ export default function AdminEventsPage() {
   }
 
   async function delRecurring(id: string) {
-    if (!confirm('Löschen?')) return
+    if (!confirm('Dieses wiederkehrende Event löschen?')) return
     await createClient().from('recurring_events').delete().eq('id', id)
+    setRecurringForm(null)
     loadRecurring()
+  }
+
+  const now = new Date().toISOString()
+  const upcoming = events.filter((e) => e.starts_at >= now).reverse()
+  const past = events.filter((e) => e.starts_at < now)
+
+  const eventRow = (ev: Event) => {
+    const cat = CAT_COLORS[ev.category]
+    const isExpanded = expandedEventId === ev.id
+    const count = regCounts[ev.id] ?? 0
+    const d = new Date(ev.starts_at)
+    return (
+      <div key={ev.id}>
+        <ListItem
+          onOpen={() => openEvent(ev)}
+          dim={ev.starts_at < now}
+          leading={<DateCol date={d} sub={`${d.toLocaleDateString('de-DE', { weekday: 'short' })} ${d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}`} />}
+          title={ev.title.de}
+          sub={<><span style={{ color: cat.color, fontWeight: 600 }}>{CAT_LABELS[ev.category]}</span> · {ev.place.de}</>}
+          trailing={ev.registration_mode && ev.registration_mode !== 'none' ? (
+            <Badge tone={isExpanded ? 'accent' : count > 0 ? 'info' : 'mute'} title={isExpanded ? 'Anmeldungen ausblenden' : 'Anmeldungen anzeigen'} onClick={() => expandRegistrations(ev.id)}>
+              {count} {count === 1 ? 'Anmeldung' : 'Anmeldungen'}
+            </Badge>
+          ) : undefined}
+        />
+        {isExpanded && <RegistrationPanel loading={regsLoading} registrations={registrations} error={regsError} onDelete={deleteRegistration} />}
+      </div>
+    )
   }
 
   return (
     <div>
-      <div style={pageHead}>
-        <div>
-          <span style={crumbStyle}>02 / Content</span>
-          <h1 style={h1Style}>Events</h1>
-        </div>
-        {!form && !recurringForm && (
-          <button onClick={() => { setForm(emptyForm()); setIsNew(true) }} style={btnPrimary}>+ Neues Event</button>
-        )}
-      </div>
+      {!form && !recurringForm && (
+        <PageHeader section="events" count={events.length} action={<button onClick={() => openEvent('new')} style={btnPrimary}>+ Neues Event</button>} />
+      )}
 
       {form && (
-        <FormShell title={isNew ? 'Neues Event' : 'Event bearbeiten'} error={error} onCancel={() => setForm(null)} onSave={save} saving={saving}>
+        <FormShell section="events" onDelete={isNew ? undefined : () => del(form.id)} title={isNew ? 'Neues Event' : 'Event bearbeiten'} error={error} onCancel={() => setForm(null)} onSave={save} saving={saving}>
           <FormSection title="Termin" description="Kategorie und Zeitpunkt legen auch die Kennung des Events fest.">
             <Grid>
               <Field label="Kategorie">
@@ -243,7 +286,7 @@ export default function AdminEventsPage() {
           <FormSection title="Inhalt" description="Titel und Ort stehen auf der Event-Karte, die Beschreibung im Detail-Dialog.">
             <LangPair label="Titel" deValue={form.title_de} enValue={form.title_en} onDe={(v) => f('title_de', v)} onEn={(v) => f('title_en', v)} placeholder={{ de: 'z. B. Sommer-Jam im Volkspark', en: 'e.g. Summer jam at Volkspark' }} />
             <LangPair label="Ort" deValue={form.place_de} enValue={form.place_en} onDe={(v) => f('place_de', v)} onEn={(v) => f('place_en', v)} placeholder={{ de: 'Volkspark Mainz', en: 'Volkspark Mainz' }} />
-            <LangColumns label="Beschreibung" de={<RichText value={form.desc_de} onChange={(v) => f('desc_de', v)} placeholder="Worum geht es, was sollte man wissen?" minHeight={120} />} en={<RichText value={form.desc_en} onChange={(v) => f('desc_en', v)} placeholder="What is it about, what should people know?" minHeight={120} />} />
+            <LangColumns label="Beschreibung" de={<RichText value={form.desc_de} onChange={(v) => f('desc_de', v)} placeholder="Worum geht es, was sollte man wissen?" minHeight={120} />} en={<RichText value={form.desc_en} onChange={(v) => f('desc_en', v)} placeholder="What is it about, what should people know?" minHeight={120} />} enValue={form.desc_en} />
           </FormSection>
           <FormSection title="Anmeldung" description="Mit Anmeldung erscheint im Event-Dialog ein Button, über den sich Leute eintragen können.">
             <Grid>
@@ -275,139 +318,75 @@ export default function AdminEventsPage() {
         </FormShell>
       )}
 
-      {!form && <div style={card}>
-        {events.length === 0 ? (
-          <div style={empty}>Keine Events</div>
-        ) : events.map((ev) => {
-          const cat = CAT_COLORS[ev.category]
-          const isExpanded = expandedEventId === ev.id
-          const count = regCounts[ev.id] ?? 0
-          return (
-            <div key={ev.id}>
-              <div style={listRow} className="admin-list-row">
-                <div style={{ minWidth: 0 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                    <span style={{ fontWeight: 500, color: 'var(--fg)', fontSize: 14, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ev.title.de}</span>
-                  </div>
-                  <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
-                    <span style={{ ...chipStyle, color: cat.color, borderColor: cat.border }}>{CAT_LABELS[ev.category]}</span>
-                    <span style={metaItem}>{formatDate(ev.starts_at, 'de')}</span>
-                    <span style={metaItem}>{ev.place.de}</span>
-                  </div>
-                </div>
-                <div style={{ display: 'flex', gap: 6, alignItems: 'center' }} className="admin-list-row-actions">
-                  <button
-                    onClick={() => expandRegistrations(ev.id)}
-                    style={{
-                      ...btnGhost,
-                      color: isExpanded ? 'var(--accent)' : count > 0 ? 'var(--fg-dim)' : 'var(--fg-mute)',
-                      borderColor: isExpanded ? 'var(--accent)' : 'var(--line)',
-                      display: 'inline-flex', alignItems: 'center', gap: 6,
-                    }}
-                  >
-                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, minWidth: 14, textAlign: 'center' }}>{count}</span>
-                    Anmeldungen
-                    <span style={{ fontSize: 9, marginLeft: 2 }}>{isExpanded ? '▲' : '▼'}</span>
-                  </button>
-                  <button onClick={() => { setForm(eventToForm(ev)); setIsNew(false) }} style={btnGhost}>Bearbeiten</button>
-                  <button onClick={() => del(ev.id)} style={btnDanger}>Löschen</button>
-                </div>
-              </div>
-              {isExpanded && (
-                <RegistrationPanel
-                  loading={regsLoading}
-                  registrations={registrations}
-                  error={regsError}
-                  onDelete={deleteRegistration}
-                />
-              )}
-            </div>
-          )
-        })}
-      </div>}
+      {recurringForm && (
+        <FormShell section="events" onDelete={recurringIsNew ? undefined : () => delRecurring(recurringForm.id)} title={recurringIsNew ? 'Neues wiederkehrendes Event' : 'Wiederkehrendes Event bearbeiten'} error={recurringError} onCancel={() => setRecurringForm(null)} onSave={saveRecurring} saving={recurringSaving}>
+          <FormSection title="Rhythmus" description="Zum Beispiel: jeden ersten Donnerstag im Monat nach dem Training.">
+            <Grid cols={3}>
+              <Field label="Kategorie">
+                <select value={recurringForm.category} onChange={(e) => rf('category', e.target.value as EventCategory)} style={inp}>
+                  {CATEGORIES.map((c) => <option key={c} value={c}>{CAT_LABELS[c]}</option>)}
+                </select>
+              </Field>
+              <Field label="Wochentag">
+                <select value={recurringForm.day_of_week} onChange={(e) => rf('day_of_week', Number(e.target.value))} style={inp}>
+                  {[0,1,2,3,4,5,6].map(d => <option key={d} value={d}>{dayLabel(d, 'de')}</option>)}
+                </select>
+              </Field>
+              <Field label="Woche im Monat">
+                <select value={recurringForm.week_of_month} onChange={(e) => rf('week_of_month', Number(e.target.value))} style={inp}>
+                  {[1,2,3,4,5].map(w => <option key={w} value={w}>{WEEK_LABELS[w]}</option>)}
+                </select>
+              </Field>
+            </Grid>
+            <Grid>
+              <Field label="Uhrzeit" hint="Freitext, z. B. „nach dem Training“ oder „19:00“.">
+                <input type="text" value={recurringForm.time_label} onChange={(e) => rf('time_label', e.target.value)} placeholder="nach dem Training" style={inp} />
+              </Field>
+              <Field label="Reihenfolge" hint="Kleinere Zahl steht weiter oben.">
+                <input type="number" value={recurringForm.sort_order} onChange={(e) => rf('sort_order', Number(e.target.value))} style={inp} />
+              </Field>
+            </Grid>
+          </FormSection>
+          <FormSection title="Inhalt">
+            <LangPair label="Titel" deValue={recurringForm.title_de} enValue={recurringForm.title_en} onDe={(v) => rf('title_de', v)} onEn={(v) => rf('title_en', v)} placeholder={{ de: 'Stammtisch', en: 'Club night' }} />
+            <LangPair label="Ort" deValue={recurringForm.place_de} enValue={recurringForm.place_en} onDe={(v) => rf('place_de', v)} onEn={(v) => rf('place_en', v)} />
+            <LangPair label="Beschreibung" optional textarea deValue={recurringForm.desc_de} enValue={recurringForm.desc_en} onDe={(v) => rf('desc_de', v)} onEn={(v) => rf('desc_en', v)} />
+          </FormSection>
+        </FormShell>
+      )}
 
-      {/* Recurring Events (Stammtisch etc.) */}
-      <div style={{ marginTop: 40 }}>
-        <div style={{ ...pageHead, marginBottom: 16 }}>
-          <div>
-            <span style={crumbStyle}>Wiederkehrend</span>
-            <h2 style={{ ...h1Style, fontSize: 20, marginTop: 4 }}>Wiederkehrende Events</h2>
+      {!form && !recurringForm && (
+        <>
+          <h2 className="admin-group-title">Kommend <small>{upcoming.length}</small></h2>
+          <div style={{ ...card, marginBottom: 44 }}>
+            {upcoming.length === 0 ? <div style={empty}>Keine kommenden Events</div> : upcoming.map(eventRow)}
           </div>
-          {!recurringForm && !form && (
-            <button onClick={() => { setRecurringForm(emptyRecurringForm()); setRecurringIsNew(true) }} style={btnPrimary}>
-              + Neu
-            </button>
-          )}
-        </div>
 
-        {recurringForm && (
-          <FormShell title={recurringIsNew ? 'Neues wiederkehrendes Event' : 'Wiederkehrendes Event bearbeiten'} error={recurringError} onCancel={() => setRecurringForm(null)} onSave={saveRecurring} saving={recurringSaving}>
-            <FormSection title="Rhythmus" description="Zum Beispiel: jeden ersten Donnerstag im Monat nach dem Training.">
-              <Grid cols={3}>
-                <Field label="Kategorie">
-                  <select value={recurringForm.category} onChange={(e) => rf('category', e.target.value as EventCategory)} style={inp}>
-                    {CATEGORIES.map((c) => <option key={c} value={c}>{CAT_LABELS[c]}</option>)}
-                  </select>
-                </Field>
-                <Field label="Wochentag">
-                  <select value={recurringForm.day_of_week} onChange={(e) => rf('day_of_week', Number(e.target.value))} style={inp}>
-                    {[0,1,2,3,4,5,6].map(d => <option key={d} value={d}>{dayLabel(d, 'de')}</option>)}
-                  </select>
-                </Field>
-                <Field label="Woche im Monat">
-                  <select value={recurringForm.week_of_month} onChange={(e) => rf('week_of_month', Number(e.target.value))} style={inp}>
-                    {[1,2,3,4,5].map(w => <option key={w} value={w}>{WEEK_LABELS[w]}</option>)}
-                  </select>
-                </Field>
-              </Grid>
-              <Grid>
-                <Field label="Uhrzeit" hint="Freitext, z. B. „nach dem Training“ oder „19:00“.">
-                  <input type="text" value={recurringForm.time_label} onChange={(e) => rf('time_label', e.target.value)} placeholder="nach dem Training" style={inp} />
-                </Field>
-                <Field label="Reihenfolge" hint="Kleinere Zahl steht weiter oben.">
-                  <input type="number" value={recurringForm.sort_order} onChange={(e) => rf('sort_order', Number(e.target.value))} style={inp} />
-                </Field>
-              </Grid>
-            </FormSection>
-            <FormSection title="Inhalt">
-              <LangPair label="Titel" deValue={recurringForm.title_de} enValue={recurringForm.title_en} onDe={(v) => rf('title_de', v)} onEn={(v) => rf('title_en', v)} placeholder={{ de: 'Stammtisch', en: 'Club night' }} />
-              <LangPair label="Ort" deValue={recurringForm.place_de} enValue={recurringForm.place_en} onDe={(v) => rf('place_de', v)} onEn={(v) => rf('place_en', v)} />
-              <LangPair label="Beschreibung" optional textarea deValue={recurringForm.desc_de} enValue={recurringForm.desc_en} onDe={(v) => rf('desc_de', v)} onEn={(v) => rf('desc_en', v)} />
-            </FormSection>
-          </FormShell>
-        )}
+          <h2 id="recurring" className="admin-group-title" style={{ scrollMarginTop: 24 }}>
+            <span>Wiederkehrend<small>z. B. Stammtisch</small></span>
+            <button onClick={() => openRecurring('new')} style={btnGhost}>+ Wiederkehrendes Event</button>
+          </h2>
+          <div style={{ ...card, marginBottom: 44 }}>
+            {recurringEvents.length === 0 ? <div style={empty}>Keine wiederkehrenden Events</div> : recurringEvents.map((re) => (
+              <ListItem
+                key={re.id}
+                onOpen={() => openRecurring(re)}
+                leading={<span className="admin-date"><b>{re.week_of_month}. {['Mo','Di','Mi','Do','Fr','Sa','So'][re.day_of_week]}</b><span>im Monat</span></span>}
+                title={re.title.de}
+                sub={`${re.time_label} · ${re.place.de}`}
+              />
+            ))}
+          </div>
 
-        <div style={card}>
-          {recurringEvents.length === 0 ? (
-            <div style={empty}>Keine wiederkehrenden Events</div>
-          ) : recurringEvents.map((re) => {
-            const cat = CAT_COLORS[re.category]
-            return (
-              <div key={re.id} style={listRow} className="admin-list-row">
-                <div style={{ minWidth: 0 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                    <span style={{ fontWeight: 500, color: 'var(--fg)', fontSize: 14 }}>{re.title.de}</span>
-                  </div>
-                  <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
-                    <span style={{ ...chipStyle, color: cat.color, borderColor: cat.border }}>{CAT_LABELS[re.category]}</span>
-                    <span style={metaItem}>{['Mo','Di','Mi','Do','Fr','Sa','So'][re.day_of_week]} · Woche {re.week_of_month}</span>
-                    <span style={metaItem}>{re.time_label}</span>
-                    <span style={metaItem}>{re.place.de}</span>
-                  </div>
-                </div>
-                <div style={{ display: 'flex', gap: 6 }} className="admin-list-row-actions">
-                  <button onClick={() => { setRecurringForm(recurringToForm(re)); setRecurringIsNew(false) }} style={btnGhost}>Bearbeiten</button>
-                  <button onClick={() => delRecurring(re.id)} style={btnDanger}>Löschen</button>
-                </div>
-              </div>
-            )
-          })}
-        </div>
-      </div>
+          {past.length > 0 && <>
+            <h2 className="admin-group-title">Vergangen <small>{past.length}</small></h2>
+            <div style={card}>{past.map(eventRow)}</div>
+          </>}
+        </>
+      )}
     </div>
   )
 }
-
 
 function RegistrationPanel({
   loading, registrations, error, onDelete,
@@ -470,7 +449,7 @@ function RegistrationPanel({
         {/* Teams */}
         {teams.length > 0 && (
           <div>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--fg-mute)', marginBottom: 12 }}>
+            <div style={{ font: '700 14px/1.3 var(--font-sans)', color: 'var(--fg)', marginBottom: 10 }}>
               Teams
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 10 }}>
@@ -513,7 +492,7 @@ function RegistrationPanel({
         {/* Individuals */}
         {individuals.length > 0 && (
           <div>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--fg-mute)', marginBottom: 12 }}>
+            <div style={{ font: '700 14px/1.3 var(--font-sans)', color: 'var(--fg)', marginBottom: 10 }}>
               Einzelanmeldungen
             </div>
             <div style={{ background: 'var(--bg-2)', border: '1px solid var(--line-soft)', borderRadius: 10, overflow: 'hidden' }}>

@@ -10,10 +10,9 @@ export async function POST() {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  revalidatePath('/de', 'page')
-  revalidatePath('/en', 'page')
-  revalidatePath('/de/blog/[slug]', 'page')
-  revalidatePath('/en/blog/[slug]', 'page')
+  // The whole public site in both languages: home, blog posts, Über uns, Ausrüstung,
+  // Impressum, and the announcement in the shared layout.
+  revalidatePath('/[lang]', 'layout')
 
   return NextResponse.json({ revalidated: true })
 }

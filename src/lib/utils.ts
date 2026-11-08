@@ -1,7 +1,17 @@
 import type { EventCategory, L10n, Lang } from './types'
 
-export function t(field: L10n, lang: Lang): string {
-  return field[lang]
+/** True when a text has nothing visible in it (an empty rich-text editor saves `<p></p>`). */
+export function isBlank(v?: string | null): boolean {
+  return !v || (!/<img/i.test(v) && v.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim() === '')
+}
+
+/** The text for `lang`; English falls back to German when it was left empty in the admin. */
+export function pick(de: string | null | undefined, en: string | null | undefined, lang: Lang): string {
+  return (lang === 'en' && !isBlank(en) ? en : de) ?? ''
+}
+
+export function t(field: L10n | null | undefined, lang: Lang): string {
+  return pick(field?.de, field?.en, lang)
 }
 
 export function cn(...classes: (string | undefined | null | false)[]): string {

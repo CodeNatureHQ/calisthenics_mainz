@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { Plus } from 'lucide-react'
 import type { Lang, FaqItem } from '@/lib/types'
+import { pick } from '@/lib/utils'
 import SectionHeading from './SectionHeading'
 
 export default function FaqSection({ lang, items }: { lang: Lang; items: FaqItem[] }) {
@@ -15,8 +16,8 @@ export default function FaqSection({ lang, items }: { lang: Lang; items: FaqItem
         <div className="faq-list">
           {items.filter(item => item.visible).map(item => {
             const isOpen = open === item.id
-            const question = de ? item.question_de : item.question_en || item.question_de
-            const answer = de ? item.answer_de : item.answer_en || item.answer_de
+            const question = pick(item.question_de, item.question_en, lang)
+            const answer = pick(item.answer_de, item.answer_en, lang)
             return (
               <div key={item.id} className="faq-item" data-open={isOpen}>
                 <button aria-expanded={isOpen} aria-controls={`answer-${item.id}`} onClick={() => setOpen(isOpen ? null : item.id)}>

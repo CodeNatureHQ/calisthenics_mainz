@@ -678,7 +678,7 @@ function CalendarView({
                     }}
                     title={`${s.time_label} · ${s.place.de}`}
                   >
-                    {s.time_label.split(' – ')[0]} · {s.place[lang === 'de' ? 'de' : 'en'].split('·')[0].trim()}
+                    {s.time_label.split(' – ')[0]} · {t(s.place, lang).split('·')[0].trim()}
                   </div>
                 ))}
 

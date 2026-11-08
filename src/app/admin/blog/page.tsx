@@ -3,8 +3,11 @@
 import { useEffect, useState } from 'react'
 import dynamic from 'next/dynamic'
 import type { Post } from '@/lib/types'
-import { createClient } from '@/lib/supabase/client'
-import { pageHead, crumbStyle, h1Style, card, listRow, empty, btnPrimary, btnGhost, btnDanger, metaItem } from '../shared'
+import { createClient } from '@/lib/supabase/admin'
+import { card, empty, btnPrimary } from '../shared'
+
+import { useDeepLink, ListItem, plain, DateCol } from '@/components/admin/list'
+import { PageHeader, Badge } from '@/components/admin/sections'
 
 const PostEditor = dynamic(() => import('@/components/admin/PostEditor'), { ssr: false })
 
@@ -21,11 +24,12 @@ export default function AdminBlogPage() {
   }
 
   useEffect(() => { load() }, [])
+  useDeepLink('edit', posts, !loading, (t) => setEditing(t))
 
   async function handleDelete(id: string) {
-    if (!confirm('Post wirklich löschen?')) return
-    const supabase = createClient()
-    await supabase.from('posts').delete().eq('id', id)
+    if (!confirm('Diesen Post wirklich löschen?')) return
+    await createClient().from('posts').delete().eq('id', id)
+    setEditing(null)
     load()
   }
 
@@ -35,70 +39,31 @@ export default function AdminBlogPage() {
         post={editing === 'new' ? null : editing}
         onSave={() => { setEditing(null); load() }}
         onCancel={() => setEditing(null)}
+        onDelete={editing === 'new' || !editing.id ? undefined : () => handleDelete(editing.id!)}
       />
     )
   }
 
   return (
     <div>
-      {/* Page head */}
-      <div style={pageHead}>
-        <div>
-          <span style={crumbStyle}>01 / Content</span>
-          <h1 style={h1Style}>Blogposts</h1>
-        </div>
-        <div style={{ display: 'flex', gap: 10, flexShrink: 0 }}>
-          <button onClick={() => setEditing('new')} style={btnPrimary}>
-            + Neuer Post
-          </button>
-        </div>
-      </div>
+      <PageHeader section="blog" count={posts.length} action={<button onClick={() => setEditing('new')} style={btnPrimary}>+ Neuer Post</button>} />
 
-      {/* Card */}
       <div style={card}>
         {loading ? (
           <div style={empty}>Laden …</div>
         ) : posts.length === 0 ? (
           <div style={empty}>Noch keine Posts</div>
-        ) : (
-          posts.map((post) => (
-            <div key={post.id} style={listRow} className="admin-list-row">
-              <div style={{ minWidth: 0 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
-                  <div style={{
-                    width: 28, height: 28, borderRadius: 6,
-                    background: 'var(--bg-2)', border: '1px solid var(--line-soft)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontFamily: 'var(--font-display)', fontSize: 10, color: 'var(--fg)',
-                    flexShrink: 0,
-                  }}>
-                    {post.glyph ?? '—'}
-                  </div>
-                  <span style={{ fontWeight: 500, color: 'var(--fg)', fontSize: 14, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {post.title.de}
-                  </span>
-                </div>
-                <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
-                  <span style={metaItem}>{post.id}</span>
-                  <span style={metaItem}>{post.category.de}</span>
-                  <span style={metaItem}>{post.date_label.de}</span>
-                  <span style={{
-                    ...metaItem,
-                    color: post.published ? 'var(--ok)' : 'var(--fg-mute)',
-                  }}>
-                    {post.published ? 'Veröffentlicht' : 'Entwurf'}
-                  </span>
-                </div>
-              </div>
-              <div style={{ display: 'flex', gap: 6 }} className="admin-list-row-actions">
-                <button onClick={() => setEditing(post)} style={btnGhost}>Bearbeiten</button>
-                <button onClick={() => handleDelete(post.id)} style={btnDanger}>Löschen</button>
-              </div>
-            </div>
-          ))
-        )}
+        ) : posts.map((post) => (
+          <ListItem
+            key={post.id}
+            onOpen={() => setEditing(post)}
+            leading={<DateCol date={new Date(post.created_at)} sub={new Date(post.created_at).getFullYear().toString()} />}
+            title={post.title.de}
+            sub={plain(post.excerpt.de)}
+            trailing={post.published ? undefined : <Badge tone="mute">Entwurf</Badge>}
+          />
+        ))}
       </div>
     </div>
   )
 }
-

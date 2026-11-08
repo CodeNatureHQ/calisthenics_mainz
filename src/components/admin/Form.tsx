@@ -1,6 +1,8 @@
 'use client'
 
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
+import { Plus, X } from 'lucide-react'
+import { BackTo, type SectionKey } from './sections'
 import { fieldLabel, fieldHint, formShell, formHead, formTitle, formSection, formSectionTitle, formSectionDesc, formFields, formActions, errorBox, btnPrimary, btnGhost } from '@/app/admin/shared'
 
 /**
@@ -9,18 +11,28 @@ import { fieldLabel, fieldHint, formShell, formHead, formTitle, formSection, for
  * same: Cancel on the left, the one primary action on the right.
  */
 
-export function FormShell({ title, error, children, onCancel, onSave, saving, saveLabel = 'Speichern', disabled }: {
+export function FormShell({ title, error, children, onCancel, onSave, saving, saveLabel = 'Speichern', disabled, section, onDelete, deleteLabel = 'Löschen' }: {
   title: string; error?: string; children: ReactNode
   onCancel: () => void; onSave: () => void; saving?: boolean; saveLabel?: string; disabled?: boolean
+  /** Shows the breadcrumb trail (Übersicht › FAQ › Frage bearbeiten) above the editor. */
+  section?: SectionKey
+  /** Delete lives inside the editor, not in the list: it is the rare, destructive action. */
+  onDelete?: () => void; deleteLabel?: string
 }) {
   return (
-    <div style={formShell}>
-      <div style={formHead}><h2 style={formTitle}>{title}</h2></div>
-      {error && <div style={{ ...errorBox, margin: '16px 24px 0' }}>{error}</div>}
-      {children}
-      <div style={{ ...formActions, borderTop: '1px solid var(--line-soft)' }}>
-        <button type="button" onClick={onCancel} style={{ ...btnGhost, marginRight: 'auto' }}>Abbrechen</button>
-        <button type="button" onClick={onSave} disabled={saving || disabled} style={btnPrimary}>{saving ? 'Speichern …' : saveLabel}</button>
+    <div>
+      {section && <BackTo section={section} onClick={onCancel} current={title} />}
+      <div style={formShell}>
+        <div style={formHead}>
+          <h2 style={formTitle}>{title}</h2>
+        </div>
+        {error && <div style={{ ...errorBox, margin: '16px 24px 0' }}>{error}</div>}
+        {children}
+        <div style={{ ...formActions, borderTop: '1px solid var(--line-soft)' }}>
+          {onDelete && <button type="button" onClick={onDelete} className="admin-text-danger">{deleteLabel}</button>}
+          <button type="button" onClick={onCancel} style={{ ...btnGhost, marginLeft: 'auto' }}>Abbrechen</button>
+          <button type="button" onClick={onSave} disabled={saving || disabled} style={btnPrimary}>{saving ? 'Speichern …' : saveLabel}</button>
+        </div>
       </div>
     </div>
   )
@@ -65,14 +77,32 @@ export function Toggle({ checked, onChange, label, description }: { checked: boo
   )
 }
 
-/** Two language columns for anything that needs German and English. Pass a render function for custom inputs (rich text). */
-export function LangColumns({ label, hint, optional, de, en }: { label: string; hint?: string; optional?: boolean; de: ReactNode; en: ReactNode }) {
+/** True when an HTML or plain value has no visible text (an empty editor yields `<p></p>`). */
+export const isBlank = (v?: string | null) => !v || (!/<img/i.test(v) && v.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim() === '')
+
+/**
+ * German first, English optional. Most changes only ever need German; the public site
+ * falls back to it when English is empty. The English field stays one click away and
+ * opens by itself when there already is an English text.
+ */
+export function LangColumns({ label, hint, optional, de, en, enValue }: { label: string; hint?: string; optional?: boolean; de: ReactNode; en: ReactNode; enValue?: string | null }) {
+  const [showEn, setShowEn] = useState(!isBlank(enValue))
   return (
     <Field label={label} hint={hint} optional={optional}>
-      <div className="admin-lang-pair">
-        <div><span className="admin-lang-tag" data-lang="de">Deutsch</span>{de}</div>
-        <div><span className="admin-lang-tag" data-lang="en">English</span>{en}</div>
-      </div>
+      {de}
+      {showEn ? (
+        <div style={{ marginTop: 10 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span className="admin-lang-tag" data-lang="en">English</span>
+            {isBlank(enValue) && <button type="button" className="admin-en-toggle" style={{ marginTop: 0 }} onClick={() => setShowEn(false)}><X size={13} /> ausblenden</button>}
+          </div>
+          {en}
+        </div>
+      ) : (
+        <button type="button" className="admin-en-toggle" onClick={() => setShowEn(true)}>
+          <Plus size={13} /> Englisch <span style={{ fontWeight: 400 }}>· optional, sonst wird Deutsch gezeigt</span>
+        </button>
+      )}
     </Field>
   )
 }

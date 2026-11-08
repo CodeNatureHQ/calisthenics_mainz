@@ -37,9 +37,8 @@ export const sectionHead: React.CSSProperties = {
 }
 
 export const sectionTitle: React.CSSProperties = {
-  font: '700 12px/1.4 var(--font-sans)',
-  textTransform: 'uppercase', letterSpacing: '0.12em',
-  color: 'var(--fg-mute)', margin: 0,
+  font: '700 14px/1.4 var(--font-sans)',
+  color: 'var(--fg-dim)', margin: 0,
 }
 
 // ── Cards ────────────────────────────────────────────────────────────────────
@@ -55,14 +54,13 @@ export const cardHead: React.CSSProperties = {
 }
 
 export const cardTitle: React.CSSProperties = {
-  font: '700 12px/1.4 var(--font-sans)',
-  textTransform: 'uppercase', letterSpacing: '0.1em',
+  font: '700 15px/1.3 var(--font-sans)',
   color: 'var(--fg)', margin: 0,
 }
 
 export const cardMeta: React.CSSProperties = {
-  fontFamily: 'var(--font-mono)', fontSize: 10,
-  color: 'var(--fg-mute)', letterSpacing: '0.06em',
+  font: '400 13px/1.4 var(--font-sans)',
+  color: 'var(--fg-mute)',
 }
 
 export const formCard: React.CSSProperties = {
@@ -80,22 +78,18 @@ export const listRow: React.CSSProperties = {
 }
 
 export const empty: React.CSSProperties = {
-  padding: '60px 24px', textAlign: 'center',
-  color: 'var(--fg-mute)', font: '600 13px/1.4 var(--font-sans)',
-  textTransform: 'uppercase', letterSpacing: '0.08em',
+  padding: '28px 16px', color: 'var(--fg-mute)',
+  font: '400 14px/1.5 var(--font-sans)',
 }
 
 export const metaItem: React.CSSProperties = {
-  fontFamily: 'var(--font-mono)', fontSize: 10.5,
-  textTransform: 'uppercase', letterSpacing: '0.06em',
+  font: '400 13px/1.4 var(--font-sans)',
   color: 'var(--fg-mute)',
+  fontVariantNumeric: 'tabular-nums',
 }
 
 export const chipStyle: React.CSSProperties = {
-  padding: '3px 9px', borderRadius: 'var(--radius-sm)',
-  background: 'var(--bg)', border: '1.5px solid',
-  font: '700 10.5px/1.4 var(--font-sans)',
-  letterSpacing: '0.08em', textTransform: 'uppercase',
+  font: '600 13px/1.4 var(--font-sans)',
 }
 
 // ── Forms ────────────────────────────────────────────────────────────────────

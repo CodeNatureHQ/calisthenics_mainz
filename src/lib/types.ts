@@ -3,7 +3,7 @@ export type Lang = 'de' | 'en'
 export type L10n = { de: string; en: string }
 
 export function t(field: L10n, lang: Lang): string {
-  return field[lang]
+  return (lang === 'en' && field.en?.replace(/<[^>]*>/g, '').trim() ? field.en : field.de) ?? ''
 }
 
 /* ------------------------------------------------------------------ */

@@ -2,10 +2,12 @@
 
 import { useEffect, useRef, useState } from 'react'
 import type { Product } from '@/lib/types'
-import { createClient } from '@/lib/supabase/client'
-import { pageHead, crumbStyle, h1Style, card, listRow, empty, inp, btnPrimary, btnGhost, btnDanger } from '../shared'
+import { createClient } from '@/lib/supabase/admin'
+import { card, empty, inp, btnPrimary, btnGhost, btnDanger } from '../shared'
 import { FormShell, FormSection, Field, Grid, Toggle } from '@/components/admin/Form'
 import LangPair from '@/components/admin/LangPair'
+import { useDeepLink, moveItem, nextSortOrder, MoveButtons, ListItem, Thumb, Switch } from '@/components/admin/list'
+import { PageHeader, Badge } from '@/components/admin/sections'
 
 const CATEGORIES = ['ringe', 'stangen', 'parallettes', 'zubehoer'] as const
 const CAT_LABELS: Record<string, string> = { ringe: 'Ringe', stangen: 'Stangen', parallettes: 'Parallettes', zubehoer: 'Zubehör' }
@@ -14,7 +16,7 @@ type FormState = {
   category: string
   name_de: string; name_en: string
   desc_de: string; desc_en: string
-  href: string; sort_order: string; visible: boolean
+  href: string; visible: boolean
   image_url: string
 }
 
@@ -22,7 +24,7 @@ const emptyForm = (): FormState => ({
   category: 'zubehoer',
   name_de: '', name_en: '',
   desc_de: '', desc_en: '',
-  href: '', sort_order: '0', visible: true,
+  href: '', visible: true,
   image_url: '',
 })
 
@@ -33,21 +35,25 @@ export default function AdminAusruestungPage() {
   const [saving, setSaving] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState('')
+  const [ready, setReady] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
 
   async function load() {
     const { data } = await createClient().from('products').select('*').order('sort_order')
     setProducts(data ?? [])
+    setReady(true)
   }
 
   useEffect(() => { load() }, [])
 
   function startNew() { setForm(emptyForm()); setEditing('new'); setError('') }
   function startEdit(p: Product) {
-    setForm({ category: p.category, name_de: p.name_de, name_en: p.name_en, desc_de: p.desc_de, desc_en: p.desc_en, href: p.href, sort_order: String(p.sort_order), visible: p.visible, image_url: p.image_url ?? '' })
+    setForm({ category: p.category, name_de: p.name_de, name_en: p.name_en, desc_de: p.desc_de, desc_en: p.desc_en, href: p.href, visible: p.visible, image_url: p.image_url ?? '' })
     setEditing(p)
     setError('')
   }
+  useDeepLink('edit', products, ready, (t) => (t === 'new' ? startNew() : startEdit(t)))
+  async function move(index: number, dir: -1 | 1) { setProducts(await moveItem('products', products, index, dir)) }
 
   const f = (key: keyof FormState, value: string) => setForm((p) => ({ ...p, [key]: value }))
 
@@ -72,13 +78,13 @@ export default function AdminAusruestungPage() {
       category: form.category,
       name_de: form.name_de, name_en: form.name_en,
       desc_de: form.desc_de, desc_en: form.desc_en,
-      href: form.href, sort_order: parseInt(form.sort_order) || 0,
+      href: form.href,
       visible: form.visible,
       image_url: form.image_url || null,
       glyph: '',
     }
     const { error: err } = editing === 'new'
-      ? await supabase.from('products').insert(data)
+      ? await supabase.from('products').insert({ ...data, sort_order: nextSortOrder(products) })
       : await supabase.from('products').update(data).eq('id', (editing as Product).id)
     if (err) setError(err.message)
     else { setEditing(null); load() }
@@ -86,9 +92,10 @@ export default function AdminAusruestungPage() {
   }
 
   async function del(id: string) {
-    if (!confirm('Löschen?')) return
+    if (!confirm('Dieses Produkt löschen?')) return false
     await createClient().from('products').delete().eq('id', id)
     load()
+    return true
   }
 
   async function toggleVisible(p: Product) {
@@ -98,16 +105,10 @@ export default function AdminAusruestungPage() {
 
   return (
     <div>
-      <div style={pageHead}>
-        <div>
-          <span style={crumbStyle}>06 / Content</span>
-          <h1 style={h1Style}>Ausrüstung</h1>
-        </div>
-        {!editing && <button onClick={startNew} style={btnPrimary}>+ Produkt hinzufügen</button>}
-      </div>
+      {!editing && <PageHeader section="ausruestung" count={products.length} action={<button onClick={startNew} style={btnPrimary}>+ Produkt hinzufügen</button>} />}
 
       {editing !== null && (
-        <FormShell title={editing === 'new' ? 'Neues Produkt' : 'Produkt bearbeiten'} error={error} onCancel={() => setEditing(null)} onSave={save} saving={saving} disabled={uploading || !form.name_de.trim()}>
+        <FormShell section="ausruestung" onDelete={editing === 'new' ? undefined : async () => { if (await del(String((editing as { id: string | number }).id))) setEditing(null) }} title={editing === 'new' ? 'Neues Produkt' : 'Produkt bearbeiten'} error={error} onCancel={() => setEditing(null)} onSave={save} saving={saving} disabled={uploading || !form.name_de.trim()}>
           <FormSection title="Produkt">
             <Grid>
               <Field label="Kategorie">
@@ -134,47 +135,27 @@ export default function AdminAusruestungPage() {
               <input value={form.href} onChange={(e) => f('href', e.target.value)} placeholder="https://amzn.to/…" style={inp} type="url" />
             </Field>
           </FormSection>
-          <FormSection title="Anzeige">
-            <Grid>
-              <Field label="Reihenfolge" hint="Kleinere Zahl steht weiter vorne.">
-                <input type="number" value={form.sort_order} onChange={(e) => f('sort_order', e.target.value)} style={inp} />
-              </Field>
-            </Grid>
+          <FormSection title="Anzeige" description="Die Reihenfolge änderst du mit den Pfeilen in der Liste.">
             <Toggle checked={form.visible} onChange={(v) => setForm(p => ({ ...p, visible: v }))} label={form.visible ? 'Auf der Ausrüstungsseite sichtbar' : 'Versteckt'} />
           </FormSection>
         </FormShell>
       )}
 
       {!editing && <div style={card}>
-        {products.length === 0 ? (
-          <div style={empty}>Noch keine Produkte</div>
-        ) : products.map((p) => (
-          <div key={p.id} style={{ ...listRow, opacity: p.visible ? 1 : 0.5 }} className="admin-list-row">
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
-              {/* Thumbnail */}
-              <div style={{ width: 48, height: 36, borderRadius: 6, overflow: 'hidden', flexShrink: 0, border: '1px solid var(--line-soft)', background: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                {p.image_url ? (
-                  <img src={p.image_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                ) : (
-                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--fg-mute)' }}>–</span>
-                )}
-              </div>
-              <div style={{ minWidth: 0 }}>
-                <div style={{ fontWeight: 500, color: 'var(--fg)', fontSize: 14, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name_de}</div>
-                <div style={{ display: 'flex', gap: 8, marginTop: 3, alignItems: 'center' }}>
-                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.08em', padding: '2px 7px', borderRadius: 999, border: '1px solid var(--line-soft)', color: 'var(--fg-mute)' }}>{CAT_LABELS[p.category] ?? p.category}</span>
-                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--fg-mute)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 240 }}>{p.href}</span>
-                </div>
-              </div>
-            </div>
-            <div style={{ display: 'flex', gap: 6 }} className="admin-list-row-actions">
-              <button onClick={() => toggleVisible(p)} style={{ ...btnGhost, color: p.visible ? 'var(--ok)' : 'var(--fg-mute)', borderColor: p.visible ? 'color-mix(in srgb, var(--ok) 35%, transparent)' : 'var(--line)' }}>
-                {p.visible ? '● Sichtbar' : '○ Versteckt'}
-              </button>
-              <button onClick={() => startEdit(p)} style={btnGhost}>Bearbeiten</button>
-              <button onClick={() => del(p.id)} style={btnDanger}>Löschen</button>
-            </div>
-          </div>
+        {products.length === 0 ? <div style={empty}>Noch keine Produkte</div> : products.map((p, i) => (
+          <ListItem
+            key={p.id}
+            onOpen={() => startEdit(p)}
+            dim={!p.visible}
+            leading={p.image_url ? <Thumb src={p.image_url} fallback="" /> : undefined}
+            title={p.name_de}
+            sub={CAT_LABELS[p.category] ?? p.category}
+            trailing={<>
+              {!p.visible && <Badge tone="mute">Versteckt</Badge>}
+              <Switch checked={p.visible} onChange={() => toggleVisible(p)} label={p.visible ? 'Auf der Seite sichtbar: ausblenden' : 'Versteckt: einblenden'} />
+              <MoveButtons index={i} count={products.length} onMove={(d) => move(i, d)} />
+            </>}
+          />
         ))}
       </div>}
     </div>

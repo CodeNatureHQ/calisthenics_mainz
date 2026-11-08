@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import type { Lang, RecurringEvent } from '@/lib/types'
+import { pick, t } from '@/lib/utils'
 import { createClient } from '@/lib/supabase/server'
 import Nav from '@/components/Nav'
 import Hero from '@/components/public/Hero'
@@ -101,10 +102,10 @@ export default async function HomePage({
           '@type': 'FAQPage',
           mainEntity: faqItems.map((item) => ({
             '@type': 'Question',
-            name: lang === 'de' ? item.question_de : item.question_en,
+            name: pick(item.question_de, item.question_en, lang),
             acceptedAnswer: {
               '@type': 'Answer',
-              text: lang === 'de' ? item.answer_de : item.answer_en,
+              text: pick(item.answer_de, item.answer_en, lang),
             },
           })),
         }
@@ -116,12 +117,12 @@ export default async function HomePage({
       ? futureEvents.map((e) => ({
           '@context': 'https://schema.org',
           '@type': 'Event',
-          name: lang === 'de' ? e.title.de : e.title.en,
+          name: t(e.title, lang),
           startDate: e.starts_at,
-          description: lang === 'de' ? e.description?.de : e.description?.en,
+          description: t(e.description, lang),
           location: {
             '@type': 'Place',
-            name: lang === 'de' ? e.place.de : e.place.en,
+            name: t(e.place, lang),
             address: {
               '@type': 'PostalAddress',
               addressLocality: 'Mainz',

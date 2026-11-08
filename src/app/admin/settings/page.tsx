@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from 'react'
 import type { SiteSettings } from '@/lib/types'
-import { createClient } from '@/lib/supabase/client'
-import { pageHead, crumbStyle, h1Style, card, cardHead, cardMeta, inp, errorBox, successBox, btnPrimary, fieldLabel } from '../shared'
+import { createClient } from '@/lib/supabase/admin'
+import { card, cardHead, cardMeta, inp, errorBox, successBox, btnPrimary, fieldLabel } from '../shared'
+import { PageHeader } from '@/components/admin/sections'
 
 export default function AdminSettingsPage() {
   const [form, setForm] = useState<Partial<SiteSettings>>({})
@@ -40,21 +41,13 @@ export default function AdminSettingsPage() {
 
   return (
     <div>
-      <div style={pageHead}>
-        <div>
-          <span style={crumbStyle}>05 / Settings</span>
-          <h1 style={h1Style}>Hero & Stats</h1>
-        </div>
-        <button onClick={save} disabled={saving} style={btnPrimary}>
-          {saving ? 'Speichern …' : 'Speichern'}
-        </button>
-      </div>
+      <PageHeader section="settings" action={<button onClick={save} disabled={saving} style={btnPrimary}>{saving ? 'Speichern …' : 'Speichern'}</button>} />
 
       {error && <div style={errorBox}>{error}</div>}
       {saved && <div style={successBox}>✓ Gespeichert</div>}
 
       {/* Hero stats */}
-      <div style={card}>
+      <div id="hero" style={{ ...card, scrollMarginTop: 24 }}>
         <div style={cardHead}>
           <h3 style={cardTitle}>Hero-Statistiken</h3>
           <span style={cardMeta}>4 Kacheln im Hero-Bereich</span>
@@ -80,7 +73,7 @@ export default function AdminSettingsPage() {
       </div>
 
       {/* About stats */}
-      <div style={{ ...card, marginTop: 20 }}>
+      <div id="about" style={{ ...card, marginTop: 20, scrollMarginTop: 24 }}>
         <div style={cardHead}>
           <h3 style={cardTitle}>Über uns — Zahlen</h3>
           <span style={cardMeta}>4 Kacheln im Über-uns-Bereich</span>
@@ -106,7 +99,7 @@ export default function AdminSettingsPage() {
       </div>
 
       {/* Impressum */}
-      <div style={{ ...card, marginTop: 20 }}>
+      <div id="impressum" style={{ ...card, marginTop: 20, scrollMarginTop: 24 }}>
         <div style={cardHead}>
           <h3 style={cardTitle}>Impressum</h3>
           <span style={cardMeta}>Pflichtangaben für die Impressums-Seite</span>
@@ -117,6 +110,7 @@ export default function AdminSettingsPage() {
             { key: 'imprint_chair2' as const,  label: '2. Vorsitzende:r',  placeholder: 'Erika Musterfrau' },
             { key: 'imprint_street' as const,  label: 'Straße & Hausnummer', placeholder: 'Musterstraße 1' },
             { key: 'imprint_zip' as const,     label: 'PLZ',               placeholder: '55122' },
+            { key: 'imprint_city' as const,    label: 'Ort',               placeholder: 'Mainz' },
             { key: 'imprint_reg_nr' as const,  label: 'Registernummer',    placeholder: 'VR 12345' },
             { key: 'imprint_email' as const,   label: 'E-Mail',            placeholder: 'kontakt@calisthenics-mainz.de' },
           ].map(({ key, label, placeholder }) => (
@@ -129,7 +123,7 @@ export default function AdminSettingsPage() {
       </div>
 
       {/* Feature flags */}
-      <div style={{ ...card, marginTop: 20 }}>
+      <div id="seiten" style={{ ...card, marginTop: 20, scrollMarginTop: 24 }}>
         <div style={cardHead}>
           <h3 style={cardTitle}>Feature-Flags</h3>
           <span style={cardMeta}>Seiten ein- / ausschalten</span>
@@ -143,10 +137,10 @@ export default function AdminSettingsPage() {
               style={{ width: 16, height: 16, accentColor: 'var(--ok)', flexShrink: 0, cursor: 'pointer' }}
             />
             <div>
-              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: form.show_ausruestung ? 'var(--ok)' : 'var(--fg)', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 600 }}>
-                Ausrüstungs-Seite {form.show_ausruestung ? '● aktiv' : '○ inaktiv'}
+              <div style={{ font: '600 14px/1.3 var(--font-sans)', color: 'var(--fg)' }}>
+                Ausrüstungs-Seite {form.show_ausruestung ? 'ist online' : 'ist ausgeblendet'}
               </div>
-              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--fg-mute)', marginTop: 3, letterSpacing: '0.04em' }}>
+              <div style={{ font: '400 13px/1.4 var(--font-sans)', color: 'var(--fg-mute)', marginTop: 3 }}>
                 /de/ausruestung — Amazon-Links (ohne Affiliate)
               </div>
             </div>
@@ -159,5 +153,5 @@ export default function AdminSettingsPage() {
   )
 }
 
-const cardTitle: React.CSSProperties = { fontFamily: 'var(--font-mono)', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.1em', margin: 0, color: 'var(--fg)', fontWeight: 600 }
-const statBox: React.CSSProperties = { background: 'var(--bg)', border: '1px solid var(--line-soft)', borderRadius: 12, padding: 18 }
+const cardTitle: React.CSSProperties = { font: '700 15px/1.3 var(--font-sans)', margin: 0, color: 'var(--fg)' }
+const statBox: React.CSSProperties = { minWidth: 0 }

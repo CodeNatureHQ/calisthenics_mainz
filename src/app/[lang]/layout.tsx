@@ -3,6 +3,7 @@ import type { Lang, Event } from '@/lib/types'
 import { LangProvider } from '@/lib/i18n'
 import { createClient } from '@/lib/supabase/server'
 import AnnouncementBanner from '@/components/public/AnnouncementBanner'
+import AdminEditPill from '@/components/public/AdminEditPill'
 
 export const revalidate = 60
 
@@ -68,6 +69,7 @@ export default async function LangLayout({
             />
           )}
           {children}
+          <AdminEditPill />
         </LangProvider>
     </div>
   )
